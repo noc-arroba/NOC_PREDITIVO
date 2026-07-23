@@ -2,190 +2,129 @@
 OTIA — Cliente de Integração IXC
 Arroba Banda Larga | NOC
 
-Autenticação: Bearer Token
-Endpoints mapeados:
-  - OS abertas
-  - Clientes
-  - Status/atualização de OS
-  - Tickets/incidentes
-  - Notificações de OS
+Autenticação: Basic Auth com token IXC (formato id:hash)
+Codificado em Base64 conforme padrão IXC REST API
 """
 
 import os
 import requests
 import json
+import base64
 from datetime import datetime
 
-# ─── Credenciais via variáveis de ambiente ───────────────────────────────────
-IXC_URL   = os.environ.get("IXC_URL", "").rstrip("/")
-IXC_TOKEN = os.environ.get("IXC_TOKEN", "")
+# ─── Credenciais ─────────────────────────────────────────────────────────────
+IXC_URL   = os.environ.get("IXC_URL", "https://central.arrobabandalarga.com.br/webservice/v1").rstrip("/")
+IXC_TOKEN = os.environ.get("IXC_TOKEN", "514:d80878e07a48bd5b338b9c815cf914f8e9cc0a2c1becf36a7f7bf2d82e77da81")
+
+_TOKEN_B64 = base64.b64encode(IXC_TOKEN.encode()).decode()
 
 HEADERS = {
-    "Authorization": f"Bearer {IXC_TOKEN}",
+    "Authorization": f"Basic {_TOKEN_B64}",
     "Content-Type":  "application/json",
     "Accept":        "application/json",
+    "ixcsoft":       "listar",
 }
 
-TIMEOUT = 15  # segundos
+TIMEOUT = 20
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+# ─── Base ────────────────────────────────────────────────────────────────────
 
-def _get(endpoint: str, params: dict = None) -> dict:
-    url = f"{IXC_URL}/{endpoint.lstrip('/')}"
-    r = requests.get(url, headers=HEADERS, params=params, timeout=TIMEOUT)
-    r.raise_for_status()
-    return r.json()
-
-def _post(endpoint: str, payload: dict) -> dict:
+def _post_list(endpoint: str, payload: dict) -> dict:
     url = f"{IXC_URL}/{endpoint.lstrip('/')}"
     r = requests.post(url, headers=HEADERS, json=payload, timeout=TIMEOUT)
     r.raise_for_status()
     return r.json()
 
-def _put(endpoint: str, payload: dict) -> dict:
+def _get(endpoint: str) -> dict:
     url = f"{IXC_URL}/{endpoint.lstrip('/')}"
-    r = requests.put(url, headers=HEADERS, json=payload, timeout=TIMEOUT)
+    h = dict(HEADERS)
+    h.pop("ixcsoft", None)
+    r = requests.get(url, headers=h, timeout=TIMEOUT)
     r.raise_for_status()
     return r.json()
 
-# ─── AUTENTICAÇÃO ─────────────────────────────────────────────────────────────
+def _put(endpoint: str, payload: dict) -> dict:
+    url = f"{IXC_URL}/{endpoint.lstrip('/')}"
+    h = dict(HEADERS)
+    h["ixcsoft"] = "alterar"
+    r = requests.put(url, headers=h, json=payload, timeout=TIMEOUT)
+    r.raise_for_status()
+    return r.json()
+
+# ─── Teste ───────────────────────────────────────────────────────────────────
 
 def testar_conexao() -> dict:
-    """Valida se a URL e o token estão corretos."""
     try:
-        resp = _get("/token")
-        return {"status": "ok", "resposta": resp}
+        resp = _post_list("su_oss_chamado", {
+            "qtype":"su_oss_chamado.id","query":"","oper":"=",
+            "page":"1","rp":"1","sortname":"su_oss_chamado.id","sortorder":"desc"
+        })
+        total = resp.get("total", 0)
+        return {"status": "ok", "total_os": total, "url": IXC_URL}
     except Exception as e:
         return {"status": "erro", "detalhe": str(e)}
 
-# ─── ORDENS DE SERVIÇO ────────────────────────────────────────────────────────
+# ─── OS ──────────────────────────────────────────────────────────────────────
 
 def listar_os_abertas(limite: int = 50, pagina: int = 1) -> dict:
-    """Lista OS com status em aberto."""
-    return _get("/su_oss_chamado", params={
-        "qtype":     "su_oss_chamado.status",
-        "query":     "A",          # A = Aberto
-        "oper":      "=",
-        "page":      pagina,
-        "rp":        limite,
-        "sortname":  "su_oss_chamado.data",
-        "sortorder": "asc",
+    return _post_list("su_oss_chamado", {
+        "qtype":"su_oss_chamado.status","query":"A","oper":"=",
+        "page": str(pagina),"rp": str(limite),
+        "sortname":"su_oss_chamado.data_abertura","sortorder":"asc"
     })
 
 def listar_os_por_status(status: str, limite: int = 50) -> dict:
-    """
-    status: A=Aberto, E=Em andamento, F=Fechado, C=Cancelado
-    """
-    return _get("/su_oss_chamado", params={
-        "qtype":    "su_oss_chamado.status",
-        "query":    status,
-        "oper":     "=",
-        "rp":       limite,
-        "sortname": "su_oss_chamado.data",
-        "sortorder":"asc",
+    return _post_list("su_oss_chamado", {
+        "qtype":"su_oss_chamado.status","query": status,"oper":"=",
+        "page":"1","rp": str(limite),
+        "sortname":"su_oss_chamado.data_abertura","sortorder":"asc"
+    })
+
+def buscar_os_por_cliente(cliente_id: str, limite: int = 20) -> dict:
+    return _post_list("su_oss_chamado", {
+        "qtype":"su_oss_chamado.id_cliente","query": cliente_id,"oper":"=",
+        "page":"1","rp": str(limite),
+        "sortname":"su_oss_chamado.data_abertura","sortorder":"desc"
     })
 
 def buscar_os_por_id(os_id: str) -> dict:
-    """Busca uma OS específica pelo ID."""
-    return _get(f"/su_oss_chamado/{os_id}")
-
-def buscar_os_por_cliente(cliente_id: str, limite: int = 20) -> dict:
-    """Lista OS de um cliente específico."""
-    return _get("/su_oss_chamado", params={
-        "qtype":  "su_oss_chamado.id_cliente",
-        "query":  cliente_id,
-        "oper":   "=",
-        "rp":     limite,
-    })
+    return _get(f"su_oss_chamado/{os_id}")
 
 def atualizar_status_os(os_id: str, novo_status: str, mensagem: str = "") -> dict:
-    """
-    Atualiza status de uma OS.
-    novo_status: A=Aberto, E=Em andamento, F=Fechado, C=Cancelado
-    """
-    payload = {
-        "status":       novo_status,
-        "mensagem_tec": mensagem,
-    }
-    return _put(f"/su_oss_chamado/{os_id}", payload)
+    return _put(f"su_oss_chamado/{os_id}", {"status": novo_status, "mensagem_tec": mensagem})
 
-def registrar_nota_os(os_id: str, nota: str, tecnico_id: str = None) -> dict:
-    """Registra uma nota/anotação numa OS."""
-    payload = {
-        "id_oss":    os_id,
-        "mensagem":  nota,
-    }
-    if tecnico_id:
-        payload["id_tecnico"] = tecnico_id
-    return _post("/su_oss_chamado_notificacao", payload)
+def registrar_nota_os(os_id: str, nota: str) -> dict:
+    return _post_list("su_oss_chamado_notificacao", {"id_oss": os_id, "mensagem": nota})
 
-# ─── CLIENTES ─────────────────────────────────────────────────────────────────
+# ─── Clientes ────────────────────────────────────────────────────────────────
 
 def buscar_cliente_por_id(cliente_id: str) -> dict:
-    return _get(f"/cliente/{cliente_id}")
-
-def buscar_cliente_por_contrato(contrato: str) -> dict:
-    return _get("/cliente", params={
-        "qtype": "cliente.login",
-        "query": contrato,
-        "oper":  "=",
-    })
+    return _get(f"cliente/{cliente_id}")
 
 def buscar_cliente_por_cpf(cpf: str) -> dict:
-    cpf_limpo = cpf.replace(".", "").replace("-", "")
-    return _get("/cliente", params={
-        "qtype": "cliente.cnpj_cpf",
-        "query": cpf_limpo,
-        "oper":  "=",
+    cpf = cpf.replace(".","").replace("-","")
+    return _post_list("cliente", {
+        "qtype":"cliente.cnpj_cpf","query": cpf,"oper":"=",
+        "page":"1","rp":"5","sortname":"cliente.id","sortorder":"desc"
     })
 
-def listar_clientes_por_bairro(bairro: str, limite: int = 100) -> dict:
-    return _get("/cliente", params={
-        "qtype": "cliente.bairro",
-        "query": bairro,
-        "oper":  "like",
-        "rp":    limite,
+def listar_clientes_por_bairro(bairro: str, limite: int = 50) -> dict:
+    return _post_list("cliente", {
+        "qtype":"cliente.bairro","query": bairro,"oper":"like",
+        "page":"1","rp": str(limite),"sortname":"cliente.id","sortorder":"desc"
     })
 
-# ─── SLA / REINCIDÊNCIA ───────────────────────────────────────────────────────
-
-def os_com_sla_vencendo(horas_limite: int = 4) -> dict:
-    """
-    Retorna OS abertas — ordenadas por data de abertura ascendente.
-    Filtragem de SLA deve ser feita no pós-processamento.
-    """
-    return listar_os_abertas(limite=200)
-
-def reincidencias_por_cliente(cliente_id: str, dias: int = 30) -> dict:
-    """Lista OS do cliente nos últimos N dias para análise de reincidência."""
-    return buscar_os_por_cliente(cliente_id, limite=50)
-
-# ─── TICKETS / INCIDENTES ─────────────────────────────────────────────────────
+# ─── Tickets ─────────────────────────────────────────────────────────────────
 
 def listar_tickets_abertos(limite: int = 50) -> dict:
-    return _get("/su_ticket", params={
-        "qtype":    "su_ticket.status",
-        "query":    "A",
-        "oper":     "=",
-        "rp":       limite,
-        "sortname": "su_ticket.data_abertura",
-        "sortorder":"asc",
+    return _post_list("su_ticket", {
+        "qtype":"su_ticket.status","query":"A","oper":"=",
+        "page":"1","rp": str(limite),
+        "sortname":"su_ticket.data_abertura","sortorder":"asc"
     })
 
-def buscar_ticket_por_id(ticket_id: str) -> dict:
-    return _get(f"/su_ticket/{ticket_id}")
-
-# ─── DIAGNÓSTICO / TESTE ──────────────────────────────────────────────────────
+# ─── Self-test ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("=" * 55)
-    print("OTIA — Teste de Conexão IXC")
-    print(f"URL:   {IXC_URL or '⚠️  NÃO CONFIGURADA'}")
-    print(f"Token: {'✅ presente' if IXC_TOKEN else '⚠️  NÃO CONFIGURADO'}")
-    print("=" * 55)
-
-    if not IXC_URL or not IXC_TOKEN:
-        print("❌ Configure IXC_URL e IXC_TOKEN como secrets antes de testar.")
-    else:
-        resultado = testar_conexao()
-        print(json.dumps(resultado, indent=2, ensure_ascii=False))
+    r = testar_conexao()
+    print(json.dumps(r, indent=2, ensure_ascii=False))
