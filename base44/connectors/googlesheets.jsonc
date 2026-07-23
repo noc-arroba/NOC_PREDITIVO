@@ -1,0 +1,6 @@
+{
+  "type": "googlesheets",
+  "scopes": [
+    "email"
+  ]
+}
