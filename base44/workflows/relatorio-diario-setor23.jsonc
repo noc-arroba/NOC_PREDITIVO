@@ -1,6 +1,6 @@
 {
   "name": "relatorio-diario-setor23",
-  "description": "Envia relat\u00f3rio di\u00e1rio do Setor 23 (Manuten\u00e7\u00e3o Cliente) \u00e0s 17h30 todos os dias no grupo WhatsApp NOC_OTIA. Inclui OS abertas, SLA, executadas do dia e por t\u00e9cnico.",
+  "description": "Envia relat\u00f3rio di\u00e1rio dos Setores 23 (Manuten\u00e7\u00e3o Cliente) e 104 (Melhoria Cliente) \u00e0s 17h30 todos os dias no grupo WhatsApp NOC_OTIA. Inclui OS abertas, SLA, executadas do dia e por t\u00e9cnico.",
   "trigger": {
     "condition": null,
     "config": {
@@ -22,7 +22,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "relatorio_diario_setor23",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -35,7 +35,7 @@
           },
           "then": "montar_e_enviar",
           "x-base44": {
-            "title": "Buscar dados IXC Setor 23",
+            "title": "Buscar dados IXC Setores 23 e 104",
             "description": "OS abertas, fechadas, SLA"
           }
         }
@@ -44,7 +44,7 @@
         "montar_e_enviar": {
           "call": "invoke_superagent_step",
           "with": {
-            "message": "O relat\u00f3rio di\u00e1rio do Setor 23 (Manuten\u00e7\u00e3o Cliente) foi solicitado automaticamente \u00e0s 17h30. Use os dados abaixo do IXC para montar e enviar o relat\u00f3rio no grupo WhatsApp NOC_OTIA.\n\nDados coletados:\n${ .buscar_dados | tostring }\n\nFormate o relat\u00f3rio para WhatsApp (use *negrito* do WhatsApp, sem markdown).\n\nEstrutura obrigat\u00f3ria:\n\n\ud83d\udee0\ufe0f *SETOR 23 \u2014 MANUTEN\u00c7\u00c3O CLIENTE*\n*Vis\u00e3o de [data de hoje] 17:30*\n\n\ud83d\udcca RESUMO GERAL\n- OS abertas (status A): [total_abertas]\n- Abertas hoje: [abertas_hoje]\n- Abertas ontem: [abertas_ontem]\n- Abertas antigas: [abertas_antigas]\n- OS executadas/fechadas hoje: [fechadas_hoje]\n- Saldo do dia: [saldo_dia] (positivo = fechou mais do que abriu)\n- Sem t\u00e9cnico atribu\u00eddo: [sem_tecnico]\n\n\u23f1\ufe0f SLA \u2014 OS ABERTAS\n- \ud83d\udd34 Vencido (>24h): [sla.vencido]\n- \ud83d\udfe0 Cr\u00edtico (80-100%): [sla.critico]\n- \ud83d\udfe2 Dentro do SLA: [sla.ok]\n\n\ud83d\udccb OS ABERTAS HOJE (lista com id, bairro, hor\u00e1rio)\n\n\u2705 EXECUTADAS HOJE (por t\u00e9cnico e por regi\u00e3o)\n\n\ud83c\udfaf DIAGN\u00d3STICO OPERACIONAL\n- Pontos de aten\u00e7\u00e3o\n- A\u00e7\u00f5es imediatas necess\u00e1rias\n\nEnvie o relat\u00f3rio para o grupo NOC_OTIA no WhatsApp agora."
+            "message": "O relat\u00f3rio di\u00e1rio dos Setores 23 (Manuten\u00e7\u00e3o Cliente) e 104 (Melhoria Cliente) foi solicitado automaticamente \u00e0s 17h30. Use os dados abaixo do IXC para montar e enviar o relat\u00f3rio no grupo WhatsApp NOC_OTIA.\n\nDados coletados:\n${ .buscar_dados | tostring }\n\nFormate o relat\u00f3rio para WhatsApp (use *negrito* do WhatsApp, sem markdown).\n\nEstrutura obrigat\u00f3ria:\n\n\ud83d\udee0\ufe0f *RELAT\u00d3RIO DI\u00c1RIO \u2014 MANUTEN\u00c7\u00c3O E MELHORIA CLIENTE*\n*Vis\u00e3o de [data de hoje] 17:30*\n\n\ud83d\udcca *RESUMO GERAL (TOTAL)*\n- OS abertas (status A): [totais.total_abertas]\n- Abertas hoje: [totais.abertas_hoje]\n- OS executadas/fechadas hoje: [totais.fechadas_hoje]\n- Sem t\u00e9cnico atribu\u00eddo: [totais.sem_tecnico]\n\nPara CADA setor (23 e 104), mostre:\n\n*SETOR [id] \u2014 [nome]*\n\ud83d\udcca Resumo: abertas, abertas hoje, fechadas hoje, saldo do dia, sem t\u00e9cnico\n\u23f1\ufe0f SLA: vencido, cr\u00edtico, ok\n\ud83d\udccb OS abertas hoje (lista com id, bairro, hor\u00e1rio)\n\u2705 Executadas hoje (por t\u00e9cnico e por regi\u00e3o)\n\nAo final:\n\ud83c\udfaf *DIAGN\u00d3STICO OPERACIONAL GERAL*\n- Pontos de aten\u00e7\u00e3o por setor\n- A\u00e7\u00f5es imediatas necess\u00e1rias\n\nEnvie o relat\u00f3rio para o grupo NOC_OTIA no WhatsApp agora."
           },
           "then": "end",
           "x-base44": {
