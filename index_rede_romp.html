@@ -364,14 +364,14 @@ function criarNoCaixa(caixa){
   const ch=document.createElement('div');ch.className='tree-children collapsed';
   if(caixa.clientes.length>0){
     const tb=document.createElement('table');tb.className='client-table';
-    tb.innerHTML=`<thead><tr><th>Status</th><th>Login</th><th>Porta</th><th>ONU MAC</th><th>Bairro</th><th>IP</th><th>PON/Interface</th><th>Sinal RX</th><th>Temp</th><th>ONU</th><th>Causa Queda</th><th>Última Leitura</th></tr></thead><tbody>${caixa.clientes.map(c=>{
+    tb.innerHTML=`<thead><tr><th>Status</th><th>Login</th><th>Últ. Conexão</th><th>Porta</th><th>ONU MAC</th><th>Bairro</th><th>IP</th><th>PON/Interface</th><th>Sinal RX</th><th>Temp</th><th>ONU</th><th>Causa Queda</th><th>Última Leitura</th></tr></thead><tbody>${caixa.clientes.map(c=>{
       const d=c.online==='S'||c.online==='SS'?'status-online':c.online==='N'?'status-offline':'status-outros';
       const s=c.online==='S'?'Online':c.online==='SS'?'Online (WiFi)':c.online==='N'?'Offline':'Desc.';
       const sc=c.sinal_status==='bom'?'sinal-bom':c.sinal_status==='atencao'?'sinal-atencao':c.sinal_status==='critico'?'sinal-critico':'sinal-sem';
       const sinalTxt=c.sinal_rx?`${c.sinal_rx} dBm`:'--';
       const tempTxt=c.temperatura?`${parseFloat(c.temperatura).toFixed(1)}°C`:'--';
       const causa=c.causa_ultima_queda?c.causa_ultima_queda.substring(0,25):'--';
-      return`<tr><td><span class="status-dot ${d}"></span>${s}</td><td>${c.login||'--'}</td><td>${c.ftth_porta||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.onu_mac||'--'}</td><td>${c.bairro||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.ip||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.conexao||c.ponid||'--'}</td><td class="${sc}">${sinalTxt}</td><td style="font-size:11px;">${tempTxt}</td><td style="font-size:11px;">${c.onu_tipo||'--'}</td><td style="font-size:10px;color:#94a3b8;">${causa}</td><td style="font-size:10px;color:#64748b;">${c.data_sinal||'--'}</td></tr>`;
+      return`<tr><td><span class="status-dot ${d}"></span>${s}</td><td>${c.login||'--'}</td><td style="font-size:10px;${c.online==='N'?'color:#f87171;font-weight:700;':'color:#64748b;'}">${c.ultima_conexao_final?c.ultima_conexao_final.substring(5,16).replace(' ',' '):'--'}</td><td>${c.ftth_porta||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.onu_mac||'--'}</td><td>${c.bairro||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.ip||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.conexao||c.ponid||'--'}</td><td class="${sc}">${sinalTxt}</td><td style="font-size:11px;">${tempTxt}</td><td style="font-size:11px;">${c.onu_tipo||'--'}</td><td style="font-size:10px;color:#94a3b8;">${causa}</td><td style="font-size:10px;color:#64748b;">${c.data_sinal||'--'}</td></tr>`;
     }).join('')}</tbody>`;
     ch.appendChild(tb);
   }
