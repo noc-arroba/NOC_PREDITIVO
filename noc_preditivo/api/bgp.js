@@ -113,7 +113,7 @@ async function checkPeers() {
   }
 }
 
-// Visibilidade corrigida: lê a estrutura real do endpoint RIPE
+// Visibilidade corrigida com detalhamento de peers que nao recebem
 async function checkVisibilidade() {
   const principais = ['143.137.32.0/22', '168.197.56.0/22', '2804:299c::/32'];
   const resultados = [];
@@ -123,17 +123,44 @@ async function checkVisibilidade() {
       const data = await fetchJSON(`https://stat.ripe.net/data/visibility/data.json?resource=${prefix}`);
       const visibilities = (data.data || {}).visibilities || [];
 
-      // Calcular corretamente a partir da lista de RRCs
       let rrcs_total = visibilities.length;
       let rrcs_vendo = 0;
-      let peers_nao_vendo = 0;
+      let peers_nao_vendo_lista = [];
 
       for (const rrc of visibilities) {
         const totalPeers = rrc.ipv4_full_table_peer_count || rrc.ipv6_full_table_peer_count || 0;
-        const naoVendo = (rrc.ipv4_full_table_peers_not_seeing || []).length +
-                         (rrc.ipv6_full_table_peers_not_seeing || []).length;
+        const naoVendoV4 = rrc.ipv4_full_table_peers_not_seeing || [];
+        const naoVendoV6 = rrc.ipv6_full_table_peers_not_seeing || [];
+
         if (totalPeers > 0) rrcs_vendo++;
-        peers_nao_vendo += naoVendo;
+
+        // Coletar detalhes dos peers que nao veem o prefixo
+        for (const peer of [...naoVendoV4, ...naoVendoV6]) {
+          const asnStr = String(peer.asn);
+          // Evitar duplicatas (mesmo ASN em RRCs diferentes)
+          const existente = peers_nao_vendo_lista.find(p => p.asn === asnStr);
+          if (existente) {
+            existente.rrcs.push(rrc.probe?.name || '?');
+            existente.locais.push(rrc.probe?.city || '?');
+          } else {
+            peers_nao_vendo_lista.push({
+              asn: asnStr,
+              holder: peer.asn ? `AS${asnStr}` : '?',
+              ip: peer.ip || '?',
+              prefix_count: peer.prefix_count || 0,
+              rrcs: [rrc.probe?.name || '?'],
+              locais: [rrc.probe?.city || '?']
+            });
+          }
+        }
+      }
+
+      // Buscar nome do holder de cada peer que nao ve
+      for (const p of peers_nao_vendo_lista) {
+        try {
+          const asnData = await fetchJSON(`https://stat.ripe.net/data/as-overview/data.json?resource=AS${p.asn}`, 5000);
+          p.holder = asnData.data?.holder || p.holder;
+        } catch {}
       }
 
       const pct = rrcs_total > 0 ? Math.round((rrcs_vendo / rrcs_total) * 100) : 0;
@@ -142,8 +169,9 @@ async function checkVisibilidade() {
         prefix,
         rrcs_visible: rrcs_vendo,
         rrcs_total,
-        peers_nao_vendo,
         visibilidade_pct: pct,
+        peers_nao_vendo: peers_nao_vendo_lista.length,
+        peers_nao_vendo_detalhe: peers_nao_vendo_lista,
         status: pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'baixa'
       });
     } catch (e) {
@@ -209,7 +237,6 @@ module.exports = async (req, res) => {
     if (prefixosNaoAnunciado > 0) alertas.push({ severity: 'critico', msg: `${prefixosNaoAnunciado} prefixo(s) nao anunciado(s)` });
     if (peers.length < 20) alertas.push({ severity: 'atencao', msg: `Apenas ${peers.length} peers ativos (esperado: 27)` });
 
-    // Alertas de visibilidade
     for (const v of visibilidade) {
       if (v.visibilidade_pct < 70) {
         alertas.push({ severity: 'atencao', msg: `Visibilidade baixa: ${v.prefix} (${v.visibilidade_pct}% dos RRCs)` });

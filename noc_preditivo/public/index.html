@@ -29,6 +29,8 @@ tr:hover { background: #0f172a; }
 .badge-hijack { background: #7f1d1d; color: #fca5a5; }
 .badge-nao { background: #78350f; color: #fcd34d; }
 .badge-erro { background: #1e1b4b; color: #c4b5fd; }
+.badge-parcial { background: #78350f; color: #fcd34d; }
+.badge-baixa { background: #7f1d1d; color: #fca5a5; }
 .badge-upstream { background: #1e3a5f; color: #93c5fd; }
 .badge-transit { background: #312e81; color: #a5b4fc; }
 .badge-ix { background: #164e63; color: #67e8f9; }
@@ -49,6 +51,22 @@ tr:hover { background: #0f172a; }
 .alert-box { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
 .alert-box.atencao { background: #78350f; border-color: #92400e; }
 .alert-icon { font-size: 20px; }
+.expand-row { cursor: pointer; }
+.expand-row:hover { background: #0f172a; }
+.sub-row { display: none; }
+.sub-row.show { display: table-row; }
+.sub-row td { padding: 0; border: none; background: #0a0e1a; }
+.sub-detail { padding: 12px 20px 16px 48px !important; }
+.peer-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #111827; border: 1px solid #1e293b; border-radius: 8px; margin-bottom: 8px; }
+.peer-card .asn { font-family: monospace; color: #93c5fd; font-weight: 600; min-width: 100px; }
+.peer-card .holder { color: #cbd5e1; flex: 1; font-size: 12px; }
+.peer-card .ip { color: #64748b; font-family: monospace; font-size: 11px; }
+.peer-card .rrcs { color: #67e8f9; font-size: 11px; }
+.peer-card .pfx { color: #475569; font-size: 11px; }
+.expand-icon { color: #475569; font-size: 14px; transition: transform 0.2s; }
+.expand-icon.open { transform: rotate(90deg); }
+.vis-pct-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 80px; display: inline-block; vertical-align: middle; }
+.vis-pct-fill { height: 100%; border-radius: 3px; }
 </style>
 </head>
 <body>
@@ -62,10 +80,10 @@ tr:hover { background: #0f172a; }
     <div class="spinner"></div>
     <p>Coletando dados BGP do RIPE Stat...</p>
   </div>
-  
+
   <div id="content" style="display:none;">
     <div id="alertas"></div>
-    
+
     <div class="grid">
       <div class="card">
         <div class="card-title">Score BGP</div>
@@ -110,10 +128,17 @@ tr:hover { background: #0f172a; }
       </div>
     </div>
 
-    <div class="section-title">👁️ Visibilidade Global (RIPE RIS)</div>
+    <div class="section-title">👁️ Visibilidade Global (RIPE RIS) — clique para ver peers que não recebem</div>
     <table>
       <thead>
-        <tr><th>Prefixo</th><th>RRCs Visíveis</th><th>Total RRCs</th><th>ASNs que veem</th><th>Status</th></tr>
+        <tr>
+          <th></th>
+          <th>Prefixo</th>
+          <th>RRCs Visíveis</th>
+          <th>Visibilidade</th>
+          <th>Peers c/ Problema</th>
+          <th>Status</th>
+        </tr>
       </thead>
       <tbody id="vis-table"></tbody>
     </table>
@@ -134,6 +159,8 @@ function badge(status) {
     'HIJACK': ['badge-hijack', 'HIJACK'],
     'nao_anunciado': ['badge-nao', 'NAO ANUNCIADO'],
     'terceiro': ['badge-nao', 'TERCEIRO'],
+    'parcial': ['badge-parcial', 'PARCIAL'],
+    'baixa': ['badge-baixa', 'BAIXA'],
     'erro': ['badge-erro', 'ERRO']
   };
   const [cls, txt] = map[status] || ['badge-erro', status];
@@ -151,48 +178,52 @@ function peerBadge(tipo) {
   return `<span class="badge ${cls}">${txt}</span>`;
 }
 
+function toggleVis(idx) {
+  const row = document.getElementById('vis-detail-' + idx);
+  const icon = document.getElementById('vis-icon-' + idx);
+  if (row) {
+    row.classList.toggle('show');
+    if (icon) icon.classList.toggle('open');
+  }
+}
+
 async function load() {
   try {
     const res = await fetch('/api/bgp');
     const data = await res.json();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-    
-    document.getElementById('asn-info').textContent = 
+
+    document.getElementById('asn-info').textContent =
       `AS${data.asn} — ${data.overview.holder || 'Arroba Banda Larga'} | ${data.fase}`;
-    
-    // Score
+
     const score = data.score_bgp;
     document.getElementById('score').textContent = score;
     document.getElementById('score-bar').style.width = score + '%';
-    document.getElementById('score-bar').style.background = 
+    document.getElementById('score-bar').style.background =
       score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
-    
-    // Prefixos
+
     document.getElementById('prefixos-ok').textContent = data.stats.prefixos_ok;
-    document.getElementById('prefixos-total').textContent = 
+    document.getElementById('prefixos-total').textContent =
       `de ${data.stats.total_prefixos} | ${data.stats.prefixos_hijack} hijack | ${data.stats.prefixos_nao_anunciado} nao anunciados`;
-    
-    // Peers
+
     document.getElementById('peers-count').textContent = data.stats.total_peers;
-    document.getElementById('peers-detail').textContent = 
+    document.getElementById('peers-detail').textContent =
       `${data.stats.peers_upstream} upstreams | ${data.stats.peers_transit} transit | ${data.stats.peers_ix} IX`;
-    
-    // Alertas
+
     document.getElementById('alertas-count').textContent = data.alertas.length;
-    document.getElementById('alertas-detail').textContent = 
+    document.getElementById('alertas-detail').textContent =
       data.alertas.length === 0 ? 'Nenhum alerta' : data.alertas.map(a => a.msg).join('; ');
-    
-    const alertasHtml = data.alertas.map(a => 
+
+    const alertasHtml = data.alertas.map(a =>
       `<div class="alert-box ${a.severity === 'atencao' ? 'atencao' : ''}">
         <span class="alert-icon">${a.severity === 'critico' ? '🔴' : '🟡'}</span>
         <span>${a.msg}</span>
       </div>`
     ).join('');
     document.getElementById('alertas').innerHTML = alertasHtml;
-    
-    // Tabela prefixos
-    document.getElementById('prefixos-table').innerHTML = data.prefixos.map(p => 
+
+    document.getElementById('prefixos-table').innerHTML = data.prefixos.map(p =>
       `<tr>
         <td style="font-family:monospace">${p.prefix}</td>
         <td>${p.tipo}</td>
@@ -200,8 +231,7 @@ async function load() {
         <td>${badge(p.status)}</td>
       </tr>`
     ).join('');
-    
-    // Tabela peers
+
     document.getElementById('peers-table').innerHTML = data.peers.map(p => {
       const maxPower = Math.max(...data.peers.map(x => x.power));
       const pct = maxPower > 0 ? (p.power / maxPower * 100) : 0;
@@ -212,28 +242,42 @@ async function load() {
         <td>${p.power} <span class="peer-power-bar"><span class="peer-power-fill" style="width:${pct}%"></span></span></td>
       </tr>`;
     }).join('');
-    
-    // Visibilidade
-    document.getElementById('vis-table').innerHTML = data.visibilidade.map(v => {
-      const pct = v.rrcs_total > 0 ? (v.rrcs_visible / v.rrcs_total * 100) : 0;
-      const status = pct >= 80 ? badge('ok') : pct >= 50 ? badge('nao_anunciado') : badge('HIJACK');
-      return `<tr>
+
+    // Tabela de visibilidade com expansão
+    document.getElementById('vis-table').innerHTML = data.visibilidade.map((v, idx) => {
+      const hasDetail = v.peers_nao_vendo > 0;
+      const pctColor = v.visibilidade_pct >= 90 ? '#10b981' : v.visibilidade_pct >= 70 ? '#f59e0b' : '#ef4444';
+      let html = `<tr class="expand-row" ${hasDetail ? `onclick="toggleVis(${idx})"` : ''}>
+        <td>${hasDetail ? `<span class="expand-icon" id="vis-icon-${idx}">▶</span>` : ''}</td>
         <td style="font-family:monospace">${v.prefix}</td>
-        <td>${v.rrcs_visible || 0}</td>
-        <td>${v.rrcs_total || 0}</td>
-        <td>${v.asns_visible || 0}</td>
-        <td>${status}</td>
+        <td>${v.rrcs_visible}/${v.rrcs_total}</td>
+        <td>${v.visibilidade_pct}% <span class="vis-pct-bar"><span class="vis-pct-fill" style="width:${v.visibilidade_pct}%;background:${pctColor}"></span></span></td>
+        <td>${v.peers_nao_vendo || 0}</td>
+        <td>${badge(v.status)}</td>
       </tr>`;
+
+      if (hasDetail) {
+        const detalhe = (v.peers_nao_vendo_detalhe || []).map(p => `
+          <div class="peer-card">
+            <span class="asn">AS${p.asn}</span>
+            <span class="holder">${p.holder}</span>
+            <span class="ip">IP: ${p.ip}</span>
+            <span class="rrcs">RRCs: ${p.rrcs.join(', ')}</span>
+            <span class="pfx">tabela: ${p.prefix_count.toLocaleString()} pfx</span>
+          </div>
+        `).join('');
+        html += `<tr class="sub-row" id="vis-detail-${idx}"><td colspan="6"><div class="sub-detail">${detalhe}</div></td></tr>`;
+      }
+      return html;
     }).join('');
-    
-    // MTR targets
-    document.getElementById('mtr-targets').innerHTML = data.mtr_targets.map(t => 
+
+    document.getElementById('mtr-targets').innerHTML = data.mtr_targets.map(t =>
       `<span class="mtr-target">${t.nome} <code>${t.ip}</code></span>`
     ).join('');
-    
-    document.getElementById('last-update').textContent = 
+
+    document.getElementById('last-update').textContent =
       new Date(data.timestamp).toLocaleString('pt-BR');
-    
+
   } catch (e) {
     document.getElementById('loading').innerHTML = `<p style="color:#ef4444">Erro: ${e.message}</p>`;
   }
