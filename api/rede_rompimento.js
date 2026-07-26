@@ -97,78 +97,109 @@ async function fetchSinalOptico() {
 }
 
 // Detecta rompimentos em 2 níveis: PON (ae0.XXXX) e CTO (id_caixa_ftth)
-// PON: 2+ clientes da mesma PON offline em janela de 2 minutos → rompimento de fibra/PON
-// CTO: 2+ clientes da mesma CTO offline em janela de 2 minutos → rompimento de ramificação da caixa
+// REGRA CRÍTICA: uma fibra atende toda a CTO. Se há 1+ cliente online na CTO,
+// a fibra está intacta e os offs são individuais (ONU, drop, energia) — NÃO é rompimento.
+// Só é rompimento se TODOS os clientes da CTO estiverem offline.
+// PON: 2+ CTOs totalmente offline na mesma PON em janela de 2 min → rompimento de PON
+// CTO: TODOS os clientes da CTO offline (2+ clientes) → rompimento de ramal da CTO
 function detectarRompimentos(clientes, olts) {
-  const offline = clientes.filter(c =>
-    c.online === 'N' && c.ultima_conexao_final
-  );
-
-  function parseAndCluster(items, keyFn, label) {
-    const groups = {};
-    for (const c of items) {
-      const key = keyFn(c);
-      if (!key || key === '0') continue;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(c);
+  // 1. Agrupar clientes por CTO e calcular status
+  const ctoStats = {};
+  for (const c of clientes) {
+    const ctoId = String(c.id_caixa_ftth || '0');
+    if (ctoId === '0') continue;
+    if (!ctoStats[ctoId]) ctoStats[ctoId] = { total: 0, online: 0, offline: 0, offlineClients: [], pon: null };
+    ctoStats[ctoId].total++;
+    if (c.online === 'S') ctoStats[ctoId].online++;
+    if (c.online === 'N') {
+      ctoStats[ctoId].offline++;
+      if (c.ultima_conexao_final) ctoStats[ctoId].offlineClients.push(c);
     }
-
-    const results = [];
-    for (const [key, clients] of Object.entries(groups)) {
-      if (clients.length < 2) continue;
-
-      const parsed = [];
-      for (const c of clients) {
-        try {
-          const dt = new Date(c.ultima_conexao_final.replace(' ', 'T'));
-          if (!isNaN(dt.getTime())) parsed.push({ dt, client: c });
-        } catch {}
-      }
-      if (parsed.length < 2) continue;
-
-      parsed.sort((a, b) => a.dt - b.dt);
-
-      let cluster = [parsed[0]];
-      for (let i = 1; i < parsed.length; i++) {
-        const diff = (parsed[i].dt - cluster[cluster.length - 1].dt) / 1000;
-        if (diff <= 120) {
-          cluster.push(parsed[i]);
-        } else {
-          if (cluster.length >= 2) results.push({ key, cluster, nivel: label });
-          cluster = [parsed[i]];
-        }
-      }
-      if (cluster.length >= 2) results.push({ key, cluster, nivel: label });
+    if (c.conexao && !ctoStats[ctoId].pon) {
+      ctoStats[ctoId].pon = c.conexao.split(':')[0] || c.conexao;
     }
-    return results;
   }
 
-  // Detectar por PON (conexao ae0.XXXX)
-  const ponDetections = parseAndCluster(offline, c => {
-    if (!c.conexao) return null;
-    return c.conexao.split(':')[0] || c.conexao;
-  }, 'pon');
+  // 2. Filtrar CTOs onde TODOS os clientes estão offline (fibra provavelmente rompida)
+  const ctosFullyOffline = [];
+  for (const [ctoId, s] of Object.entries(ctoStats)) {
+    if (s.total >= 2 && s.online === 0 && s.offline >= 2) {
+      ctosFullyOffline.push({ ctoId, ...s });
+    }
+  }
 
-  // Detectar por CTO (id_caixa_ftth)
-  const ctoDetections = parseAndCluster(offline, c => c.id_caixa_ftth || null, 'cto');
+  // 3. Detectar rompimento de PON: 2+ CTOs totalmente offline na mesma PON em 2 min
+  const ponGroups = {};
+  for (const cto of ctosFullyOffline) {
+    if (!cto.pon) continue;
+    if (!ponGroups[cto.pon]) ponGroups[cto.pon] = [];
+    // Usar a primeira queda de cada CTO como timestamp
+    const parsed = cto.offlineClients
+      .map(c => { try { const dt = new Date(c.ultima_conexao_final.replace(' ', 'T')); return isNaN(dt.getTime()) ? null : dt; } catch { return null; } })
+      .filter(Boolean)
+      .sort((a, b) => a - b);
+    if (parsed.length > 0) ponGroups[cto.pon].push({ ctoId: cto.ctoId, dt: parsed[0], nClients: cto.offline });
+  }
 
-  // Construir rompimentos por PON
   const rompimentos = [];
   const rompMap = { pons: {}, ctos: {} };
 
-  for (const det of ponDetections) {
-    const romp = buildRompimento(det.key, det.cluster, olts, 'pon');
-    rompimentos.push(romp);
-    rompMap.pons[det.key] = romp;
+  // Detectar clusters por PON (2+ CTOs offline na mesma PON em 2 min)
+  for (const [pon, ctos] of Object.entries(ponGroups)) {
+    if (ctos.length < 2) continue;
+    ctos.sort((a, b) => a.dt - b.dt);
+    
+    let cluster = [ctos[0]];
+    for (let i = 1; i < ctos.length; i++) {
+      const diff = (ctos[i].dt - cluster[cluster.length - 1].dt) / 1000;
+      if (diff <= 120) {
+        cluster.push(ctos[i]);
+      } else {
+        if (cluster.length >= 2) break;
+        cluster = [ctos[i]];
+      }
+    }
+    
+    if (cluster.length >= 2) {
+      // Rompimento de PON — coletar todos os clientes offline das CTOs afetadas
+      const allOfflineClients = [];
+      for (const c of cluster) {
+        const stats = ctoStats[c.ctoId];
+        for (const cl of stats.offlineClients) {
+          try {
+            const dt = new Date(cl.ultima_conexao_final.replace(' ', 'T'));
+            if (!isNaN(dt.getTime())) allOfflineClients.push({ dt, client: cl });
+          } catch {}
+        }
+      }
+      allOfflineClients.sort((a, b) => a.dt - b.dt);
+      const romp = buildRompimento(pon, allOfflineClients, olts, 'pon');
+      rompimentos.push(romp);
+      rompMap.pons[pon] = romp;
+      // Marcar todas as CTOs afetadas
+      for (const c of cluster) {
+        rompMap.ctos[c.ctoId] = romp;
+      }
+    }
   }
 
-  // Construir rompimentos por CTO e mapear
-  for (const det of ctoDetections) {
-    const romp = buildRompimento(det.key, det.cluster, olts, 'cto');
-    rompMap.ctos[det.key] = romp;
-    // Se esta CTO também está num rompimento de PON, marca o nível
-    const ponKey = det.cluster[0].client.conexao ? det.cluster[0].client.conexao.split(':')[0] : null;
-    romp.nivel_cto = true;
+  // 4. Detectar rompimento de CTO (CTO totalmente offline, não parte de rompimento de PON)
+  for (const cto of ctosFullyOffline) {
+    if (rompMap.ctos[cto.ctoId]) continue; // Já marcada por rompimento de PON
+    
+    const parsed = cto.offlineClients
+      .map(c => { try { const dt = new Date(c.ultima_conexao_final.replace(' ', 'T')); return isNaN(dt.getTime()) ? null : { dt, client: c }; } catch { return null; } })
+      .filter(Boolean)
+      .sort((a, b) => a.dt - b.dt);
+    
+    if (parsed.length >= 2) {
+      // Verificar se caíram em janela de 2 min
+      const span = (parsed[parsed.length - 1].dt - parsed[0].dt) / 1000;
+      if (span <= 120) {
+        const romp = buildRompimento(cto.ctoId, parsed, olts, 'cto');
+        rompMap.ctos[cto.ctoId] = romp;
+      }
+    }
   }
 
   // Ordenar por número de clientes afetados (desc)
