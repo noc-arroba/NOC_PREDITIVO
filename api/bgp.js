@@ -55,7 +55,7 @@ async function checkPrefixos() {
       const asns = block.asns || [];
       const announcing = block.announced || false;
       const numIps = block.num_ips || 0;
-      let originAsn = asns.length > 0 ? asns[0].asn : null;
+      let originAsn = asns.length > 0 ? String(asns[0].asn) : null;
       let originHolder = asns.length > 0 ? asns[0].holder : null;
       const isOurs = originAsn === ASN_ARROBA;
       const isHijack = !isOurs && announcing;
@@ -76,7 +76,7 @@ async function checkPrefixos() {
       const block = data.data || {};
       const asns = block.asns || [];
       const announcing = block.announced || false;
-      let originAsn = asns.length > 0 ? asns[0].asn : null;
+      let originAsn = asns.length > 0 ? String(asns[0].asn) : null;
       let originHolder = asns.length > 0 ? asns[0].holder : null;
       const isOurs = originAsn === ASN_ARROBA;
       const isHijack = !isOurs && announcing;
