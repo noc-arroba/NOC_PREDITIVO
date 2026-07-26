@@ -1,10 +1,13 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/bgp.js", "use": "@vercel/node" }
+    { "src": "api/bgp.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/bgp", "dest": "/api/bgp.js" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+    { "src": "/mtr.json", "dest": "/public/mtr.json" },
+    { "src": "/(.*)", "dest": "/public/$1" },
+    { "src": "/", "dest": "/public/index.html" }
   ]
 }
