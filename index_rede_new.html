@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoramento de Rede FTTH — NOC Arroba</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;font-size:14px}
+.header{background:#1e293b;padding:16px 24px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.header h1{font-size:20px;font-weight:600;color:#f1f5f9}
+.header h1 span{color:#3b82f6}
+.header-right{display:flex;align-items:center;gap:12px}
+.badge{padding:4px 12px;border-radius:6px;font-weight:600;font-size:13px}
+.badge-green{background:#064e3b;color:#34d399}
+.badge-red{background:#7f1d1d;color:#f87171}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}.btn-blue:disabled{opacity:.5;cursor:wait}
+.subtitle{font-size:12px;color:#64748b;margin-top:4px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:16px 24px}
+.kpi-card{background:#1e293b;border-radius:8px;padding:16px;border:1px solid #334155}
+.kpi-card .label{font-size:12px;color:#94a3b8;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.kpi-card .value{font-size:28px;font-weight:700;color:#f1f5f9}
+.kpi-card .sub{font-size:12px;color:#64748b;margin-top:2px}
+.kpi-card.alert{border-color:#7f1d1d}.kpi-card.alert .value{color:#f87171}
+.kpi-card.sinal-good{border-color:#064e3b}.kpi-card.sinal-good .value{color:#34d399}
+.kpi-card.sinal-warn{border-color:#78350f}.kpi-card.sinal-warn .value{color:#fbbf24}
+.kpi-card.sinal-crit{border-color:#7f1d1d}.kpi-card.sinal-crit .value{color:#f87171}
+.tree-container{padding:0 24px 24px}
+.tree-node{margin:2px 0}
+.tree-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;cursor:pointer;transition:all .15s;user-select:none;flex-wrap:wrap}
+.tree-header:hover{background:#1e293b}
+.tree-children{margin-left:20px;border-left:1px solid #334155;padding-left:8px;overflow:hidden}
+.tree-children.collapsed{display:none}
+.tree-icon{font-size:14px;color:#64748b;width:16px;text-align:center;transition:transform .15s}
+.tree-icon.expanded{transform:rotate(90deg)}
+.tree-name{font-weight:500}
+.tree-stats{display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.stat-pill{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.stat-total{background:#334155;color:#cbd5e1}.stat-online{background:#064e3b;color:#34d399}
+.stat-offline{background:#7f1d1d;color:#f87171}.stat-pct{background:#334155;color:#fbbf24}
+.stat-pct.critical{background:#7f1d1d;color:#f87171}
+.stat-sinal{background:#334155;font-size:10px}
+.level-olt .tree-name{color:#34d399;font-size:16px;font-weight:600}
+.level-olt .tree-header{background:#0d2818;border:1px solid #1e3a5f}
+.level-olt.alert .tree-header{background:#1a0d0d;border-left:3px solid #ef4444}
+.level-pon .tree-name{color:#fbbf24;font-size:13px}.level-pon .tree-header{background:#1a1505}
+.level-caixa .tree-name{color:#c084fc;font-size:13px}.level-caixa .tree-header{background:#1a1033}
+.client-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.client-table th{background:#1e293b;color:#94a3b8;padding:6px 8px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase}
+.client-table td{padding:6px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+.client-table tr:hover{background:#1e293b}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.status-online{background:#34d399}.status-offline{background:#f87171}.status-outros{background:#60a5fa}
+.sinal-bom{color:#34d399;font-weight:600}
+.sinal-atencao{color:#fbbf24;font-weight:600}
+.sinal-critico{color:#f87171;font-weight:600}
+.sinal-sem{color:#64748b}
+.search-bar{padding:12px 24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.search-bar input{flex:1;max-width:400px;padding:8px 12px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px}
+.search-bar input:focus{outline:none;border-color:#3b82f6}
+.search-bar select{padding:8px 12px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;cursor:pointer;min-width:250px}
+.filter-bar{display:flex;gap:8px;padding:0 24px 12px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border:1px solid #334155;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px;font-weight:500}
+.filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.filter-btn.sinal-active{background:#7f1d1d;color:#fca5a5;border-color:#7f1d1d}
+.loading{text-align:center;padding:60px;color:#64748b}
+.loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid #334155;border-top:3px solid #3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status-bar{padding:8px 24px;font-size:12px;color:#64748b}.status-bar .ok{color:#34d399}
+.penetration-box{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin:0 24px 16px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+.penetration-box .item{text-align:center}.penetration-box .item .num{font-size:22px;font-weight:700}
+.penetration-box .item .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;margin-top:2px}
+.penetration-box .bar{flex:1;min-width:200px;height:24px;background:#334155;border-radius:12px;overflow:hidden;position:relative}
+.penetration-box .bar-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:12px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;font-weight:700;color:#fff}
+.transmissor-list{background:#1e293b;border:1px solid #334155;border-radius:8px;margin:0 24px 16px;overflow:hidden}
+.transmissor-list table{width:100%;border-collapse:collapse;font-size:13px}
+.transmissor-list th{background:#0f172a;color:#94a3b8;padding:8px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase}
+.transmissor-list td{padding:8px 12px;border-bottom:1px solid #334155;color:#cbd5e1}
+.transmissor-list tr.alert-row{background:#1a0d0d}.transmissor-list tr.alert-row td:first-child{border-left:3px solid #ef4444}
+.transmissor-list tr:hover{background:#172033}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Monitoramento de Rede <span>FTTH</span> — Arroba Banda Larga</h1>
+    <div class="subtitle">Hierarquia: OLT/Transmissor → PON → Caixa FTTH → Cliente | Fonte: IXC + Sinal Óptico | Cache: 5 min</div>
+  </div>
+  <div class="header-right">
+    <span id="badgeOnline" class="badge badge-green">Online: --</span>
+    <span id="badgeOffline" class="badge badge-red">Offline: --</span>
+    <button class="btn btn-blue" id="btnRefresh" onclick="carregarDados(true)">Atualizar</button>
+  </div>
+</div>
+<div class="penetration-box" id="penetrationBox" style="display:none;">
+  <div class="item"><div class="num" style="color:#60a5fa;" id="penClientes">--</div><div class="lbl">Clientes FTTH</div></div>
+  <div class="item"><div class="num" style="color:#fbbf24;" id="penDomicilios">175.660</div><div class="lbl">Domicílios (IBGE)</div></div>
+  <div class="item"><div class="num" style="color:#34d399;" id="penPct">--%</div><div class="lbl">Penetração</div></div>
+  <div class="bar"><div class="bar-fill" id="penBar" style="width:0%;">--%</div></div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi-card"><div class="label">OLTs Ativas</div><div class="value" id="kpiOLTs">--</div><div class="sub" id="kpiOLTsSub">--</div></div>
+  <div class="kpi-card"><div class="label">PONs</div><div class="value" id="kpiPONs">--</div><div class="sub">interfaces ativas</div></div>
+  <div class="kpi-card"><div class="label">Caixas FTTH</div><div class="value" id="kpiCaixas">--</div><div class="sub">caixas com clientes</div></div>
+  <div class="kpi-card"><div class="label">Total Clientes</div><div class="value" id="kpiClientes">--</div><div class="sub" id="kpiClientesSub">--</div></div>
+  <div class="kpi-card" id="kpiTaxaCard"><div class="label">Taxa Online</div><div class="value" id="kpiTaxaOnline">--%</div><div class="sub" id="kpiTaxaOnlineSub">--</div></div>
+  <div class="kpi-card"><div class="label">Alertas</div><div class="value" id="kpiAlertas">--</div><div class="sub">OLTs com problema</div></div>
+</div>
+<div class="kpi-grid" style="padding-top:0;">
+  <div class="kpi-card sinal-good"><div class="label">Sinal Bom (&ge;-25 dBm)</div><div class="value" id="kpiSinalBom">--</div><div class="sub" id="kpiSinalBomSub">--</div></div>
+  <div class="kpi-card sinal-warn"><div class="label">Sinal Atenção (-28 a -25)</div><div class="value" id="kpiSinalAtencao">--</div><div class="sub">potência abaixo do ideal</div></div>
+  <div class="kpi-card sinal-crit"><div class="label">Sinal Crítico (&lt;-28 dBm)</div><div class="value" id="kpiSinalCritico">--</div><div class="sub">requer intervenção</div></div>
+  <div class="kpi-card"><div class="label">Sem Leitura</div><div class="value" id="kpiSemSinal">--</div><div class="sub">ONU sem telemetria</div></div>
+</div>
+<div class="transmissor-list" id="transmissorList" style="display:none;">
+  <table>
+    <thead><tr><th>ID</th><th>OLT / Transmissor</th><th>PONs</th><th>Clientes</th><th>Online</th><th>Offline</th><th>Taxa</th><th>Status</th></tr></thead>
+    <tbody id="transmissorBody"></tbody>
+  </table>
+</div>
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Buscar por login, caixa, PON, OLT, bairro, ONU..." oninput="filtrarArvore()">
+  <select id="transmissorFilter" onchange="filtrarArvore()">
+    <option value="">Todas as OLTs</option>
+  </select>
+</div>
+<div class="filter-bar">
+  <button class="filter-btn active" data-filter="all" onclick="setFiltro('all')">Todos</button>
+  <button class="filter-btn" data-filter="offline" onclick="setFiltro('offline')">Apenas Offline</button>
+  <button class="filter-btn" data-filter="online" onclick="setFiltro('online')">Apenas Online</button>
+  <button class="filter-btn" data-filter="critical" onclick="setFiltro('critical')">PONs Críticas (&gt;30% offline)</button>
+  <button class="filter-btn" data-filter="alerta" onclick="setFiltro('alerta')">Apenas Alertas</button>
+  <button class="filter-btn" data-filter="sinal_critico" onclick="setFiltro('sinal_critico')">Sinal Crítico (&lt;-28 dBm)</button>
+</div>
+<div class="status-bar" id="statusBar"></div>
+<div class="tree-container" id="treeContainer">
+  <div class="loading"><div class="spinner"></div><br>Carregando hierarquia FTTH + sinal óptico do IXC...</div>
+</div>
+<script>
+let dadosGlobais=null,filtroAtual='all',termoBusca='',transmissorSel='';
+function carregarDados(force){
+  const btn=document.getElementById('btnRefresh');
+  btn.disabled=true;btn.textContent='Carregando...';
+  fetch('/api/rede'+(force?'?_t='+Date.now():''))
+    .then(r=>r.json()).then(data=>{
+      if(data.error)throw new Error(data.error);
+      dadosGlobais=data;
+      renderizarKPIs(data);renderizarSinais(data);renderizarPenetracao(data);renderizarTransmissores(data);preencherDropdown(data);renderizarArvore(data);
+      const bar=document.getElementById('statusBar');
+      const cs=data.cached?'(cache: '+data.cache_age+')':'(fresh)';
+      bar.innerHTML='<span class="ok">✓</span> Atualizado em '+new Date().toLocaleString('pt-BR')+' '+cs;
+      btn.disabled=false;btn.textContent='Atualizar';
+    }).catch(err=>{
+      document.getElementById('treeContainer').innerHTML='<div class="loading" style="color:#f87171;">Erro: '+err.message+'</div>';
+      btn.disabled=false;btn.textContent='Atualizar';
+    });
+}
+function renderizarPenetracao(data){
+  const box=document.getElementById('penetrationBox');
+  const DOMICILIOS_IBGE=175660;
+  const tc=data.stats.totalClientes;
+  const p=(tc/DOMICILIOS_IBGE*100).toFixed(1);
+  box.style.display='flex';
+  document.getElementById('penClientes').textContent=tc.toLocaleString('pt-BR');
+  document.getElementById('penDomicilios').textContent=DOMICILIOS_IBGE.toLocaleString('pt-BR');
+  document.getElementById('penPct').textContent=p+'%';
+  document.getElementById('penBar').style.width=Math.min(p,100)+'%';
+  document.getElementById('penBar').textContent=p+'%';
+}
+function renderizarKPIs(data){
+  const s=data.stats;
+  document.getElementById('kpiOLTs').textContent=s.transmissoresUnicos;
+  document.getElementById('kpiOLTsSub').textContent=s.transmissoresUnicos+' OLTs ativas';
+  document.getElementById('kpiPONs').textContent=s.pons;
+  document.getElementById('kpiCaixas').textContent=s.caixas;
+  document.getElementById('kpiClientes').textContent=s.totalClientes.toLocaleString('pt-BR');
+  document.getElementById('kpiClientesSub').textContent=s.online+' online, '+s.offline+' offline';
+  const t=s.totalClientes>0?((s.online/s.totalClientes)*100).toFixed(1):0;
+  document.getElementById('kpiTaxaOnline').textContent=t+'%';
+  document.getElementById('kpiTaxaOnlineSub').textContent=s.online.toLocaleString('pt-BR')+' de '+s.totalClientes.toLocaleString('pt-BR');
+  const card=document.getElementById('kpiTaxaCard');
+  if(parseFloat(t)<80)card.classList.add('alert');else card.classList.remove('alert');
+  const alertas=data.transmissoresUnicos.filter(t=>t.alerta).length;
+  document.getElementById('kpiAlertas').textContent=alertas;
+  document.getElementById('badgeOnline').textContent='Online: '+s.online.toLocaleString('pt-BR');
+  document.getElementById('badgeOffline').textContent='Offline: '+s.offline.toLocaleString('pt-BR');
+}
+function renderizarSinais(data){
+  const s=data.stats;
+  document.getElementById('kpiSinalBom').textContent=s.sinalBom||0;
+  document.getElementById('kpiSinalBomSub').textContent=(s.comSinal||0)+' com leitura';
+  document.getElementById('kpiSinalAtencao').textContent=s.sinalAtencao||0;
+  document.getElementById('kpiSinalCritico').textContent=s.sinalCritico||0;
+  document.getElementById('kpiSemSinal').textContent=(s.totalClientes-(s.comSinal||0));
+}
+function renderizarTransmissores(data){
+  const list=document.getElementById('transmissorList');
+  const body=document.getElementById('transmissorBody');
+  list.style.display='block';
+  body.innerHTML='';
+  data.transmissoresUnicos.sort((a,b)=>parseFloat(a.taxa)-parseFloat(b.taxa)).forEach(t=>{
+    const tr=document.createElement('tr');
+    if(t.alerta)tr.className='alert-row';
+    tr.innerHTML=`<td>${t.id}</td><td>${t.nome}${t.alerta?' ⚠️':''}</td><td>${t.pons}</td><td>${t.total}</td><td style="color:#34d399;">${t.online}</td><td style="color:#f87171;">${t.offline}</td><td style="font-weight:600;${parseFloat(t.taxa)<80?'color:#f87171;':'color:#34d399;'}">${t.taxa}%</td><td>${t.alerta?'⚠️ ALERTA':'✓ OK'}</td>`;
+    body.appendChild(tr);
+  });
+}
+function preencherDropdown(data){
+  const sel=document.getElementById('transmissorFilter');
+  const current=sel.value;
+  sel.innerHTML='<option value="">Todas as OLTs</option>';
+  data.transmissoresUnicos.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(t=>{
+    const opt=document.createElement('option');
+    opt.value=t.id;
+    opt.textContent=`${t.nome} (${t.total} clientes, ${t.taxa}%)`;
+    if(t.alerta)opt.textContent='⚠️ '+opt.textContent;
+    sel.appendChild(opt);
+  });
+  sel.value=current;
+}
+function renderizarArvore(data){
+  const c=document.getElementById('treeContainer');
+  c.innerHTML='';
+  data.hierarquia.forEach(olt=>c.appendChild(criarNoOLT(olt)));
+}
+function criarNoOLT(olt){
+  let on=0,off=0,total=0,sinalCrit=0;
+  olt.pons.forEach(p=>{on+=p.stats.online;off+=p.stats.offline;total+=p.stats.total;
+    p.caixas.forEach(cx=>cx.clientes.forEach(cl=>{if(cl.sinal_status==='critico')sinalCrit++;}));
+  });
+  const t=total>0?((on/total)*100).toFixed(1):0;
+  const isAlert=(olt.id!=='81')&&(parseFloat(t)<75||(total>0&&off===total)||total===0);
+  const n=document.createElement('div');n.className='tree-node level-olt'+(isAlert?' alert':'');n.dataset.oltId=olt.id;
+  const h=document.createElement('div');h.className='tree-header';
+  h.innerHTML=`<span class="tree-icon">▶</span><span class="tree-name">🔌 ${olt.nome}${isAlert?' ⚠️':''}</span><span style="font-size:11px;color:#64748b;">${olt.pons.length} PONs</span><div class="tree-stats"><span class="stat-pill stat-total">${total} clientes</span><span class="stat-pill stat-online">${on} online</span><span class="stat-pill stat-offline">${off} offline</span>${sinalCrit>0?`<span class="stat-pill stat-sinal" style="background:#7f1d1d;color:#f87171;">${sinalCrit} sinal crítico</span>`:''}<span class="stat-pill stat-pct ${parseFloat(t)<80?'critical':''}">${t}%</span></div>`;
+  h.onclick=()=>toggleFilhos(h);
+  const ch=document.createElement('div');ch.className='tree-children collapsed';
+  olt.pons.forEach(p=>ch.appendChild(criarNoPON(p)));
+  n.appendChild(h);n.appendChild(ch);return n;
+}
+function criarNoPON(pon){
+  const t=pon.stats.total>0?((pon.stats.online/pon.stats.total)*100).toFixed(1):0;
+  const crit=pon.stats.total>0&&(pon.stats.offline/pon.stats.total)>0.3;
+  let sinalInfo='';
+  if(pon.ponid_tecnico){sinalInfo=` <span style="font-size:10px;color:#64748b;">(${pon.ponid_tecnico})</span>`;}
+  const n=document.createElement('div');n.className='tree-node level-pon';if(crit)n.dataset.critical='true';
+  const h=document.createElement('div');h.className='tree-header';
+  h.innerHTML=`<span class="tree-icon">▶</span><span class="tree-name">📡 ${pon.nome}</span>${sinalInfo}<span style="font-size:11px;color:#64748b;">${pon.caixas.length} caixas</span><div class="tree-stats"><span class="stat-pill stat-total">${pon.stats.total}</span><span class="stat-pill stat-online">${pon.stats.online}</span><span class="stat-pill stat-offline">${pon.stats.offline}</span><span class="stat-pill stat-pct ${crit?'critical':''}">${t}%</span></div>`;
+  h.onclick=()=>toggleFilhos(h);
+  const ch=document.createElement('div');ch.className='tree-children collapsed';
+  pon.caixas.forEach(c=>ch.appendChild(criarNoCaixa(c)));
+  n.appendChild(h);n.appendChild(ch);return n;
+}
+function criarNoCaixa(caixa){
+  const on=caixa.clientes.filter(c=>c.online==='S'||c.online==='SS').length;
+  const off=caixa.clientes.filter(c=>c.online==='N').length;
+  const total=caixa.clientes.length;
+  const t=total>0?((on/total)*100).toFixed(0):0;
+  const sinalCrit=caixa.clientes.filter(c=>c.sinal_status==='critico').length;
+  const n=document.createElement('div');n.className='tree-node level-caixa';
+  const h=document.createElement('div');h.className='tree-header';
+  h.innerHTML=`<span class="tree-icon">▶</span><span class="tree-name">📦 ${caixa.nome}</span><span style="font-size:11px;color:#64748b;">${total} clientes</span><div class="tree-stats"><span class="stat-pill stat-online">${on}</span><span class="stat-pill stat-offline">${off}</span>${sinalCrit>0?`<span class="stat-pill" style="background:#7f1d1d;color:#f87171;">${sinalCrit} sinal crítico</span>`:''}<span class="stat-pill stat-pct ${parseInt(t)<80?'critical':''}">${t}%</span></div>`;
+  h.onclick=()=>toggleFilhos(h);
+  const ch=document.createElement('div');ch.className='tree-children collapsed';
+  if(caixa.clientes.length>0){
+    const tb=document.createElement('table');tb.className='client-table';
+    tb.innerHTML=`<thead><tr><th>Status</th><th>Login</th><th>Porta</th><th>ONU MAC</th><th>Bairro</th><th>IP</th><th>PON/Interface</th><th>Sinal RX</th><th>Temp</th><th>ONU</th><th>Causa Queda</th><th>Última Leitura</th></tr></thead><tbody>${caixa.clientes.map(c=>{
+      const d=c.online==='S'||c.online==='SS'?'status-online':c.online==='N'?'status-offline':'status-outros';
+      const s=c.online==='S'?'Online':c.online==='SS'?'Online (WiFi)':c.online==='N'?'Offline':'Desc.';
+      const sc=c.sinal_status==='bom'?'sinal-bom':c.sinal_status==='atencao'?'sinal-atencao':c.sinal_status==='critico'?'sinal-critico':'sinal-sem';
+      const sinalTxt=c.sinal_rx?`${c.sinal_rx} dBm`:'--';
+      const tempTxt=c.temperatura?`${parseFloat(c.temperatura).toFixed(1)}°C`:'--';
+      const causa=c.causa_ultima_queda?c.causa_ultima_queda.substring(0,25):'--';
+      return`<tr><td><span class="status-dot ${d}"></span>${s}</td><td>${c.login||'--'}</td><td>${c.ftth_porta||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.onu_mac||'--'}</td><td>${c.bairro||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.ip||'--'}</td><td style="font-family:monospace;font-size:11px;">${c.conexao||c.ponid||'--'}</td><td class="${sc}">${sinalTxt}</td><td style="font-size:11px;">${tempTxt}</td><td style="font-size:11px;">${c.onu_tipo||'--'}</td><td style="font-size:10px;color:#94a3b8;">${causa}</td><td style="font-size:10px;color:#64748b;">${c.data_sinal||'--'}</td></tr>`;
+    }).join('')}</tbody>`;
+    ch.appendChild(tb);
+  }
+  n.appendChild(h);n.appendChild(ch);return n;
+}
+function toggleFilhos(h){const i=h.querySelector('.tree-icon');const c=h.nextElementSibling;if(c){c.classList.toggle('collapsed');i.classList.toggle('expanded');}}
+function setFiltro(f){filtroAtual=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));const btn=document.querySelector(`[data-filter="${f}"]`);if(btn)btn.classList.add('active');filtrarArvore();}
+function filtrarArvore(){
+  termoBusca=document.getElementById('searchInput').value.toLowerCase().trim();
+  transmissorSel=document.getElementById('transmissorFilter').value;
+  if(!dadosGlobais)return;
+  const c=document.getElementById('treeContainer');c.innerHTML='';
+  dadosGlobais.hierarquia.forEach(olt=>{
+    if(transmissorSel&&olt.id!==transmissorSel)return;
+    let oOn=0,oOff=0,oTotal=0;
+    olt.pons.forEach(p=>{oOn+=p.stats.online;oOff+=p.stats.offline;oTotal+=p.stats.total;});
+    const oTaxa=oTotal>0?oOn/oTotal:0;
+    if(filtroAtual==='alerta'&&oTaxa>=0.75&&oOff<oTotal&&olt.id!=='82')return;
+    const pons=[];
+    olt.pons.forEach(p=>{
+      if(filtroAtual==='critical'){const pct=p.stats.total>0?p.stats.offline/p.stats.total:0;if(pct<=0.3)return;}
+      const caixas=[];
+      p.caixas.forEach(cx=>{
+        const cl=cx.clientes.filter(c=>{
+          if(filtroAtual==='offline'&&c.online!=='N')return false;
+          if(filtroAtual==='online'&&c.online!=='S'&&c.online!=='SS')return false;
+          if(filtroAtual==='sinal_critico'&&c.sinal_status!=='critico')return false;
+          if(termoBusca){const txt=(c.login+' '+cx.id+' '+p.id+' '+olt.nome+' '+c.bairro+' '+c.onu_mac+' '+(c.onu_tipo||'')+' '+(c.sinal_rx||'')).toLowerCase();if(!txt.includes(termoBusca))return false;}
+          return true;
+        });
+        if(cl.length>0)caixas.push({...cx,clientes:cl});
+      });
+      if(caixas.length>0||!termoBusca)pons.push({...p,caixas:caixas.length>0?caixas:p.caixas});
+    });
+    if(pons.length>0)c.appendChild(criarNoOLT({...olt,pons}));
+  });
+}
+carregarDados(false);
+</script>
+</body>
+</html>
