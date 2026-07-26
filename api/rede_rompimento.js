@@ -337,20 +337,42 @@ async function fetchAllFTTH() {
   stats.sinalCritico = sinalCritico;
   stats.comSinal = comSinal;
 
-  // CTOs com coordenadas válidas
-  const ctos = Object.values(ctoMap).map(cto => ({
-    id: cto.id,
-    lat: cto.coordCount > 0 ? cto.latSum / cto.coordCount : null,
-    lon: cto.coordCount > 0 ? cto.lonSum / cto.coordCount : null,
-    total: cto.total, online: cto.online, offline: cto.offline,
-    sinalCritico: cto.sinalCritico, sinalAtencao: cto.sinalAtencao,
-    oltNome: cto.oltNome, oltId: cto.oltId, bairro: cto.bairro
-  })).filter(cto => cto.lat !== null && cto.lon !== null);
-  stats.ctosComCoord = ctos.length;
-
-  // Detectar rompimentos (por PON e por CTO)
-  const { rompimentos, rompMap } = detectarRompimentos(clientesPlano, olts);
+  // Detectar rompimentos ANTES de construir CTOs para poder marcar cada CTO
+  const clientesParaRomp = Object.values(ctoMap).length > 0 ? clientesPlano : [];
+  const { rompimentos, rompMap } = detectarRompimentos(clientesParaRomp, olts);
   stats.rompimentos = rompimentos.length;
+
+  // Construir mapa rápido de ctoId -> info do rompimento para lookup O(1)
+  const rompCtoLookup = {}; // ctoId -> { pon, nivel, n_clientes, inicio }
+  rompimentos.forEach(r => {
+    // CTOs listadas no campo 'ctos' (por PON)
+    (r.ctos || '').split(',').map(s => s.trim()).filter(Boolean).forEach(cid => {
+      if (!rompCtoLookup[cid]) rompCtoLookup[cid] = { pon: r.pon, nivel: r.nivel || 'pon', n_clientes: r.n_clientes, inicio: r.inicio };
+    });
+    // CTO principal (por CTO, nivel cto)
+    if (r.cto_principal && r.cto_principal !== '') {
+      rompCtoLookup[r.cto_principal] = { pon: r.pon, nivel: r.nivel || 'cto', n_clientes: r.n_clientes, inicio: r.inicio };
+    }
+  });
+  // Adicionar também do rompMap.ctos (detecção por CTO)
+  Object.entries((rompMap.ctos) || {}).forEach(([cid, r]) => {
+    rompCtoLookup[cid] = { pon: r.pon, nivel: 'cto', n_clientes: r.n_clientes, inicio: r.inicio };
+  });
+
+  // CTOs com coordenadas válidas — agora com campo rompimento
+  const ctos = Object.values(ctoMap).map(cto => {
+    const rompInfo = rompCtoLookup[String(cto.id)] || null;
+    return {
+      id: cto.id,
+      lat: cto.coordCount > 0 ? cto.latSum / cto.coordCount : null,
+      lon: cto.coordCount > 0 ? cto.lonSum / cto.coordCount : null,
+      total: cto.total, online: cto.online, offline: cto.offline,
+      sinalCritico: cto.sinalCritico, sinalAtencao: cto.sinalAtencao,
+      oltNome: cto.oltNome, oltId: cto.oltId, bairro: cto.bairro,
+      rompimento: rompInfo  // null ou { pon, nivel, n_clientes, inicio }
+    };
+  }).filter(cto => cto.lat !== null && cto.lon !== null);
+  stats.ctosComCoord = ctos.length;
 
   const transmissoresUnicos = Object.entries(OLTS_ATIVAS).map(([id, nome]) => {
     const olt = olts[id];

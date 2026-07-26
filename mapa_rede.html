@@ -28,6 +28,9 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
 .controls input:focus{outline:none;border-color:#3b82f6}
 .filter-btn{padding:5px 12px;border:1px solid #334155;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px;font-weight:500}
 .filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.filter-btn.active.romp{background:#7f1d1d;color:#fca5a5;border-color:#7f1d1d}
+@keyframes pulseRomp{0%,100%{opacity:1;stroke-width:2.5px}50%{opacity:0.6;stroke-width:4px}}
+.marker-rompimento{animation:pulseRomp 1.2s ease-in-out infinite;}
 .filter-btn.active.red{background:#7f1d1d;color:#f87171;border-color:#7f1d1d}
 .filter-btn.active.yellow{background:#78350f;color:#fbbf24;border-color:#78350f}
 .legend{position:absolute;bottom:20px;right:20px;background:rgba(15,23,42,0.95);border:1px solid #334155;border-radius:8px;padding:12px;z-index:1000;font-size:12px}
@@ -65,6 +68,7 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
   <div>Online: <span style="color:#34d399;" id="stOnline">--</span></div>
   <div>Offline: <span style="color:#f87171;" id="stOffline">--</span></div>
   <div>Sinal Crítico: <span style="color:#f87171;" id="stSinalCrit">--</span></div>
+  <div style="margin-left:12px;">🚨 Rompimento: <span style="color:#fca5a5;font-weight:700;" id="stRomp">--</span></div>
 </div>
 <div class="controls">
   <input type="text" id="searchInput" placeholder="Buscar por CTO, bairro ou OLT..." oninput="aplicarFiltros()">
@@ -75,12 +79,14 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
   <button class="filter-btn" data-filter="offline" onclick="setFiltro('offline')">Com Offline</button>
   <button class="filter-btn" data-filter="sinal" onclick="setFiltro('sinal')">Sinal Crítico</button>
   <button class="filter-btn" data-filter="online" onclick="setFiltro('online')">100% Online</button>
+  <button class="filter-btn" data-filter="rompimento" onclick="setFiltro('rompimento')" id="btnRomp" style="border-color:#7f1d1d;color:#f87171;">🚨 Rompimento</button>
 </div>
 <div id="map"></div>
 <div class="legend">
   <div class="item"><div class="dot" style="background:#34d399;"></div> 100% Online</div>
   <div class="item"><div class="dot" style="background:#fbbf24;"></div> Com Offline (&lt;100%)</div>
   <div class="item"><div class="dot" style="background:#f87171;"></div> Sinal Crítico</div>
+  <div class="item"><div class="dot" style="background:#dc2626;border:2px solid #fff;box-shadow:0 0 6px #dc2626;"></div> 🚨 Rompimento</div>
   <div class="item"><div class="dot" style="background:#64748b;"></div> Sem dados de sinal</div>
   <div style="margin-top:8px;font-size:10px;color:#64748b;">Tamanho = nº de clientes</div>
 </div>
@@ -130,9 +136,20 @@ function atualizarStats(data){
   document.getElementById('stOnline').textContent=s.online.toLocaleString('pt-BR');
   document.getElementById('stOffline').textContent=s.offline.toLocaleString('pt-BR');
   document.getElementById('stSinalCrit').textContent=(s.sinalCritico||0).toLocaleString('pt-BR');
+  // Contar CTOs com rompimento
+  const ctosRomp = dadosCTOs.filter(c=>c.rompimento).length;
+  const elRomp = document.getElementById('stRomp');
+  if(elRomp){
+    elRomp.textContent = ctosRomp > 0 ? ctosRomp + ' CTOs' : '0';
+    elRomp.style.color = ctosRomp > 0 ? '#f87171' : '#94a3b8';
+  }
+  // Atualizar badge do botão rompimento
+  const btnRomp = document.getElementById('btnRomp');
+  if(btnRomp && ctosRomp > 0) btnRomp.textContent = '🚨 Rompimento (' + ctosRomp + ')';
 }
 
 function getCorCTO(c){
+  if(c.rompimento) return '#dc2626';  // Vermelho escuro — rompimento confirmado
   if(c.sinalCritico>0) return '#f87171';
   if(c.offline>0) return '#fbbf24';
   if(c.total>0 && c.online===c.total) return '#34d399';
@@ -158,12 +175,20 @@ function aplicarFiltros(){
     if(filtroAtual==='offline' && c.offline===0) return;
     if(filtroAtual==='online' && c.online!==c.total) return;
     if(filtroAtual==='sinal' && c.sinalCritico===0) return;
+    if(filtroAtual==='rompimento' && !c.rompimento) return;
     const cor=getCorCTO(c);
     const raio=getRaio(c);
-    const marker=L.circleMarker([c.lat,c.lon],{
-      radius:raio,fillColor:cor,color:'rgba(255,255,255,0.3)',weight:1,
-      fillOpacity:0.8
-    });
+    // Rompimento: marcador especial maior com borda branca pulsante
+    const isRomp = !!c.rompimento;
+    const marker = isRomp
+      ? L.circleMarker([c.lat,c.lon],{
+          radius: Math.max(10, raio+4), fillColor:'#dc2626',
+          color:'#ffffff', weight:2.5, fillOpacity:0.95, className:'marker-rompimento'
+        })
+      : L.circleMarker([c.lat,c.lon],{
+          radius:raio, fillColor:cor, color:'rgba(255,255,255,0.3)', weight:1,
+          fillOpacity:0.8
+        });
     const taxa=c.total>0?((c.online/c.total)*100).toFixed(0):0;
     marker.bindPopup(`
       <div class="popup-content">
@@ -174,6 +199,7 @@ function aplicarFiltros(){
         <div class="row"><span class="label">Online</span><span class="value green">${c.online}</span></div>
         <div class="row"><span class="label">Offline</span><span class="value ${c.offline>0?'red':''}">${c.offline}</span></div>
         <div class="row"><span class="label">Taxa</span><span class="value ${taxa<80?'red':'green'}">${taxa}%</span></div>
+        ${c.rompimento?`<div class="row" style="background:#7f1d1d;border-radius:4px;padding:4px;margin:4px 0;"><span class="label" style="color:#fca5a5;">🚨 Rompimento</span><span class="value red">${c.rompimento.nivel==='cto'?'CTO afetada':'PON afetada'} · ${c.rompimento.n_clientes} off · ${c.rompimento.inicio.substring(5,16)}</span></div>`:''}
         ${c.sinalCritico>0?`<div class="row"><span class="label">Sinal Crítico</span><span class="value red">${c.sinalCritico} cliente(s)</span></div>`:''}
         ${c.sinalAtencao>0?`<div class="row"><span class="label">Sinal Atenção</span><span class="value yellow">${c.sinalAtencao} cliente(s)</span></div>`:''}
         <div class="row"><span class="label">Coord.</span><span class="value" style="font-family:monospace;font-size:10px;">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span></div>
@@ -191,8 +217,9 @@ function setFiltro(f){
   const btn=document.querySelector(`[data-filter="${f}"]`);
   if(btn){
     btn.classList.add('active');
-    if(f==='sinal')btn.classList.add('red');
-    if(f==='offline')btn.classList.add('yellow');
+    if(f==='sinal') btn.classList.add('red');
+    if(f==='offline') btn.classList.add('yellow');
+    if(f==='rompimento') btn.classList.add('romp');
   }
   aplicarFiltros();
 }
