@@ -103,42 +103,55 @@ async function fetchSinalOptico() {
 // PON: 2+ CTOs totalmente offline na mesma PON em janela de 2 min → rompimento de PON
 // CTO: TODOS os clientes da CTO offline (2+ clientes) → rompimento de ramal da CTO
 function detectarRompimentos(clientes, olts) {
-  // 1. Agrupar clientes por CTO e calcular status
-  const ctoStats = {};
+  // 1. Agrupar clientes por CTO+PON (uma fibra atende uma PON, não a CTO inteira)
+  // Cada combinação CTO+PON é tratada como uma "célula" independente de fibra
+  const ctoPonStats = {}; // key: ctoId|pon
+  const ctoStats = {};    // key: ctoId (para lookup rápido de PON dominante)
   for (const c of clientes) {
     const ctoId = String(c.id_caixa_ftth || '0');
     if (ctoId === '0') continue;
-    if (!ctoStats[ctoId]) ctoStats[ctoId] = { total: 0, online: 0, offline: 0, offlineClients: [], pon: null };
-    ctoStats[ctoId].total++;
-    if (c.online === 'S') ctoStats[ctoId].online++;
+    const pon = c.conexao ? (c.conexao.split(':')[0] || c.conexao) : null;
+    if (!pon) continue;
+
+    // Agrupamento por CTO+PON
+    const cpKey = `${ctoId}|${pon}`;
+    if (!ctoPonStats[cpKey]) ctoPonStats[cpKey] = { ctoId, pon, total: 0, online: 0, offline: 0, offlineClients: [] };
+    ctoPonStats[cpKey].total++;
+    if (c.online === 'S') ctoPonStats[cpKey].online++;
     if (c.online === 'N') {
-      ctoStats[ctoId].offline++;
-      if (c.ultima_conexao_final) ctoStats[ctoId].offlineClients.push(c);
+      ctoPonStats[cpKey].offline++;
+      if (c.ultima_conexao_final) ctoPonStats[cpKey].offlineClients.push(c);
     }
-    if (c.conexao && !ctoStats[ctoId].pon) {
-      ctoStats[ctoId].pon = c.conexao.split(':')[0] || c.conexao;
+
+    // Agrupamento por CTO (para lookup de PON dominante)
+    if (!ctoStats[ctoId]) ctoStats[ctoId] = { pon: null, count: 0 };
+    if (!ctoStats[ctoId].pon || ctoPonStats[cpKey].total > ctoStats[ctoId].count) {
+      ctoStats[ctoId].pon = pon;
+      ctoStats[ctoId].count = ctoPonStats[cpKey].total;
     }
   }
 
-  // 2. Filtrar CTOs onde TODOS os clientes estão offline (fibra provavelmente rompida)
+  // 2. Filtrar combinações CTO+PON onde TODOS os clientes da MESMA PON estão offline
+  // Regra: fibra atende todos os clientes de uma PON na CTO. Se há 1+ online na mesma PON → fibra ok.
   const ctosFullyOffline = [];
-  for (const [ctoId, s] of Object.entries(ctoStats)) {
+  for (const [cpKey, s] of Object.entries(ctoPonStats)) {
     if (s.total >= 2 && s.online === 0 && s.offline >= 2) {
-      ctosFullyOffline.push({ ctoId, ...s });
+      ctosFullyOffline.push({ ctoId: s.ctoId, pon: s.pon, ...s });
     }
   }
 
   // 3. Detectar rompimento de PON: 2+ CTOs totalmente offline na mesma PON em 2 min
   const ponGroups = {};
   for (const cto of ctosFullyOffline) {
-    if (!cto.pon) continue;
-    if (!ponGroups[cto.pon]) ponGroups[cto.pon] = [];
+    const ponKey = cto.pon;
+    if (!ponKey) continue;
+    if (!ponGroups[ponKey]) ponGroups[ponKey] = [];
     // Usar a primeira queda de cada CTO como timestamp
     const parsed = cto.offlineClients
       .map(c => { try { const dt = new Date(c.ultima_conexao_final.replace(' ', 'T')); return isNaN(dt.getTime()) ? null : dt; } catch { return null; } })
       .filter(Boolean)
       .sort((a, b) => a - b);
-    if (parsed.length > 0) ponGroups[cto.pon].push({ ctoId: cto.ctoId, dt: parsed[0], nClients: cto.offline });
+    if (parsed.length > 0) ponGroups[ponKey].push({ ctoId: cto.ctoId, dt: parsed[0], nClients: cto.offline });
   }
 
   const rompimentos = [];
@@ -164,12 +177,15 @@ function detectarRompimentos(clientes, olts) {
       // Rompimento de PON — coletar todos os clientes offline das CTOs afetadas
       const allOfflineClients = [];
       for (const c of cluster) {
-        const stats = ctoStats[c.ctoId];
-        for (const cl of stats.offlineClients) {
-          try {
-            const dt = new Date(cl.ultima_conexao_final.replace(' ', 'T'));
-            if (!isNaN(dt.getTime())) allOfflineClients.push({ dt, client: cl });
-          } catch {}
+        // Coletar clientes offline de todas as células CTO+PON desse ctoId na PON afetada
+        const relevantCells = Object.values(ctoPonStats).filter(s => s.ctoId === c.ctoId);
+        for (const cell of relevantCells) {
+          for (const cl of cell.offlineClients) {
+            try {
+              const dt = new Date(cl.ultima_conexao_final.replace(' ', 'T'));
+              if (!isNaN(dt.getTime())) allOfflineClients.push({ dt, client: cl });
+            } catch {}
+          }
         }
       }
       allOfflineClients.sort((a, b) => a.dt - b.dt);
