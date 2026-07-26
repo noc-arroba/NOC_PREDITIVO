@@ -39,7 +39,6 @@ export default async function handler(req: Request): Promise<Response> {
       qtype: "su_oss_chamado.data_abertura", query: data24h, oper: "<=",
       page: "1", rp: "1", sortname: "su_oss_chamado.data_abertura", sortorder: "asc"
     });
-    // Filtrar apenas abertas
     const totalSla24 = Number(osSla24.total || 0);
 
     // 3. OS abertas há mais de 48h (SLA vencido crítico)
@@ -82,10 +81,46 @@ export default async function handler(req: Request): Promise<Response> {
     const totalRadius = totalOnline + totalOffline;
     const pctOnline = totalRadius > 0 ? Math.round((totalOnline / totalRadius) * 100) : 0;
 
+    // 7. Status de rompimentos da rede FTTH
+    let rompimentoStatus = { total: 0, detalhes: [] };
+    try {
+      const redeResp = await fetch("https://manutencao-de-rede.vercel.app/api/rede", {
+        signal: AbortSignal.timeout(15000)
+      });
+      if (redeResp.ok) {
+        const redeData = await redeResp.json();
+        const rompimentos = redeData.rompimentos || [];
+        const ctos = redeData.ctos || [];
+        
+        // Contar CTOs com todos offline
+        const ctosCriticas = ctos.filter(c => c.online === 0 && c.offline >= 2);
+        
+        rompimentoStatus = {
+          total: rompimentos.length,
+          ctos_totalmente_offline: ctosCriticas.length,
+          detalhes: rompimentos.map(r => ({
+            nivel: r.nivel,
+            pon: r.pon,
+            n_clientes: r.n_clientes,
+            inicio: r.inicio,
+            bairro: r.bairro || 'N/A'
+          })),
+          ctos_criticas: ctosCriticas.slice(0, 10).map(c => ({
+            id: c.id,
+            offline: c.offline,
+            bairro: c.bairro || 'N/A',
+            olt: c.oltNome || 'N/A'
+          }))
+        };
+      }
+    } catch(e) {
+      console.error("Erro ao buscar rompimentos:", e.message);
+    }
+
     // Criticidade geral
     let criticidade = "🟢 NORMAL";
-    if (totalSla48 > 100 || totalSemTecnico > 200) criticidade = "🔴 CRÍTICA";
-    else if (totalSla24 > 200 || totalSemTecnico > 100) criticidade = "🟠 ALTA";
+    if (totalSla48 > 100 || totalSemTecnico > 200 || rompimentoStatus.total > 0) criticidade = "🔴 CRÍTICA";
+    else if (totalSla24 > 200 || totalSemTecnico > 100 || rompimentoStatus.ctos_totalmente_offline > 0) criticidade = "🟠 ALTA";
     else if (totalSla24 > 50) criticidade = "🟡 ATENÇÃO";
 
     const dataHora = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -101,6 +136,7 @@ export default async function handler(req: Request): Promise<Response> {
       clientes_online: totalOnline,
       clientes_offline: totalOffline,
       pct_online: pctOnline,
+      rompimentos: rompimentoStatus,
     };
 
     return Response.json({ success: true, briefing });
