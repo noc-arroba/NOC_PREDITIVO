@@ -97,11 +97,12 @@ async function fetchSinalOptico() {
 }
 
 // Detecta rompimentos em 2 níveis: PON (ae0.XXXX) e CTO (id_caixa_ftth)
-// REGRA CRÍTICA: uma fibra atende toda a CTO. Se há 1+ cliente online na CTO,
-// a fibra está intacta e os offs são individuais (ONU, drop, energia) — NÃO é rompimento.
-// Só é rompimento se TODOS os clientes da CTO estiverem offline.
-// PON: 2+ CTOs totalmente offline na mesma PON em janela de 2 min → rompimento de PON
-// CTO: TODOS os clientes da CTO offline (2+ clientes) → rompimento de ramal da CTO
+// REGRA: Agrupa clientes por CTO+PON. O maior volume de clientes dita qual PON é a "dona" da CTO.
+// Se 80%+ dos clientes da PON majoritária estão offline → rompimento (mesmo com 1-2 online na mesma PON).
+// Cliente cadastrado na CTO/PON errada (online em PON diferente) NÃO bloqueia o alerta.
+// PON: 2+ CTOs com volume dominante offline na mesma PON em 2 min → rompimento de PON
+// CTO: 80%+ dos clientes da PON majoritária offline (2+ clientes) → rompimento de ramal da CTO
+// Usa clustering: 2+ quedas em janela de 2 min dispara (não exige que TODOS caíram no mesmo instante)
 function detectarRompimentos(clientes, olts) {
   // 1. Agrupar clientes por CTO+PON (uma fibra atende uma PON, não a CTO inteira)
   // Cada combinação CTO+PON é tratada como uma "célula" independente de fibra
@@ -131,12 +132,23 @@ function detectarRompimentos(clientes, olts) {
     }
   }
 
-  // 2. Filtrar combinações CTO+PON onde TODOS os clientes da MESMA PON estão offline
-  // Regra: fibra atende todos os clientes de uma PON na CTO. Se há 1+ online na mesma PON → fibra ok.
+  // 2. Filtrar combinações CTO+PON com base no VOLUME de clientes caídos vs online
+  // REGRA: O maior volume de clientes na CTO dita qual PON é a "dona".
+  // Se o volume de offline é dominante (>= 80% do total da PON), dispara alarme.
+  // Casos de cadastro na CTO/PON errada (1-2 clientes online em PON diferente) não bloqueiam o alerta.
+  // Se ainda há volume significativo de online na MESMA PON, a fibra provavelmente está ok.
   const ctosFullyOffline = [];
   for (const [cpKey, s] of Object.entries(ctoPonStats)) {
-    if (s.total >= 2 && s.online === 0 && s.offline >= 2) {
-      ctosFullyOffline.push({ ctoId: s.ctoId, pon: s.pon, ...s });
+    if (s.total < 2 || s.offline < 2) continue;
+    
+    // Razão de offline: se >= 80% dos clientes da PON estão offline, considera rompimento
+    // Também dispara se TODOS estão offline (caso clássico)
+    const pctOffline = s.total > 0 ? (s.offline / s.total) : 0;
+    
+    // PON majoritária da CTO (maior volume) — permite disparar mesmo com 1-2 online na mesma PON
+    // se o volume de offline é esmagador (ex: 9 offline, 1 online = 90% offline)
+    if (pctOffline >= 0.80) {
+      ctosFullyOffline.push({ ctoId: s.ctoId, pon: s.pon, ...s, pctOffline });
     }
   }
 
