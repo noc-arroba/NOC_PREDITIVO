@@ -354,7 +354,8 @@ function criarNoCaixa(caixa){
   const n=document.createElement('div');n.className='tree-node level-caixa';
   const h=document.createElement('div');h.className='tree-header';
   const rompCaixa=window._rompMap&&window._rompMap.ctos[String(caixa.id)];
-  const rompCaixaBadge=rompCaixa?`<span class="stat-pill" style="background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-weight:700;font-size:11px;animation:pulse 1.5s infinite;">🚨 ${rompCaixa.n_clientes} clientes offline · ${rompCaixa.inicio.substring(5,16)}</span>`:'';
+  // Badge da CTO: usa 'off' (offline reais da CTO) em vez de n_clientes do rompimento (que inclui outras CTOs)
+  const rompCaixaBadge=rompCaixa?`<span class="stat-pill" style="background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-weight:700;font-size:11px;animation:pulse 1.5s infinite;">🚨 ${off>0?off+' off · ':''}PON afetada · ${rompCaixa.inicio.substring(5,16)}</span>`:'';
   const cBomBadge=sinalBom>0?`<span class="stat-pill" style="background:#064e3b;color:#34d399;">✓ ${sinalBom}</span>`:'';
   const cAtenBadge=sinalAten>0?`<span class="stat-pill" style="background:#78350f;color:#fbbf24;">⚠ ${sinalAten}</span>`:'';
   const cCritBadge=sinalCrit>0?`<span class="stat-pill" style="background:#7f1d1d;color:#f87171;">⛔ ${sinalCrit}</span>`:'';
