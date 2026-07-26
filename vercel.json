@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/bgp.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/bgp", "dest": "/api/bgp.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}
