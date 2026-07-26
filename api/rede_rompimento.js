@@ -199,7 +199,10 @@ function detectarRompimentos(clientes, olts) {
     }
   }
 
-  // 4. Detectar rompimento de CTO (CTO totalmente offline, não parte de rompimento de PON)
+  // 4. Detectar rompimento de CTO (CTO+PON totalmente offline, não parte de rompimento de PON)
+  // REGRA: o maior volume de clientes na CTO dita qual PON é a "dona" da CTO.
+  // Usa clustering: 2+ clients offline em janela de 2 min = rompimento
+  // (não exige que TODOS os offline tenham caído juntos — alguns podem ter timestamps antigos)
   for (const cto of ctosFullyOffline) {
     if (rompMap.ctos[cto.ctoId]) continue; // Já marcada por rompimento de PON
     
@@ -208,13 +211,27 @@ function detectarRompimentos(clientes, olts) {
       .filter(Boolean)
       .sort((a, b) => a.dt - b.dt);
     
-    if (parsed.length >= 2) {
-      // Verificar se caíram em janela de 2 min
-      const span = (parsed[parsed.length - 1].dt - parsed[0].dt) / 1000;
-      if (span <= 120) {
-        const romp = buildRompimento(cto.ctoId, parsed, olts, 'cto');
-        rompMap.ctos[cto.ctoId] = romp;
+    if (parsed.length < 2) continue;
+    
+    // Clustering: encontrar o maior cluster de quedas em janela de 2 min
+    let bestCluster = [];
+    let cluster = [parsed[0]];
+    for (let i = 1; i < parsed.length; i++) {
+      const diff = (parsed[i].dt - cluster[cluster.length - 1].dt) / 1000;
+      if (diff <= 120) {
+        cluster.push(parsed[i]);
+      } else {
+        if (cluster.length > bestCluster.length) bestCluster = cluster;
+        cluster = [parsed[i]];
       }
+    }
+    if (cluster.length > bestCluster.length) bestCluster = cluster;
+    
+    // Se 2+ clientes caíram juntos em 2 min → rompimento de CTO
+    if (bestCluster.length >= 2) {
+      const romp = buildRompimento(cto.ctoId, bestCluster, olts, 'cto');
+      rompimentos.push(romp);
+      rompMap.ctos[cto.ctoId] = romp;
     }
   }
 
