@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mapa de Rede FTTH — NOC Arroba</title>
@@ -46,6 +47,10 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
 .popup-content .value{font-weight:600}
 .popup-content .value.green{color:#34d399}
 .popup-content .value.red{color:#f87171}
+.popup-content .maps-btn{display:block;width:100%;margin-top:8px;padding:8px 12px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box}
+.popup-content .maps-btn:active{background:#1557b0}
+.popup-content .maps-btn:hover{background:#1557b0}
+.popup-content .client-btn{display:block;width:100%;margin-top:4px;padding:6px 12px;background:#334155;color:#e2e8f0;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box}
 .popup-content .value.yellow{color:#fbbf24}
 .stats-bar{padding:6px 20px;background:#1e293b;border-bottom:1px solid #334155;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#94a3b8}
 .stats-bar span{font-weight:600;color:#cbd5e1}
@@ -203,6 +208,7 @@ function aplicarFiltros(){
         ${c.sinalCritico>0?`<div class="row"><span class="label">Sinal Crítico</span><span class="value red">${c.sinalCritico} cliente(s)</span></div>`:''}
         ${c.sinalAtencao>0?`<div class="row"><span class="label">Sinal Atenção</span><span class="value yellow">${c.sinalAtencao} cliente(s)</span></div>`:''}
         <div class="row"><span class="label">Coord.</span><span class="value" style="font-family:monospace;font-size:10px;">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)} ${c.coordReal?'<span style="color:#34d399;font-weight:700;">✓ IXC</span>':''}</span></div>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank" class="maps-btn">📍 Abrir no Google Maps</a>
       </div>
     `);
     marker.addTo(markerGroup);
@@ -227,7 +233,7 @@ function setFiltro(f){
 // Inicializar mapa
 map=L.map('map',{zoomControl:true,attributionControl:true}).setView([-21.725,-41.305],13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19,attribution:'© OpenStreetMap'
+  maxZoom:20,attribution:'© OpenStreetMap'
 }).addTo(map);
 
 carregarDados(false);
