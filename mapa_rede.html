@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Rede FTTH — NOC Arroba</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;font-size:14px}
+.header{background:#1e293b;padding:12px 20px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;font-weight:600;color:#f1f5f9}
+.header h1 span{color:#3b82f6}
+.header-right{display:flex;align-items:center;gap:10px}
+.badge{padding:4px 10px;border-radius:6px;font-weight:600;font-size:12px}
+.badge-blue{background:#1e3a5f;color:#60a5fa}
+.badge-green{background:#064e3b;color:#34d399}
+.badge-red{background:#7f1d1d;color:#f87171}
+.badge-yellow{background:#78350f;color:#fbbf24}
+.btn{padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;text-decoration:none}
+.btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}.btn-blue:disabled{opacity:.5;cursor:wait}
+.btn-gray{background:#334155;color:#cbd5e1}.btn-gray:hover{background:#475569}
+.subtitle{font-size:11px;color:#64748b;margin-top:2px}
+#map{height:calc(100vh - 120px);width:100%;background:#1a1a2e}
+.controls{padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#1e293b;border-bottom:1px solid #334155}
+.controls select,.controls input{padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px}
+.controls input{flex:1;max-width:300px}
+.controls input:focus{outline:none;border-color:#3b82f6}
+.filter-btn{padding:5px 12px;border:1px solid #334155;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px;font-weight:500}
+.filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.filter-btn.active.red{background:#7f1d1d;color:#f87171;border-color:#7f1d1d}
+.filter-btn.active.yellow{background:#78350f;color:#fbbf24;border-color:#78350f}
+.legend{position:absolute;bottom:20px;right:20px;background:rgba(15,23,42,0.95);border:1px solid #334155;border-radius:8px;padding:12px;z-index:1000;font-size:12px}
+.legend .item{display:flex;align-items:center;gap:8px;margin:4px 0}
+.legend .dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.3)}
+.loading-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;background:rgba(15,23,42,0.95);border:1px solid #334155;border-radius:12px;padding:24px 40px;text-align:center}
+.loading-overlay .spinner{display:inline-block;width:32px;height:32px;border:3px solid #334155;border-top:3px solid #3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.popup-content{font-size:13px;line-height:1.6}
+.popup-content .title{font-weight:700;font-size:14px;color:#3b82f6;margin-bottom:4px}
+.popup-content .row{display:flex;justify-content:space-between;gap:12px;margin:2px 0}
+.popup-content .label{color:#94a3b8}
+.popup-content .value{font-weight:600}
+.popup-content .value.green{color:#34d399}
+.popup-content .value.red{color:#f87171}
+.popup-content .value.yellow{color:#fbbf24}
+.stats-bar{padding:6px 20px;background:#1e293b;border-bottom:1px solid #334155;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#94a3b8}
+.stats-bar span{font-weight:600;color:#cbd5e1}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Mapa de Rede <span>FTTH</span> — Arroba Banda Larga</h1>
+    <div class="subtitle">CTOs georreferenciadas | Coordenadas médias dos clientes | Fonte: IXC + radpop_radio_cliente_fibra</div>
+  </div>
+  <div class="header-right">
+    <a href="https://manutencao-de-rede.vercel.app" class="btn btn-gray">← Dashboard</a>
+    <button class="btn btn-blue" id="btnRefresh" onclick="carregarDados(true)">Atualizar</button>
+  </div>
+</div>
+<div class="stats-bar" id="statsBar">
+  <div>CTOs no mapa: <span id="stCTOs">--</span></div>
+  <div>Clientes: <span id="stClientes">--</span></div>
+  <div>Online: <span style="color:#34d399;" id="stOnline">--</span></div>
+  <div>Offline: <span style="color:#f87171;" id="stOffline">--</span></div>
+  <div>Sinal Crítico: <span style="color:#f87171;" id="stSinalCrit">--</span></div>
+</div>
+<div class="controls">
+  <input type="text" id="searchInput" placeholder="Buscar por CTO, bairro ou OLT..." oninput="aplicarFiltros()">
+  <select id="oltFilter" onchange="aplicarFiltros()">
+    <option value="">Todas as OLTs</option>
+  </select>
+  <button class="filter-btn active" data-filter="all" onclick="setFiltro('all')">Todas</button>
+  <button class="filter-btn" data-filter="offline" onclick="setFiltro('offline')">Com Offline</button>
+  <button class="filter-btn" data-filter="sinal" onclick="setFiltro('sinal')">Sinal Crítico</button>
+  <button class="filter-btn" data-filter="online" onclick="setFiltro('online')">100% Online</button>
+</div>
+<div id="map"></div>
+<div class="legend">
+  <div class="item"><div class="dot" style="background:#34d399;"></div> 100% Online</div>
+  <div class="item"><div class="dot" style="background:#fbbf24;"></div> Com Offline (&lt;100%)</div>
+  <div class="item"><div class="dot" style="background:#f87171;"></div> Sinal Crítico</div>
+  <div class="item"><div class="dot" style="background:#64748b;"></div> Sem dados de sinal</div>
+  <div style="margin-top:8px;font-size:10px;color:#64748b;">Tamanho = nº de clientes</div>
+</div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div><br>
+  Carregando CTOs do IXC...
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map,dadosCTOs=[],filtroAtual='all',termoBusca='',oltSel='';
+let markerGroup=null;
+
+function carregarDados(force){
+  const btn=document.getElementById('btnRefresh');
+  btn.disabled=true;btn.textContent='Carregando...';
+  fetch('/api/rede'+(force?'?_t='+Date.now():''))
+    .then(r=>r.json()).then(data=>{
+      if(data.error)throw new Error(data.error);
+      dadosCTOs=data.ctos||[];
+      document.getElementById('loadingOverlay').style.display='none';
+      preencherDropdown(data);
+      atualizarStats(data);
+      aplicarFiltros();
+      btn.disabled=false;btn.textContent='Atualizar';
+    }).catch(err=>{
+      document.getElementById('loadingOverlay').innerHTML='<div style="color:#f87171;">Erro: '+err.message+'</div>';
+      btn.disabled=false;btn.textContent='Atualizar';
+    });
+}
+
+function preencherDropdown(data){
+  const sel=document.getElementById('oltFilter');
+  sel.innerHTML='<option value="">Todas as OLTs</option>';
+  const olts=new Map();
+  dadosCTOs.forEach(c=>{if(!olts.has(c.oltId))olts.set(c.oltId,c.oltNome);});
+  [...olts.entries()].sort((a,b)=>a[1].localeCompare(b[1])).forEach(([id,nome])=>{
+    const opt=document.createElement('option');
+    opt.value=id;opt.textContent=nome;
+    sel.appendChild(opt);
+  });
+}
+
+function atualizarStats(data){
+  const s=data.stats;
+  document.getElementById('stCTOs').textContent=dadosCTOs.length.toLocaleString('pt-BR');
+  document.getElementById('stClientes').textContent=s.totalClientes.toLocaleString('pt-BR');
+  document.getElementById('stOnline').textContent=s.online.toLocaleString('pt-BR');
+  document.getElementById('stOffline').textContent=s.offline.toLocaleString('pt-BR');
+  document.getElementById('stSinalCrit').textContent=(s.sinalCritico||0).toLocaleString('pt-BR');
+}
+
+function getCorCTO(c){
+  if(c.sinalCritico>0) return '#f87171';
+  if(c.offline>0) return '#fbbf24';
+  if(c.total>0 && c.online===c.total) return '#34d399';
+  return '#64748b';
+}
+
+function getRaio(c){
+  return Math.max(4, Math.min(20, Math.sqrt(c.total)*2));
+}
+
+function aplicarFiltros(){
+  termoBusca=document.getElementById('searchInput').value.toLowerCase().trim();
+  oltSel=document.getElementById('oltFilter').value;
+  if(markerGroup){map.removeLayer(markerGroup);}
+  markerGroup=L.layerGroup().addTo(map);
+  let visiveis=0;
+  dadosCTOs.forEach(c=>{
+    if(oltSel && c.oltId!==oltSel) return;
+    if(termoBusca){
+      const txt=(c.id+' '+c.bairro+' '+c.oltNome).toLowerCase();
+      if(!txt.includes(termoBusca)) return;
+    }
+    if(filtroAtual==='offline' && c.offline===0) return;
+    if(filtroAtual==='online' && c.online!==c.total) return;
+    if(filtroAtual==='sinal' && c.sinalCritico===0) return;
+    const cor=getCorCTO(c);
+    const raio=getRaio(c);
+    const marker=L.circleMarker([c.lat,c.lon],{
+      radius:raio,fillColor:cor,color:'rgba(255,255,255,0.3)',weight:1,
+      fillOpacity:0.8
+    });
+    const taxa=c.total>0?((c.online/c.total)*100).toFixed(0):0;
+    marker.bindPopup(`
+      <div class="popup-content">
+        <div class="title">CTO ${c.id}</div>
+        <div class="row"><span class="label">OLT</span><span class="value">${c.oltNome}</span></div>
+        ${c.bairro?`<div class="row"><span class="label">Bairro</span><span class="value">${c.bairro}</span></div>`:''}
+        <div class="row"><span class="label">Clientes</span><span class="value">${c.total}</span></div>
+        <div class="row"><span class="label">Online</span><span class="value green">${c.online}</span></div>
+        <div class="row"><span class="label">Offline</span><span class="value ${c.offline>0?'red':''}">${c.offline}</span></div>
+        <div class="row"><span class="label">Taxa</span><span class="value ${taxa<80?'red':'green'}">${taxa}%</span></div>
+        ${c.sinalCritico>0?`<div class="row"><span class="label">Sinal Crítico</span><span class="value red">${c.sinalCritico} cliente(s)</span></div>`:''}
+        ${c.sinalAtencao>0?`<div class="row"><span class="label">Sinal Atenção</span><span class="value yellow">${c.sinalAtencao} cliente(s)</span></div>`:''}
+        <div class="row"><span class="label">Coord.</span><span class="value" style="font-family:monospace;font-size:10px;">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span></div>
+      </div>
+    `);
+    marker.addTo(markerGroup);
+    visiveis++;
+  });
+  document.getElementById('stCTOs').textContent=visiveis.toLocaleString('pt-BR');
+}
+
+function setFiltro(f){
+  filtroAtual=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active','red','yellow'));
+  const btn=document.querySelector(`[data-filter="${f}"]`);
+  if(btn){
+    btn.classList.add('active');
+    if(f==='sinal')btn.classList.add('red');
+    if(f==='offline')btn.classList.add('yellow');
+  }
+  aplicarFiltros();
+}
+
+// Inicializar mapa
+map=L.map('map',{zoomControl:true,attributionControl:true}).setView([-21.725,-41.305],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,attribution:'© OpenStreetMap'
+}).addTo(map);
+
+carregarDados(false);
+</script>
+</body>
+</html>
