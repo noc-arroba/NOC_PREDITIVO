@@ -96,63 +96,87 @@ async function fetchSinalOptico() {
   return sinalMap;
 }
 
-// Detecta rompimentos: 2+ clientes da mesma PON offline em janela de 2 minutos
+// Detecta rompimentos em 2 níveis: PON (ae0.XXXX) e CTO (id_caixa_ftth)
+// PON: 2+ clientes da mesma PON offline em janela de 2 minutos → rompimento de fibra/PON
+// CTO: 2+ clientes da mesma CTO offline em janela de 2 minutos → rompimento de ramificação da caixa
 function detectarRompimentos(clientes, olts) {
-  // Filtrar só offline com timestamp válido
   const offline = clientes.filter(c =>
-    c.online === 'N' && c.ultima_conexao_final && c.conexao
+    c.online === 'N' && c.ultima_conexao_final
   );
 
-  // Agrupar por PON (interface antes do ':')
-  const ponGroups = {};
-  for (const c of offline) {
-    const pon = c.conexao.split(':')[0] || c.conexao;
-    if (!ponGroups[pon]) ponGroups[pon] = [];
-    ponGroups[pon].push(c);
+  function parseAndCluster(items, keyFn, label) {
+    const groups = {};
+    for (const c of items) {
+      const key = keyFn(c);
+      if (!key || key === '0') continue;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(c);
+    }
+
+    const results = [];
+    for (const [key, clients] of Object.entries(groups)) {
+      if (clients.length < 2) continue;
+
+      const parsed = [];
+      for (const c of clients) {
+        try {
+          const dt = new Date(c.ultima_conexao_final.replace(' ', 'T'));
+          if (!isNaN(dt.getTime())) parsed.push({ dt, client: c });
+        } catch {}
+      }
+      if (parsed.length < 2) continue;
+
+      parsed.sort((a, b) => a.dt - b.dt);
+
+      let cluster = [parsed[0]];
+      for (let i = 1; i < parsed.length; i++) {
+        const diff = (parsed[i].dt - cluster[cluster.length - 1].dt) / 1000;
+        if (diff <= 120) {
+          cluster.push(parsed[i]);
+        } else {
+          if (cluster.length >= 2) results.push({ key, cluster, nivel: label });
+          cluster = [parsed[i]];
+        }
+      }
+      if (cluster.length >= 2) results.push({ key, cluster, nivel: label });
+    }
+    return results;
   }
 
+  // Detectar por PON (conexao ae0.XXXX)
+  const ponDetections = parseAndCluster(offline, c => {
+    if (!c.conexao) return null;
+    return c.conexao.split(':')[0] || c.conexao;
+  }, 'pon');
+
+  // Detectar por CTO (id_caixa_ftth)
+  const ctoDetections = parseAndCluster(offline, c => c.id_caixa_ftth || null, 'cto');
+
+  // Construir rompimentos por PON
   const rompimentos = [];
-  for (const [pon, clients] of Object.entries(ponGroups)) {
-    if (clients.length < 2) continue;
+  const rompMap = { pons: {}, ctos: {} };
 
-    // Parse timestamps
-    const parsed = [];
-    for (const c of clients) {
-      const ts = c.ultima_conexao_final;
-      try {
-        const dt = new Date(ts.replace(' ', 'T'));
-        if (!isNaN(dt.getTime())) parsed.push({ dt, client: c });
-      } catch {}
-    }
-    if (parsed.length < 2) continue;
+  for (const det of ponDetections) {
+    const romp = buildRompimento(det.key, det.cluster, olts, 'pon');
+    rompimentos.push(romp);
+    rompMap.pons[det.key] = romp;
+  }
 
-    // Sort by timestamp
-    parsed.sort((a, b) => a.dt - b.dt);
-
-    // Sliding window: clusters within 2 minutes (120 segundos)
-    let cluster = [parsed[0]];
-    for (let i = 1; i < parsed.length; i++) {
-      const diff = (parsed[i].dt - cluster[cluster.length - 1].dt) / 1000;
-      if (diff <= 120) {
-        cluster.push(parsed[i]);
-      } else {
-        if (cluster.length >= 2) {
-          rompimentos.push(buildRompimento(pon, cluster, olts));
-        }
-        cluster = [parsed[i]];
-      }
-    }
-    if (cluster.length >= 2) {
-      rompimentos.push(buildRompimento(pon, cluster, olts));
-    }
+  // Construir rompimentos por CTO e mapear
+  for (const det of ctoDetections) {
+    const romp = buildRompimento(det.key, det.cluster, olts, 'cto');
+    rompMap.ctos[det.key] = romp;
+    // Se esta CTO também está num rompimento de PON, marca o nível
+    const ponKey = det.cluster[0].client.conexao ? det.cluster[0].client.conexao.split(':')[0] : null;
+    romp.nivel_cto = true;
   }
 
   // Ordenar por número de clientes afetados (desc)
   rompimentos.sort((a, b) => b.n_clientes - a.n_clientes);
-  return rompimentos;
+  return { rompimentos, rompMap };
 }
 
-function buildRompimento(pon, cluster, olts) {
+function buildRompimento(key, cluster, olts, nivel = 'pon') {
   const inicio = cluster[0].dt;
   const fim = cluster[cluster.length - 1].dt;
   const deltaSeg = Math.round((fim - inicio) / 1000);
@@ -160,25 +184,28 @@ function buildRompimento(pon, cluster, olts) {
   const oltId = first.oltId;
   const oltNome = OLTS_ATIVAS[oltId] || 'Desconhecida';
 
-  // Coletar CTOs únicas afetadas
   const ctosSet = new Set(cluster.map(c => c.client.id_caixa_ftth || '').filter(id => id && id !== '0'));
-  // Calcular ponNumId por maioria (mais frequente entre os clientes do cluster)
   const ponNumCount = {};
   cluster.forEach(c => { const pid = c.client.pon_num_id || ''; if (pid && pid !== '0') ponNumCount[pid] = (ponNumCount[pid]||0) + 1; });
   const ponNumId = Object.entries(ponNumCount).sort((a,b)=>b[1]-a[1]).map(e=>e[0])[0] || '';
   const ctosAfetadas = Array.from(ctosSet).join(', ');
+
+  // Determinar a PON (sempre do conexao, mesmo para nível CTO)
+  const pon = nivel === 'cto' ? (first.conexao ? first.conexao.split(':')[0] || key : key) : key;
 
   return {
     pon,
     ponNumId,
     oltId,
     oltNome,
+    nivel, // 'pon' ou 'cto'
     n_clientes: cluster.length,
     inicio: inicio.toISOString().replace('T', ' ').substring(0, 19),
     fim: fim.toISOString().replace('T', ' ').substring(0, 19),
     delta_seg: deltaSeg,
     bairro: first.bairro || '',
     ctos: ctosAfetadas,
+    cto_principal: nivel === 'cto' ? key : (ctosSet.size === 1 ? Array.from(ctosSet)[0] : ''),
     clientes: cluster.map(c => ({
       login: c.client.login,
       bairro: c.client.bairro || '',
@@ -321,8 +348,8 @@ async function fetchAllFTTH() {
   })).filter(cto => cto.lat !== null && cto.lon !== null);
   stats.ctosComCoord = ctos.length;
 
-  // Detectar rompimentos
-  const rompimentos = detectarRompimentos(clientesPlano, olts);
+  // Detectar rompimentos (por PON e por CTO)
+  const { rompimentos, rompMap } = detectarRompimentos(clientesPlano, olts);
   stats.rompimentos = rompimentos.length;
 
   const transmissoresUnicos = Object.entries(OLTS_ATIVAS).map(([id, nome]) => {
@@ -351,7 +378,7 @@ async function fetchAllFTTH() {
 
   return {
     stats, oltsAtivas: Object.entries(OLTS_ATIVAS).map(([id, nome]) => ({ id, nome })),
-    transmissoresUnicos, hierarquia, ctos, rompimentos
+    transmissoresUnicos, hierarquia, ctos, rompimentos, rompMap
   };
 }
 

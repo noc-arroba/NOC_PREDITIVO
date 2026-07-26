@@ -275,17 +275,22 @@ function renderizarArvore(data){
     if(best) ae0ToPonId[ae] = best[0];
   });
   // Construir mapa de rompimentos: oltId -> [], ponId -> romp, ctoId -> romp
-  window._rompMap = { olts: {}, pons: {}, ctos: {} };
+  // Usa rompMap da API (já separa por PON e por CTO)
+  window._rompMap = data.rompMap || { olts: {}, pons: {}, ctos: {} };
+  // Garantir mapeamento OLT e PON a partir da lista de rompimentos também
+  if(!window._rompMap.olts) window._rompMap.olts = {};
+  if(!window._rompMap.pons) window._rompMap.pons = {};
+  if(!window._rompMap.ctos) window._rompMap.ctos = {};
   (data.rompimentos||[]).forEach(r=>{
     // OLT
     if(!window._rompMap.olts[r.oltId]) window._rompMap.olts[r.oltId] = [];
     window._rompMap.olts[r.oltId].push(r);
     // PON numérica via mapeamento ae0
     const ponNumId = ae0ToPonId[r.pon] || '';
-    if(ponNumId) window._rompMap.pons[ponNumId] = r;
-    // CTOs
+    if(ponNumId && !window._rompMap.pons[ponNumId]) window._rompMap.pons[ponNumId] = r;
+    // CTOs da lista de rompimentos por PON (caso a CTO não tenha rompimento próprio)
     (r.ctos||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(cid=>{
-      window._rompMap.ctos[cid] = r;
+      if(!window._rompMap.ctos[cid]) window._rompMap.ctos[cid] = r;
     });
   });
   data.hierarquia.forEach(olt=>c.appendChild(criarNoOLT(olt)));
@@ -354,8 +359,12 @@ function criarNoCaixa(caixa){
   const n=document.createElement('div');n.className='tree-node level-caixa';
   const h=document.createElement('div');h.className='tree-header';
   const rompCaixa=window._rompMap&&window._rompMap.ctos[String(caixa.id)];
-  // Badge da CTO: usa 'off' (offline reais da CTO) em vez de n_clientes do rompimento (que inclui outras CTOs)
-  const rompCaixaBadge=rompCaixa?`<span class="stat-pill" style="background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-weight:700;font-size:11px;animation:pulse 1.5s infinite;">🚨 ${off>0?off+' off · ':''}PON afetada · ${rompCaixa.inicio.substring(5,16)}</span>`:'';
+  // Badge da CTO: distingue entre rompimento da própria CTO vs PON afetada
+  const rompCaixaNivel = rompCaixa ? (rompCaixa.nivel || 'pon') : '';
+  // Para CTO: usa n_clientes do rompimento (2+ caíram juntos). Para PON: usa off real da caixa
+  const rompOff = rompCaixaNivel === 'cto' ? (rompCaixa.n_clientes || off) : off;
+  const rompLabel = rompCaixaNivel === 'cto' ? 'CTO afetada' : 'PON afetada';
+  const rompCaixaBadge = rompCaixa ? `<span class="stat-pill" style="background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;font-weight:700;font-size:11px;animation:pulse 1.5s infinite;">🚨 ${rompLabel} · ${rompOff} off · ${rompCaixa.inicio.substring(5,16)}</span>` : '';
   const cBomBadge=sinalBom>0?`<span class="stat-pill" style="background:#064e3b;color:#34d399;">✓ ${sinalBom}</span>`:'';
   const cAtenBadge=sinalAten>0?`<span class="stat-pill" style="background:#78350f;color:#fbbf24;">⚠ ${sinalAten}</span>`:'';
   const cCritBadge=sinalCrit>0?`<span class="stat-pill" style="background:#7f1d1d;color:#f87171;">⛔ ${sinalCrit}</span>`:'';
