@@ -159,6 +159,10 @@ function buildRompimento(pon, cluster, olts) {
   const oltId = first.oltId;
   const oltNome = OLTS_ATIVAS[oltId] || 'Desconhecida';
 
+  // Coletar CTOs únicas afetadas
+  const ctosSet = new Set(cluster.map(c => c.client.id_caixa_ftth || '').filter(id => id && id !== '0'));
+  const ctosAfetadas = Array.from(ctosSet).join(', ');
+
   return {
     pon,
     oltId,
@@ -168,9 +172,11 @@ function buildRompimento(pon, cluster, olts) {
     fim: fim.toISOString().replace('T', ' ').substring(0, 19),
     delta_seg: deltaSeg,
     bairro: first.bairro || '',
+    ctos: ctosAfetadas,
     clientes: cluster.map(c => ({
       login: c.client.login,
       bairro: c.client.bairro || '',
+      id_caixa: c.client.id_caixa_ftth || '',
       ultima_conexao: c.client.ultima_conexao_final,
       sinal_rx: c.client.sinal_rx || '',
       onu_tipo: c.client.onu_tipo || '',
@@ -272,6 +278,7 @@ async function fetchAllFTTH() {
       ftth_porta: c.ftth_porta || sinal.porta_ftth || '',
       onu_mac: c.onu_mac || sinal.onu_mac || '',
       bairro: c.bairro || '', ip: c.ip || '',
+      id_caixa_ftth: String(c.id_caixa_ftth || sinal.id_caixa_ftth || ''),
       ultima_conexao_final: c.ultima_conexao_final || '',
       sinal_rx: sinal.sinal_rx || '', sinal_tx: sinal.sinal_tx || '',
       sinal_status: sinalStatus,

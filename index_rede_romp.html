@@ -136,7 +136,7 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
 <div class="rompimento-panel" id="rompimentoPanel">
   <div class="romp-header">🚨 Detecção de Rompimento / Falta de Energia — 2+ clientes da mesma PON offline em janela de 2 minutos</div>
   <table>
-    <thead><tr><th>PON / Interface</th><th>OLT</th><th>Bairro</th><th>Clientes Afetados</th><th>Início</th><th>Fim</th><th>Janela</th><th>Logins</th></tr></thead>
+    <thead><tr><th>PON / Interface</th><th>OLT</th><th>CTO(s)</th><th>Bairro</th><th>Clientes Afetados</th><th>Início</th><th>Fim</th><th>Janela</th><th>Logins</th></tr></thead>
     <tbody id="rompimentoBody"></tbody>
   </table>
 </div>
@@ -227,7 +227,8 @@ function renderizarRompimentos(data){
     const tr=document.createElement('tr');
     const deltaTxt=r.delta_seg<60?r.delta_seg+'s':Math.floor(r.delta_seg/60)+'min '+(r.delta_seg%60)+'s';
     const logins=r.clientes.map(c=>c.login).join(', ').substring(0,80);
-    tr.innerHTML=`<td class="romp-pon">${r.pon}</td><td class="romp-olt">${r.oltNome}</td><td>${r.bairro||'--'}</td><td style="text-align:center;font-weight:700;color:#f87171;">${r.n_clientes}</td><td class="romp-timerange">${r.inicio}</td><td class="romp-timerange">${r.fim}</td><td style="text-align:center;">${deltaTxt}</td><td class="romp-clientes">${logins}${r.clientes.length>5?'...':''}</td>`;
+    const ctosStr=r.ctos||'--';
+    tr.innerHTML=`<td class="romp-pon">${r.pon}</td><td class="romp-olt">${r.oltNome}</td><td style="font-family:monospace;font-size:11px;color:#c084fc;">${ctosStr}</td><td>${r.bairro||'--'}</td><td style="text-align:center;font-weight:700;color:#f87171;">${r.n_clientes}</td><td class="romp-timerange">${r.inicio}</td><td class="romp-timerange">${r.fim}</td><td style="text-align:center;">${deltaTxt}</td><td class="romp-clientes">${logins}${r.clientes.length>5?'...':''}</td>`;
     body.appendChild(tr);
   });
 }
