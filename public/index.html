@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — BGP AS264025</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a0e1a; color: #e0e0e0; }
+.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 1px solid #1e293b; }
+.header h1 { font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+.header .asn { font-size: 14px; color: #64748b; margin-top: 4px; }
+.header .fase { background: #1e40af; color: #dbeafe; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
+.card-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.card-value { font-size: 32px; font-weight: 700; color: #f8fafc; }
+.card-sub { font-size: 12px; color: #475569; margin-top: 4px; }
+.score-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.section-title { font-size: 16px; color: #94a3b8; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; }
+td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #cbd5e1; }
+tr:hover { background: #0f172a; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: #064e3b; color: #6ee7b7; }
+.badge-hijack { background: #7f1d1d; color: #fca5a5; }
+.badge-nao { background: #78350f; color: #fcd34d; }
+.badge-erro { background: #1e1b4b; color: #c4b5fd; }
+.badge-upstream { background: #1e3a5f; color: #93c5fd; }
+.badge-transit { background: #312e81; color: #a5b4fc; }
+.badge-ix { background: #164e63; color: #67e8f9; }
+.badge-peer { background: #064e3b; color: #6ee7b7; }
+.badge-alert { background: #7f1d1d; color: #fca5a5; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:768px) { .two-col { grid-template-columns: 1fr; } }
+.loading { text-align: center; padding: 60px; color: #475569; }
+.spinner { border: 3px solid #1e293b; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.peer-power-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 100px; display: inline-block; vertical-align: middle; margin-left: 8px; }
+.peer-power-fill { height: 100%; background: #3b82f6; border-radius: 3px; }
+.mtr-target { display: inline-block; background: #1e293b; padding: 6px 14px; border-radius: 8px; margin: 4px; font-size: 12px; }
+.mtr-target code { color: #67e8f9; }
+.footer { text-align: center; padding: 30px; color: #334155; font-size: 12px; }
+#alertas { margin-bottom: 20px; }
+.alert-box { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.alert-box.atencao { background: #78350f; border-color: #92400e; }
+.alert-icon { font-size: 20px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛰️ NOC Preditivo <span class="fase">Fase 1</span></h1>
+  <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Coletando dados BGP do RIPE Stat...</p>
+  </div>
+  
+  <div id="content" style="display:none;">
+    <div id="alertas"></div>
+    
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Score BGP</div>
+        <div class="card-value" id="score">--</div>
+        <div class="score-bar"><div class="score-fill" id="score-bar" style="width:0%; background:#3b82f6;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prefixos Ativos</div>
+        <div class="card-value" id="prefixos-ok">--</div>
+        <div class="card-sub" id="prefixos-total">de --</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Peers BGP</div>
+        <div class="card-value" id="peers-count">--</div>
+        <div class="card-sub" id="peers-detail">-- upstreams</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Alertas</div>
+        <div class="card-value" id="alertas-count">--</div>
+        <div class="card-sub" id="alertas-detail">--</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-title">📡 Prefixos Anunciados</div>
+        <table>
+          <thead>
+            <tr><th>Prefixo</th><th>Tipo</th><th>Origin AS</th><th>Status</th></tr>
+          </thead>
+          <tbody id="prefixos-table"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="section-title">🔗 Peers BGP (Vizinhos)</div>
+        <table>
+          <thead>
+            <tr><th>ASN</th><th>Nome</th><th>Tipo</th><th>Power</th></tr>
+          </thead>
+          <tbody id="peers-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">👁️ Visibilidade Global (RIPE RIS)</div>
+    <table>
+      <thead>
+        <tr><th>Prefixo</th><th>RRCs Visíveis</th><th>Total RRCs</th><th>ASNs que veem</th><th>Status</th></tr>
+      </thead>
+      <tbody id="vis-table"></tbody>
+    </table>
+
+    <div class="section-title">🛣️ Targets MTR (Fase 2 — via VPN/Sandbox)</div>
+    <div id="mtr-targets"></div>
+
+    <div class="footer">
+      NOC Preditivo — AS264025 Arroba Banda Larga | Dados: RIPE Stat API | Atualização: <span id="last-update">--</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function badge(status) {
+  const map = {
+    'ok': ['badge-ok', 'OK'],
+    'HIJACK': ['badge-hijack', 'HIJACK'],
+    'nao_anunciado': ['badge-nao', 'NAO ANUNCIADO'],
+    'terceiro': ['badge-nao', 'TERCEIRO'],
+    'erro': ['badge-erro', 'ERRO']
+  };
+  const [cls, txt] = map[status] || ['badge-erro', status];
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+
+function peerBadge(tipo) {
+  const map = {
+    'upstream_nacional': ['badge-upstream', 'Upstream'],
+    'transit_internacional': ['badge-transit', 'Transit'],
+    'ix_ptt': ['badge-ix', 'IX/PTT'],
+    'peer_regional': ['badge-peer', 'Peer']
+  };
+  const [cls, txt] = map[tipo] || ['badge-erro', tipo];
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/bgp');
+    const data = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    
+    document.getElementById('asn-info').textContent = 
+      `AS${data.asn} — ${data.overview.holder || 'Arroba Banda Larga'} | ${data.fase}`;
+    
+    // Score
+    const score = data.score_bgp;
+    document.getElementById('score').textContent = score;
+    document.getElementById('score-bar').style.width = score + '%';
+    document.getElementById('score-bar').style.background = 
+      score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+    
+    // Prefixos
+    document.getElementById('prefixos-ok').textContent = data.stats.prefixos_ok;
+    document.getElementById('prefixos-total').textContent = 
+      `de ${data.stats.total_prefixos} | ${data.stats.prefixos_hijack} hijack | ${data.stats.prefixos_nao_anunciado} nao anunciados`;
+    
+    // Peers
+    document.getElementById('peers-count').textContent = data.stats.total_peers;
+    document.getElementById('peers-detail').textContent = 
+      `${data.stats.peers_upstream} upstreams | ${data.stats.peers_transit} transit | ${data.stats.peers_ix} IX`;
+    
+    // Alertas
+    document.getElementById('alertas-count').textContent = data.alertas.length;
+    document.getElementById('alertas-detail').textContent = 
+      data.alertas.length === 0 ? 'Nenhum alerta' : data.alertas.map(a => a.msg).join('; ');
+    
+    const alertasHtml = data.alertas.map(a => 
+      `<div class="alert-box ${a.severity === 'atencao' ? 'atencao' : ''}">
+        <span class="alert-icon">${a.severity === 'critico' ? '🔴' : '🟡'}</span>
+        <span>${a.msg}</span>
+      </div>`
+    ).join('');
+    document.getElementById('alertas').innerHTML = alertasHtml;
+    
+    // Tabela prefixos
+    document.getElementById('prefixos-table').innerHTML = data.prefixos.map(p => 
+      `<tr>
+        <td style="font-family:monospace">${p.prefix}</td>
+        <td>${p.tipo}</td>
+        <td>${p.origin_asn ? 'AS' + p.origin_asn : '--'}</td>
+        <td>${badge(p.status)}</td>
+      </tr>`
+    ).join('');
+    
+    // Tabela peers
+    document.getElementById('peers-table').innerHTML = data.peers.map(p => {
+      const maxPower = Math.max(...data.peers.map(x => x.power));
+      const pct = maxPower > 0 ? (p.power / maxPower * 100) : 0;
+      return `<tr>
+        <td style="font-family:monospace">AS${p.asn}</td>
+        <td>${p.nome}</td>
+        <td>${peerBadge(p.tipo)}</td>
+        <td>${p.power} <span class="peer-power-bar"><span class="peer-power-fill" style="width:${pct}%"></span></span></td>
+      </tr>`;
+    }).join('');
+    
+    // Visibilidade
+    document.getElementById('vis-table').innerHTML = data.visibilidade.map(v => {
+      const pct = v.rrcs_total > 0 ? (v.rrcs_visible / v.rrcs_total * 100) : 0;
+      const status = pct >= 80 ? badge('ok') : pct >= 50 ? badge('nao_anunciado') : badge('HIJACK');
+      return `<tr>
+        <td style="font-family:monospace">${v.prefix}</td>
+        <td>${v.rrcs_visible || 0}</td>
+        <td>${v.rrcs_total || 0}</td>
+        <td>${v.asns_visible || 0}</td>
+        <td>${status}</td>
+      </tr>`;
+    }).join('');
+    
+    // MTR targets
+    document.getElementById('mtr-targets').innerHTML = data.mtr_targets.map(t => 
+      `<span class="mtr-target">${t.nome} <code>${t.ip}</code></span>`
+    ).join('');
+    
+    document.getElementById('last-update').textContent = 
+      new Date(data.timestamp).toLocaleString('pt-BR');
+    
+  } catch (e) {
+    document.getElementById('loading').innerHTML = `<p style="color:#ef4444">Erro: ${e.message}</p>`;
+  }
+}
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
