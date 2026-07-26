@@ -96,6 +96,40 @@ async function fetchSinalOptico() {
   return sinalMap;
 }
 
+
+// Classifica o motivo de queda da ONU em 3 categorias operacionais
+// LOS/LOSi/LOBi = perda de sinal óptico (rompimento de fibra)
+// dying-gasp = falta de energia (ONU enviou sinal antes de desligar)
+// Reboot = ONU reiniciou (power cycle ou manual)
+function classificarCausa(causa) {
+  if (!causa || causa === '-' || causa === '') return 'desconhecida';
+  const c = causa.toLowerCase();
+  if (c.includes('los') || c.includes('lob')) return 'rompimento';      // Perda de sinal = fibra rompida
+  if (c.includes('dying') || c.includes('gasp')) return 'falta_energia'; // Dying gasp = sem energia
+  if (c.includes('reboot') || c.includes('reset')) return 'reboot';      // ONU reiniciou
+  if (c.includes('ont') || c.includes('power') || c.includes('energy')) return 'falta_energia'; // Power-related
+  // Fallback RADIUS: NAS-Request = OLT derrubou (LOS ou energia) | User-Request = cliente desligou
+  if (c === 'nas-request' || c.includes('nas')) return 'olt_derrubou';   // OLT iniciou desconexão
+  if (c === 'user-request' || c.includes('user')) return 'cliente';     // Cliente desligou/rebootou
+  return 'outra';
+}
+
+// Combina causa_ultima_queda (OLT) com motivo_desconexao (RADIUS) para classificar
+function classificarCausaCombinada(client) {
+  const causaOlt = client.causa_ultima_queda || '';
+  const causaRadius = client.motivo_desconexao || '';
+  
+  // Prioriza causa da OLT (mais específica)
+  if (causaOlt && causaOlt !== '-' && causaOlt !== '') {
+    return classificarCausa(causaOlt);
+  }
+  // Fallback: usa motivo RADIUS
+  if (causaRadius && causaRadius !== '') {
+    return classificarCausa(causaRadius);
+  }
+  return 'desconhecida';
+}
+
 // Detecta rompimentos em 2 níveis: PON (ae0.XXXX) e CTO (id_caixa_ftth)
 // REGRA: Agrupa clientes por CTO+PON. O maior volume de clientes dita qual PON é a "dona" da CTO.
 // Se 80%+ dos clientes da PON majoritária estão offline → rompimento (mesmo com 1-2 online na mesma PON).
@@ -257,6 +291,16 @@ function buildRompimento(key, cluster, olts, nivel = 'pon') {
   const fim = cluster[cluster.length - 1].dt;
   const deltaSeg = Math.round((fim - inicio) / 1000);
   const first = cluster[0].client;
+  
+  // Classificar causa dominante no cluster
+  const causas = {};
+  for (const item of cluster) {
+    const cat = classificarCausaCombinada(item.client);
+    causas[cat] = (causas[cat] || 0) + 1;
+  }
+  const causaDominante = Object.keys(causas).length > 0 
+    ? Object.entries(causas).sort((a,b) => b[1]-a[1])[0][0] 
+    : 'desconhecida';
   const oltId = first.oltId;
   const oltNome = OLTS_ATIVAS[oltId] || 'Desconhecida';
 
@@ -439,6 +483,7 @@ async function fetchAllFTTH() {
       temperatura: sinal.temperatura || '', voltagem: sinal.voltagem || '',
       onu_tipo: sinal.onu_tipo || '', ponid: sinal.ponid || '',
       causa_ultima_queda: sinal.causa_ultima_queda || '', data_sinal: sinal.data_sinal || '',
+      motivo_desconexao: c.motivo_desconexao || '',
       latitude: sinal.latitude || '', longitude: sinal.longitude || '',
       oltId: idTransm
     };
@@ -463,20 +508,29 @@ async function fetchAllFTTH() {
   stats.rompimentos = rompimentos.length;
 
   // Construir mapa rápido de ctoId -> info do rompimento para lookup O(1)
-  const rompCtoLookup = {}; // ctoId -> { pon, nivel, n_clientes, inicio }
+  const rompCtoLookup = {}; // ctoId -> { pon, nivel, n_clientes, inicio, tipo, causa_classificada, causas_detalhe }
   rompimentos.forEach(r => {
+    const info = { 
+      pon: r.pon, nivel: r.nivel || 'pon', n_clientes: r.n_clientes, inicio: r.inicio,
+      tipo: r.tipo || 'rompimento', causa_classificada: r.causa_classificada || 'desconhecida',
+      causas_detalhe: r.causas_detalhe || {}
+    };
     // CTOs listadas no campo 'ctos' (por PON)
     (r.ctos || '').split(',').map(s => s.trim()).filter(Boolean).forEach(cid => {
-      if (!rompCtoLookup[cid]) rompCtoLookup[cid] = { pon: r.pon, nivel: r.nivel || 'pon', n_clientes: r.n_clientes, inicio: r.inicio };
+      if (!rompCtoLookup[cid]) rompCtoLookup[cid] = { ...info };
     });
     // CTO principal (por CTO, nivel cto)
     if (r.cto_principal && r.cto_principal !== '') {
-      rompCtoLookup[r.cto_principal] = { pon: r.pon, nivel: r.nivel || 'cto', n_clientes: r.n_clientes, inicio: r.inicio };
+      rompCtoLookup[r.cto_principal] = { ...info, nivel: 'cto' };
     }
   });
   // Adicionar também do rompMap.ctos (detecção por CTO)
   Object.entries((rompMap.ctos) || {}).forEach(([cid, r]) => {
-    rompCtoLookup[cid] = { pon: r.pon, nivel: 'cto', n_clientes: r.n_clientes, inicio: r.inicio };
+    rompCtoLookup[cid] = { 
+      pon: r.pon, nivel: 'cto', n_clientes: r.n_clientes, inicio: r.inicio,
+      tipo: r.tipo || 'rompimento', causa_classificada: r.causa_classificada || 'desconhecida',
+      causas_detalhe: r.causas_detalhe || {}
+    };
   });
 
   // CTOs com coordenadas — override do IXC tem prioridade sobre média de clientes
