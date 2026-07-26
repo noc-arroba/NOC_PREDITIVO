@@ -1,0 +1,8 @@
+{
+  "name": "noc-preditivo",
+  "version": "1.0.0",
+  "description": "NOC Preditivo - Monitoramento BGP AS264025 Arroba Banda Larga",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
