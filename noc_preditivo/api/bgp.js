@@ -113,21 +113,38 @@ async function checkPeers() {
   }
 }
 
+// Visibilidade corrigida: lê a estrutura real do endpoint RIPE
 async function checkVisibilidade() {
   const principais = ['143.137.32.0/22', '168.197.56.0/22', '2804:299c::/32'];
   const resultados = [];
+
   for (const prefix of principais) {
     try {
       const data = await fetchJSON(`https://stat.ripe.net/data/visibility/data.json?resource=${prefix}`);
-      const vis = data.data || {};
-      const v4 = vis.ipv4 || {};
-      const v6 = vis.ipv6 || {};
+      const visibilities = (data.data || {}).visibilities || [];
+
+      // Calcular corretamente a partir da lista de RRCs
+      let rrcs_total = visibilities.length;
+      let rrcs_vendo = 0;
+      let peers_nao_vendo = 0;
+
+      for (const rrc of visibilities) {
+        const totalPeers = rrc.ipv4_full_table_peer_count || rrc.ipv6_full_table_peer_count || 0;
+        const naoVendo = (rrc.ipv4_full_table_peers_not_seeing || []).length +
+                         (rrc.ipv6_full_table_peers_not_seeing || []).length;
+        if (totalPeers > 0) rrcs_vendo++;
+        peers_nao_vendo += naoVendo;
+      }
+
+      const pct = rrcs_total > 0 ? Math.round((rrcs_vendo / rrcs_total) * 100) : 0;
+
       resultados.push({
         prefix,
-        rrcs_visible: v4.rrcs_visible || v6.rrcs_visible || 0,
-        rrcs_total: v4.rrcs_total || v6.rrcs_total || 0,
-        asns_visible: v4.asns_visible || v6.asns_visible || 0,
-        status: 'ok'
+        rrcs_visible: rrcs_vendo,
+        rrcs_total,
+        peers_nao_vendo,
+        visibilidade_pct: pct,
+        status: pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'baixa'
       });
     } catch (e) {
       resultados.push({ prefix, erro: e.message, status: 'erro' });
@@ -164,34 +181,41 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  
+
   const now = Date.now();
   if (cache.data && (now - cache.ts) < CACHE_TTL) {
     return res.json({ ...cache.data, cached: true });
   }
-  
+
   try {
     const [prefixos, peers, visibilidade, overview] = await Promise.all([
       checkPrefixos(), checkPeers(), checkVisibilidade(), checkASOverview()
     ]);
-    
+
     const prefixosOk = prefixos.filter(p => p.status === 'ok').length;
     const prefixosHijack = prefixos.filter(p => p.status === 'HIJACK').length;
     const prefixosNaoAnunciado = prefixos.filter(p => p.status === 'nao_anunciado').length;
     const peersUpstreams = peers.filter(p => p.tipo && p.tipo.includes('upstream'));
     const peersTransit = peers.filter(p => p.tipo && p.tipo.includes('transit'));
     const peersIX = peers.filter(p => p.tipo && p.tipo.includes('ix'));
-    
+
     const scorePrefixos = (prefixosOk / prefixos.length) * 100;
     const scoreHijack = prefixosHijack > 0 ? 0 : 100;
     const scorePeers = peers.length > 0 ? Math.min(100, (peers.length / 27) * 100) : 0;
     const score = Math.round((scorePrefixos * 0.5 + scoreHijack * 0.3 + scorePeers * 0.2));
-    
+
     const alertas = [];
     if (prefixosHijack > 0) alertas.push({ severity: 'critico', msg: `${prefixosHijack} prefixo(s) com possivel HIJACK` });
     if (prefixosNaoAnunciado > 0) alertas.push({ severity: 'critico', msg: `${prefixosNaoAnunciado} prefixo(s) nao anunciado(s)` });
     if (peers.length < 20) alertas.push({ severity: 'atencao', msg: `Apenas ${peers.length} peers ativos (esperado: 27)` });
-    
+
+    // Alertas de visibilidade
+    for (const v of visibilidade) {
+      if (v.visibilidade_pct < 70) {
+        alertas.push({ severity: 'atencao', msg: `Visibilidade baixa: ${v.prefix} (${v.visibilidade_pct}% dos RRCs)` });
+      }
+    }
+
     const result = {
       timestamp: new Date().toISOString(),
       asn: ASN_ARROBA,
@@ -212,7 +236,7 @@ module.exports = async (req, res) => {
       fase: 'Fase 1 - Visibilidade Externa',
       proxima_fase: 'Fase 2 - VPN + SNMP (aguardando credenciais)'
     };
-    
+
     cache = { data: result, ts: now };
     res.json({ ...result, cached: false });
   } catch (error) {
