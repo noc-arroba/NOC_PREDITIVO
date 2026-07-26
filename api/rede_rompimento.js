@@ -87,6 +87,7 @@ async function fetchSinalOptico() {
       data_sinal: r.data_sinal || '',
       porta_ftth: r.porta_ftth || '',
       id_caixa_ftth: r.id_caixa_ftth || '',
+      id_pon: String(r.id_pon || ''),
       latitude: r.latitude || '',
       longitude: r.longitude || '',
       id_transmissor: String(r.id_transmissor || '')
@@ -161,10 +162,15 @@ function buildRompimento(pon, cluster, olts) {
 
   // Coletar CTOs únicas afetadas
   const ctosSet = new Set(cluster.map(c => c.client.id_caixa_ftth || '').filter(id => id && id !== '0'));
+  // Calcular ponNumId por maioria (mais frequente entre os clientes do cluster)
+  const ponNumCount = {};
+  cluster.forEach(c => { const pid = c.client.pon_num_id || ''; if (pid && pid !== '0') ponNumCount[pid] = (ponNumCount[pid]||0) + 1; });
+  const ponNumId = Object.entries(ponNumCount).sort((a,b)=>b[1]-a[1]).map(e=>e[0])[0] || '';
   const ctosAfetadas = Array.from(ctosSet).join(', ');
 
   return {
     pon,
+    ponNumId,
     oltId,
     oltNome,
     n_clientes: cluster.length,
@@ -279,6 +285,7 @@ async function fetchAllFTTH() {
       onu_mac: c.onu_mac || sinal.onu_mac || '',
       bairro: c.bairro || '', ip: c.ip || '',
       id_caixa_ftth: String(c.id_caixa_ftth || sinal.id_caixa_ftth || ''),
+      pon_num_id: sinal.id_pon || '',
       ultima_conexao_final: c.ultima_conexao_final || '',
       sinal_rx: sinal.sinal_rx || '', sinal_tx: sinal.sinal_tx || '',
       sinal_status: sinalStatus,
