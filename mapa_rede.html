@@ -202,7 +202,7 @@ function aplicarFiltros(){
         ${c.rompimento?`<div class="row" style="background:#7f1d1d;border-radius:4px;padding:4px;margin:4px 0;"><span class="label" style="color:#fca5a5;">🚨 Rompimento</span><span class="value red">${c.rompimento.nivel==='cto'?'CTO afetada':'PON afetada'} · ${c.rompimento.n_clientes} off · ${c.rompimento.inicio.substring(5,16)}</span></div>`:''}
         ${c.sinalCritico>0?`<div class="row"><span class="label">Sinal Crítico</span><span class="value red">${c.sinalCritico} cliente(s)</span></div>`:''}
         ${c.sinalAtencao>0?`<div class="row"><span class="label">Sinal Atenção</span><span class="value yellow">${c.sinalAtencao} cliente(s)</span></div>`:''}
-        <div class="row"><span class="label">Coord.</span><span class="value" style="font-family:monospace;font-size:10px;">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span></div>
+        <div class="row"><span class="label">Coord.</span><span class="value" style="font-family:monospace;font-size:10px;">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)} ${c.coordReal?'<span style="color:#34d399;font-weight:700;">✓ IXC</span>':''}</span></div>
       </div>
     `);
     marker.addTo(markerGroup);

@@ -226,6 +226,12 @@ async function fetchAllFTTH() {
     fetchSinalOptico()
   ]);
 
+  // === OVERRIDE DE COORDENADAS DE CTOs ===
+  // Coordenadas reais cadastradas no IXC (arquivo manual)
+  const CTO_COORDS_OVERRIDE = {
+    "4272": { lat: -21.724574807634, lon: -41.302924306658, endereco: "R. Cidade de Lima, 141-123 - Parque Santa Rosa" }
+  };
+
   let sinalBom = 0, sinalAtencao = 0, sinalCritico = 0, comSinal = 0;
   const ctoMap = {};
   const olts = {};
@@ -359,17 +365,22 @@ async function fetchAllFTTH() {
     rompCtoLookup[cid] = { pon: r.pon, nivel: 'cto', n_clientes: r.n_clientes, inicio: r.inicio };
   });
 
-  // CTOs com coordenadas válidas — agora com campo rompimento
+  // CTOs com coordenadas — override do IXC tem prioridade sobre média de clientes
   const ctos = Object.values(ctoMap).map(cto => {
     const rompInfo = rompCtoLookup[String(cto.id)] || null;
+    const override = CTO_COORDS_OVERRIDE[String(cto.id)];
+    // Se tem override, usa coordenada real do IXC; senão usa média dos clientes
+    const lat = override ? override.lat : (cto.coordCount > 0 ? cto.latSum / cto.coordCount : null);
+    const lon = override ? override.lon : (cto.coordCount > 0 ? cto.lonSum / cto.coordCount : null);
     return {
       id: cto.id,
-      lat: cto.coordCount > 0 ? cto.latSum / cto.coordCount : null,
-      lon: cto.coordCount > 0 ? cto.lonSum / cto.coordCount : null,
+      lat, lon,
       total: cto.total, online: cto.online, offline: cto.offline,
       sinalCritico: cto.sinalCritico, sinalAtencao: cto.sinalAtencao,
-      oltNome: cto.oltNome, oltId: cto.oltId, bairro: cto.bairro,
-      rompimento: rompInfo  // null ou { pon, nivel, n_clientes, inicio }
+      oltNome: cto.oltNome, oltId: cto.oltId, bairro: override ? (cto.bairro || 'Parque Santa Rosa') : cto.bairro,
+      endereco: override ? override.endereco : null,
+      coordReal: !!override,  // true se coordenada veio do IXC (não calculada)
+      rompimento: rompInfo
     };
   }).filter(cto => cto.lat !== null && cto.lon !== null);
   stats.ctosComCoord = ctos.length;
