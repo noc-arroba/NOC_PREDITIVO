@@ -1,0 +1,3 @@
+# NOC Preditivo — Deploy Trigger
+# Este arquivo garante que a Vercel detecte mudanças e dispare o deploy.
+# Ultimo update: 2026-07-26 20:49 - Deploy inicial
