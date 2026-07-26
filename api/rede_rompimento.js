@@ -218,19 +218,57 @@ function buildRompimento(key, cluster, olts, nivel = 'pon') {
   };
 }
 
+// === COORDENADAS REAIS DAS CTOs VIA GOOGLE SHEETS ===
+const CTO_SHEETS_URL = "https://docs.google.com/spreadsheets/d/1gYd0pUs19nBz_geph9LHFbFhFKBJEpijxxDaG5qTLig/export?format=csv&gid=568231368";
+const fetchCtoCoords = async () => {
+  try {
+    const resp = await fetch(CTO_SHEETS_URL, { 
+      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const csvText = await resp.text();
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    const idIdx = headers.findIndex(h => h.toLowerCase() === 'id');
+    const latIdx = headers.findIndex(h => h.toLowerCase() === 'latitude');
+    const lonIdx = headers.findIndex(h => h.toLowerCase() === 'longitude');
+    const bairroIdx = headers.findIndex(h => h.toLowerCase() === 'bairro');
+    const map = {};
+    if (idIdx >= 0 && latIdx >= 0 && lonIdx >= 0) {
+      for (let i = 1; i < lines.length; i++) {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (const ch of lines[i]) {
+          if (ch === '"') inQ = !inQ;
+          else if (ch === ',' && !inQ) { cols.push(cur); cur = ''; }
+          else cur += ch;
+        }
+        cols.push(cur);
+        const id = cols[idIdx]?.trim();
+        const lat = parseFloat(cols[latIdx]);
+        const lon = parseFloat(cols[lonIdx]);
+        if (id && !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+          map[id] = { lat, lon, bairro: bairroIdx >= 0 ? cols[bairroIdx]?.replace(/"/g, '').trim() : '' };
+        }
+      }
+      console.log(`[CTO Override] ${Object.keys(map).length} CTOs carregadas da planilha`);
+    }
+    return map;
+  } catch(e) {
+    console.error('[CTO Override] Erro:', e.message);
+    return { "4272": { lat: -21.724574807634, lon: -41.302924306658, bairro: "Parque Santa Rosa" } };
+  }
+};
+
 async function fetchAllFTTH() {
-  const [clientesRaw, sinalMap] = await Promise.all([
+  const [clientesRaw, sinalMap, CTO_COORDS_OVERRIDE] = await Promise.all([
     fetchIXC('radusuarios', {
       qtype: 'ativo', query: 'S', oper: '=', sortname: 'id_transmissor', sortorder: 'asc'
     }, 5000, 5),
-    fetchSinalOptico()
+    fetchSinalOptico(),
+    fetchCtoCoords()
   ]);
-
-  // === OVERRIDE DE COORDENADAS DE CTOs ===
-  // Coordenadas reais cadastradas no IXC (arquivo manual)
-  const CTO_COORDS_OVERRIDE = {
-    "4272": { lat: -21.724574807634, lon: -41.302924306658, endereco: "R. Cidade de Lima, 141-123 - Parque Santa Rosa" }
-  };
 
   let sinalBom = 0, sinalAtencao = 0, sinalCritico = 0, comSinal = 0;
   const ctoMap = {};
@@ -377,7 +415,7 @@ async function fetchAllFTTH() {
       lat, lon,
       total: cto.total, online: cto.online, offline: cto.offline,
       sinalCritico: cto.sinalCritico, sinalAtencao: cto.sinalAtencao,
-      oltNome: cto.oltNome, oltId: cto.oltId, bairro: override ? (cto.bairro || 'Parque Santa Rosa') : cto.bairro,
+      oltNome: cto.oltNome, oltId: cto.oltId, bairro: override ? (override.bairro || cto.bairro) : cto.bairro,
       endereco: override ? override.endereco : null,
       coordReal: !!override,  // true se coordenada veio do IXC (não calculada)
       rompimento: rompInfo
