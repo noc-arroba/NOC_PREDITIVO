@@ -73,11 +73,11 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
 .penetration-box .item .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;margin-top:2px}
 .penetration-box .bar{flex:1;min-width:200px;height:24px;background:#334155;border-radius:12px;overflow:hidden;position:relative}
 .penetration-box .bar-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:12px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;font-weight:700;color:#fff}
-.transmissor-list{background:#1e293b;border:1px solid #334155;border-radius:8px;margin:0 24px 16px;overflow:hidden}
-.transmissor-list table{width:100%;border-collapse:collapse;font-size:13px}
-.transmissor-list th{background:#0f172a;color:#94a3b8;padding:8px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase}
-.transmissor-list td{padding:8px 12px;border-bottom:1px solid #334155;color:#cbd5e1}
-.transmissor-list tr.alert-row{background:#1a0d0d}.transmissor-list tr.alert-row td:first-child{border-left:3px solid #ef4444}
+
+
+
+
+.transmissor-list tr.transmissor-list tr.alert-row td:first-child{border-left:3px solid #ef4444}
 .transmissor-list tr:hover{background:#172033}
 
 .rompimento-panel{background:#1e293b;border:1px solid #7f1d1d;border-radius:8px;margin:0 24px 16px;overflow:hidden;display:none}
@@ -127,12 +127,7 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-s
   <div class="kpi-card"><div class="label">Sem Leitura</div><div class="value" id="kpiSemSinal">--</div><div class="sub">ONU sem telemetria</div></div>
   <div class="kpi-card romp"><div class="label">🔴 Suspeita de Rompimento</div><div class="value" id="kpiRomp">--</div><div class="sub">2+ clientes/PON em 2 min</div></div>
 </div>
-<div class="transmissor-list" id="transmissorList" style="display:none;">
-  <table>
-    <thead><tr><th>ID</th><th>OLT / Transmissor</th><th>PONs</th><th>Clientes</th><th>Online</th><th>Offline</th><th>Taxa</th><th>Status</th></tr></thead>
-    <tbody id="transmissorBody"></tbody>
-  </table>
-</div>
+
 <div class="rompimento-panel" id="rompimentoPanel">
   <div class="romp-header">🚨 Detecção de Rompimento / Falta de Energia — 2+ clientes da mesma PON offline em janela de 2 minutos</div>
   <table>
@@ -168,7 +163,7 @@ function carregarDados(force){
     .then(r=>r.json()).then(data=>{
       if(data.error)throw new Error(data.error);
       dadosGlobais=data;
-      renderizarKPIs(data);renderizarSinais(data);renderizarRompimentos(data);renderizarPenetracao(data);renderizarTransmissores(data);preencherDropdown(data);renderizarArvore(data);
+      renderizarKPIs(data);renderizarSinais(data);renderizarRompimentos(data);renderizarPenetracao(data);preencherDropdown(data);renderizarArvore(data);
       const bar=document.getElementById('statusBar');
       const cs=data.cached?'(cache: '+data.cache_age+')':'(fresh)';
       bar.innerHTML='<span class="ok">✓</span> Atualizado em '+new Date().toLocaleString('pt-BR')+' '+cs;
@@ -232,18 +227,7 @@ function renderizarRompimentos(data){
     body.appendChild(tr);
   });
 }
-function renderizarTransmissores(data){
-  const list=document.getElementById('transmissorList');
-  const body=document.getElementById('transmissorBody');
-  list.style.display='block';
-  body.innerHTML='';
-  data.transmissoresUnicos.sort((a,b)=>parseFloat(a.taxa)-parseFloat(b.taxa)).forEach(t=>{
-    const tr=document.createElement('tr');
-    if(t.alerta)tr.className='alert-row';
-    tr.innerHTML=`<td>${t.id}</td><td>${t.nome}${t.alerta?' ⚠️':''}</td><td>${t.pons}</td><td>${t.total}</td><td style="color:#34d399;">${t.online}</td><td style="color:#f87171;">${t.offline}</td><td style="font-weight:600;${parseFloat(t.taxa)<80?'color:#f87171;':'color:#34d399;'}">${t.taxa}%</td><td>${t.alerta?'⚠️ ALERTA':'✓ OK'}</td>`;
-    body.appendChild(tr);
-  });
-}
+
 function preencherDropdown(data){
   const sel=document.getElementById('transmissorFilter');
   const current=sel.value;
