@@ -246,7 +246,7 @@ module.exports = async (req, res) => {
         ip: 'central.arrobabandalarga.com.br',
         acao: `Certificado SSL do IXC é inválido ou auto-assinado. Obter certificado válido (Let's Encrypt). Emissor atual: ${sslAudit.issuer || 'desconhecido'}`
       });
-    } else if (sslAudit.days_remaining !== null && sslCert.days_remaining < 30) {
+    } else if (sslAudit.days_remaining !== null && sslAudit.days_remaining < 30) {
       recomendacoes.push({
         severity: 'atencao',
         tipo: 'SSL Expirando',
