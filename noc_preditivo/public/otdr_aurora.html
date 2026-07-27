@@ -52,7 +52,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 <div class="header">
   <div>
     <h1>🔦 OTDR Virtual — Parque Aurora (Topologia InMap)</h1>
-    <div class="sub">OLT → Backbone → Abertura de Área → CTO | Click numa CTO offline ou abertura para analisar</div>
+    <div class="sub">OLT → Backbone → Abertura de Área → CTO | Cor da borda = fibra que atende a CTO</div>
   </div>
   <div class="nav-tabs">
     <a href="index.html">📊 BGP</a>
@@ -68,7 +68,6 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
     <h3>📍 Camadas — Topologia</h3>
     <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Backbone (88)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-abertura" checked> 🟡 Aberturas de Área (52)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-fusao"> 🔵 Fusões (916) — oculto 🔵 Fusões (916)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-emenda" checked> 🔴 Caixas de Emenda (19)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-poligono"> 🟣 Áreas de Cobertura (52)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-postes"> ⚡ Postes (4136)</label>
@@ -80,7 +79,6 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
     <div class="stats-box" id="statsBox">
       <div class="stat-row">Backbone: <strong>88</strong></div>
       <div class="stat-row">Aberturas: <strong>52</strong></div>
-      <div class="stat-row">Fusões: <strong>916</strong></div>
       <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
       <div class="stat-row">CTOs offline: <strong id="stat-ctos-off" style="color:#f87171">0</strong></div>
     </div>
@@ -160,17 +158,49 @@ async function loadTopologia() {
   }
   layers.abertura.addTo(map);
   
-  // Fusões (linhas azuis finas)
-  layers.fusao = L.layerGroup();
-  for (const f of fusoes) {
-    const coords = f.geometry.coordinates.map(c => [c[1], c[0]]);
-    L.polyline(coords, { color: '#3b82f6', weight: 1.5, opacity: 0.4 })
-      .bindPopup(`<div class="popup-title">🔵 Fusão: ${f.properties.nome}</div>
-        <div class="popup-info">Área: <strong>${f.properties.area}</strong></div>`)
-      .addTo(layers.fusao);
-  }
-  // Fusões NÃO visíveis por padrão (apenas dados para OTDR)
-  // layers.fusao.addTo(map);
+  // Fusões: NÃO renderizadas no mapa — apenas dados internos para OTDR e identificação de cor de fibra
+  // Mapear cor de fibra para cada CTO
+  const fiberColors = {
+    '1':'#0066CC','F1':'#0066CC',  // Azul
+    '2':'#FF8800','F2':'#FF8800',  // Laranja
+    '3':'#00AA00','F3':'#00AA00',  // Verde
+    '4':'#8B4513','F4':'#8B4513',  // Marrom
+    '5':'#708090','F5':'#708090',  // Cinza
+    '6':'#FFFFFF','F6':'#FFFFFF',  // Branco
+    '7':'#FF0000','F7':'#FF0000',  // Vermelho
+    '8':'#1a1a1a','F8':'#1a1a1a', // Preto
+    '9':'#FFDD00','F9':'#FFDD00',  // Amarelo
+    '10':'#AA00FF','F10':'#AA00FF', // Roxo
+    '11':'#FF66AA','F11':'#FF66AA', // Rosa
+    '12':'#00CCFF','F12':'#00CCFF', // Turquesa
+    '13':'#4B0082','F13':'#4B0082', // Índigo
+    '14':'#FF6600','F14':'#FF6600', // Laranja escuro
+    '15':'#336600','F15':'#336600', // Verde escuro
+    '16':'#660066','F16':'#660066', // Roxo escuro
+    '17':'#666600','F17':'#666600', // Oliva
+    '19':'#006666','F19':'#006666'  // Teal
+  };
+
+  const fiberNames = {
+    '1':'Azul','F1':'Azul',
+    '2':'Laranja','F2':'Laranja',
+    '3':'Verde','F3':'Verde',
+    '4':'Marrom','F4':'Marrom',
+    '5':'Cinza','F5':'Cinza',
+    '6':'Branco','F6':'Branco',
+    '7':'Vermelho','F7':'Vermelho',
+    '8':'Preto','F8':'Preto',
+    '9':'Amarelo','F9':'Amarelo',
+    '10':'Roxo','F10':'Roxo',
+    '11':'Rosa','F11':'Rosa',
+    '12':'Turquesa','F12':'Turquesa',
+    '13':'Índigo','F13':'Índigo',
+    '14':'Laranja Esc','F14':'Laranja Esc',
+    '15':'Verde Esc','F15':'Verde Esc',
+    '16':'Roxo Esc','F16':'Roxo Esc',
+    '17':'Oliva','F17':'Oliva',
+    '19':'Teal','F19':'Teal'
+  };
   
   // Caixas de emenda
   layers.emenda = L.layerGroup();
@@ -238,22 +268,41 @@ async function loadCTOs() {
     else if (someOff) { cor = '#fbbf24'; radius = 4; }
     else { cor = '#34d399'; radius = 3; }
     
-    const m = L.circleMarker([cto.lat, cto.lon], { radius, fillColor: cor, fillOpacity: 0.8, color: cor, weight: 1 });
+    const fiberBorder = nearestFiberColor ? nearestFiberColor : cor;
+    const fiberWeight = nearestFiberColor ? 2 : 1;
+    const m = L.circleMarker([cto.lat, cto.lon], { radius, fillColor: cor, fillOpacity: 0.7, color: fiberBorder, weight: fiberWeight });
     
-    let popup = `<div class="popup-title">CTO ${cto.id}</div>`;
-    popup += `<div class="popup-info">OLT: <strong>${cto.oltNome}</strong><br>`;
-    popup += `Clientes: <strong>${cto.total}</strong> (${cto.online} on / ${cto.offline} off)</div>`;
+    let popup = '<div class="popup-title">CTO ' + cto.id + '</div>';
+    popup += '<div class="popup-info">OLT: <strong>' + cto.oltNome + '</strong><br>';
+    popup += 'Clientes: <strong>' + cto.total + '</strong> (' + cto.online + ' on / ' + cto.offline + ' off)';
+    if (nearestFiberName) {
+      popup += '<br>Fibra: <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + nearestFiberColor + ';border:1px solid #334155;vertical-align:middle;margin:0 4px"></span><strong style="color:' + nearestFiberColor + '">' + nearestFiberName + ' (' + nearestFiber + ')</strong>';
+    }
+    popup += '</div>';
     if (someOff) {
-      popup += `<br><div class="popup-btn" onclick="runOtdrFromCTO(${cto.id}, ${cto.lat}, ${cto.lon})">🔦 Analisar OTDR</div>`;
+      popup += '<br><div class="popup-btn" onclick="runOtdrFromCTO(' + cto.id + ', ' + cto.lat + ', ' + cto.lon + ')">🔦 Analisar OTDR</div>';
     }
     m.bindPopup(popup);
     m.addTo(layers.ctos);
     
-    // Associar CTO à área mais próxima
+    // Associar CTO à área mais próxima e identificar cor de fibra
     let minDist = Infinity, nearestArea = null;
+    let nearestFiber = null, nearestFiberColor = null, nearestFiberName = null;
     for (const [areaName, areaData] of Object.entries(areaMap)) {
       const d = distM(cto.lat, cto.lon, areaData.lat, areaData.lon);
       if (d < minDist) { minDist = d; nearestArea = areaName; }
+      // Buscar fusão desta área que termina perto da CTO
+      for (const f of areaData.fusoes) {
+        const fCoords = f.geometry.coordinates;
+        const end = [fCoords[fCoords.length-1][1], fCoords[fCoords.length-1][0]];
+        const fd = distM(cto.lat, cto.lon, end[0], end[1]);
+        if (fd < 50) {
+          const fName = f.properties.nome;
+          nearestFiber = fName;
+          nearestFiberColor = fiberColors[fName] || '#666';
+          nearestFiberName = fiberNames[fName] || fName;
+        }
+      }
     }
     if (nearestArea && minDist < 300) {
       areaMap[nearestArea].ctos.push(cto);
@@ -352,7 +401,7 @@ function runOtdrFromCTO(ctoId, lat, lon) {
 
 // Toggles
 function setupToggles() {
-  const ids = ['backbone','abertura','fusao','emenda','poligono','postes','ctos','otdr'];
+  const ids = ['backbone','abertura','emenda','poligono','postes','ctos','otdr'];
   for (const id of ids) {
     const key = id === 'ctos' ? 'ctos' : id === 'otdr' ? 'otdr' : id;
     const layer = layers[key];
