@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — Segurança de Rede</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a0e1a; color: #e0e0e0; }
+.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 1px solid #1e293b; }
+.header h1 { font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+.header .fase { background: #7f1d1d; color: #fca5a5; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.header .sub { font-size: 14px; color: #64748b; margin-top: 4px; }
+.nav-tabs { display: flex; gap: 4px; background: #0f172a; border-radius: 8px; padding: 4px; border: 1px solid #1e293b; margin-top: 12px; }
+.nav-tabs a { padding: 6px 14px; border-radius: 6px; font-size: 13px; color: #94a3b8; text-decoration: none; transition: all .15s; }
+.nav-tabs a:hover { color: #cbd5e1; }
+.nav-tabs a.active { background: #7f1d1d; color: #fca5a5; font-weight: 600; }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
+.card-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.card-value { font-size: 32px; font-weight: 700; }
+.card-sub { font-size: 12px; color: #475569; margin-top: 4px; }
+.score-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.section-title { font-size: 16px; color: #94a3b8; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #cbd5e1; }
+tr:hover { background: #0f172a; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-critico { background: #7f1d1d; color: #fca5a5; animation: pulse 2s infinite; }
+.badge-alto { background: #78350f; color: #fcd34d; }
+.badge-medio { background: #1e3a5f; color: #93c5fd; }
+.badge-baixo { background: #064e3b; color: #6ee7b7; }
+.badge-atencao { background: #78350f; color: #fcd34d; }
+.badge-open { background: #7f1d1d; color: #fca5a5; }
+.badge-closed { background: #064e3b; color: #6ee7b7; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.ip-card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.ip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.ip-name { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+.ip-addr { font-family: monospace; color: #67e8f9; font-size: 13px; }
+.port-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin-top: 8px; }
+.port-item { padding: 8px 10px; border-radius: 6px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+.port-open { background: #1a0d0d; border: 1px solid #7f1d1d; }
+.port-closed { background: #0f172a; border: 1px solid #1e293b; opacity: 0.5; }
+.port-label { font-family: monospace; }
+.recomendacao { background: #111827; border: 1px solid #1e293b; border-left: 4px solid; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+.recomendacao.critico { border-left-color: #ef4444; }
+.recomendacao.alto { border-left-color: #f59e0b; }
+.recomendacao.medio { border-left-color: #3b82f6; }
+.recomendacao.atencao { border-left-color: #fbbf24; }
+.rec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.rec-tipo { font-weight: 600; color: #f1f5f9; font-size: 14px; }
+.rec-acao { color: #94a3b8; font-size: 13px; line-height: 1.5; }
+.hardening-cat { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.hardening-title { font-size: 14px; font-weight: 600; color: #93c5fd; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.hardening-item { padding: 6px 0; color: #cbd5e1; font-size: 13px; padding-left: 20px; position: relative; }
+.hardening-item::before { content: '▸'; position: absolute; left: 4px; color: #475569; }
+.ssl-box { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.ssl-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+.ssl-row:last-child { border: none; }
+.ssl-label { color: #64748b; }
+.ssl-value { color: #cbd5e1; font-family: monospace; }
+.loading { text-align: center; padding: 60px; color: #475569; }
+.spinner { border: 3px solid #1e293b; border-top: 3px solid #ef4444; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.footer { text-align: center; padding: 30px; color: #334155; font-size: 12px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:768px) { .two-col { grid-template-columns: 1fr; } .port-grid { grid-template-columns: repeat(2, 1fr); } }
+.filter-btn { padding: 5px 12px; border: 1px solid #334155; border-radius: 6px; background: transparent; color: #94a3b8; cursor: pointer; font-size: 12px; transition: all .15s; }
+.filter-btn:hover { background: #1e293b; }
+.filter-btn.active { background: #7f1d1d; color: #fca5a5; border-color: #7f1d1d; }
+.alert-banner { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.alert-banner.warn { background: #78350f; border-color: #92400e; }
+.alert-banner.ok { background: #064e3b; border-color: #065f46; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛡️ Segurança de Rede <span class="fase">Auditoria</span></h1>
+  <div class="sub">Scanner de portas abertas em IPs públicos + Hardening ISP</div>
+  <div class="nav-tabs">
+    <a href="index.html">📊 Dashboard BGP</a>
+    <a href="config.html">⚙️ Config VPN/SNMP</a>
+    <a href="security.html" class="active">🛡️ Segurança</a>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Escaneando portas abertas nos IPs públicos da Arroba...</p>
+    <p style="font-size:12px;color:#334155;margin-top:8px">Isso pode levar 30-60 segundos</p>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div id="alertBanner"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Score de Segurança</div>
+        <div class="card-value" id="score">--</div>
+        <div class="score-bar"><div class="score-fill" id="scoreBar" style="width:0%;background:#ef4444"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">IPs Escaneados</div>
+        <div class="card-value" id="ipsCount" style="color:#93c5fd">--</div>
+        <div class="card-sub" id="ipsSub">--</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Portas Abertas</div>
+        <div class="card-value" id="openPorts" style="color:#fcd34d">--</div>
+        <div class="card-sub" id="openPortsSub">--</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Portas Críticas</div>
+        <div class="card-value" id="critPorts" style="color:#fca5a5">--</div>
+        <div class="card-sub">Requer ação imediata</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recomendações</div>
+        <div class="card-value" id="recCount" style="color:#93c5fd">--</div>
+        <div class="card-sub" id="recSub">--</div>
+      </div>
+    </div>
+
+    <div class="section-title">🚨 Recomendações de Segurança</div>
+    <div id="recomendacoes"></div>
+
+    <div class="section-title">🔍 Resultado do Scan de Portas</div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="filter-btn active" onclick="filterPorts('all')">Todas</button>
+      <button class="filter-btn" onclick="filterPorts('open')">Apenas Abertas</button>
+      <button class="filter-btn" onclick="filterPorts('critico')">Críticas</button>
+      <button class="filter-btn" onclick="filterPorts('alto')">Risco Alto</button>
+      <button class="filter-btn" onclick="filterPorts('closed')">Fechadas</button>
+    </div>
+    <div id="portScan"></div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-title">🔐 Auditoria SSL — IXC</div>
+        <div id="sslAudit"></div>
+
+        <div class="section-title">🌐 Auditoria DNS — arrobabandalarga.com.br</div>
+        <div id="dnsAudit"></div>
+      </div>
+      <div>
+        <div class="section-title">📖 Guia de Hardening para ISP</div>
+        <div id="hardening"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      NOC Preditivo — Segurança de Rede | Scan executado em: <span id="lastUpdate">--</span> | <span id="scanDuration">--</span>
+    </div>
+  </div>
+</div>
+
+<script>
+let allData = null;
+let currentFilter = 'all';
+
+function badge(risco) {
+  const map = { critico: 'badge-critico', alto: 'badge-alto', medio: 'badge-medio', baixo: 'badge-baixo', atencao: 'badge-atencao' };
+  const cls = map[risco] || 'badge-baixo';
+  return `<span class="badge ${cls}">${risco.toUpperCase()}</span>`;
+}
+
+function renderRecomendacoes(recs) {
+  if (!recs || recs.length === 0) {
+    document.getElementById('recomendacoes').innerHTML = '<div class="recomendacao baixo"><div class="rec-acao">✅ Nenhuma recomendação crítica. Configuração de segurança adequada.</div></div>';
+    return;
+  }
+
+  document.getElementById('recomendacoes').innerHTML = recs.map(r => `
+    <div class="recomendacao ${r.severity}">
+      <div class="rec-header">
+        <span class="badge badge-${r.severity}">${r.severity.toUpperCase()}</span>
+        <span class="rec-tipo">${r.tipo}</span>
+        ${r.ip ? `<span style="font-family:monospace;color:#67e8f9;font-size:12px">${r.ip}</span>` : ''}
+        ${r.porta ? `<span style="color:#64748b;font-size:12px">Porta ${r.porta}</span>` : ''}
+      </div>
+      <div class="rec-acao">${r.acao}</div>
+    </div>
+  `).join('');
+}
+
+function renderPortScan(data) {
+  const scan = data.scan || [];
+  let html = '';
+
+  for (const ip of scan) {
+    let portas = ip.portas || [];
+    if (currentFilter === 'open') portas = portas.filter(p => p.aberta);
+    else if (currentFilter === 'closed') portas = portas.filter(p => !p.aberta);
+    else if (currentFilter === 'critico') portas = portas.filter(p => p.aberta && p.risco === 'critico');
+    else if (currentFilter === 'alto') portas = portas.filter(p => p.aberta && p.risco === 'alto');
+
+    if (portas.length === 0 && currentFilter !== 'all') continue;
+
+    const portHtml = portas.map(p => {
+      const cls = p.aberta ? 'port-open' : 'port-closed';
+      const status = p.aberta ? `<span class="badge badge-open">OPEN</span>` : `<span class="badge badge-closed">closed</span>`;
+      return `<div class="port-item ${cls}" title="${p.descricao}">
+        <span class="port-label">${p.porta}/${p.servico}</span>
+        ${status}
+      </div>`;
+    }).join('');
+
+    const abertas = ip.portas_abertas;
+    const criticas = ip.portas_criticas;
+
+    html += `<div class="ip-card">
+      <div class="ip-header">
+        <div>
+          <span class="ip-name">${ip.nome}</span>
+          <span class="ip-addr">${ip.ip}</span>
+          <span style="color:#475569;font-size:11px;margin-left:8px">${ip.bloco}</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${abertas > 0 ? `<span class="badge badge-open">${abertas} aberta(s)</span>` : '<span class="badge badge-closed">todas fechadas</span>'}
+          ${criticas > 0 ? `<span class="badge badge-critico">${criticas} CRÍTICA</span>` : ''}
+        </div>
+      </div>
+      <div class="port-grid">${portHtml}</div>
+    </div>`;
+  }
+
+  document.getElementById('portScan').innerHTML = html || '<div style="padding:20px;color:#475569">Nenhum resultado para este filtro.</div>';
+}
+
+function filterPorts(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (allData) renderPortScan(allData);
+}
+
+function renderSSL(ssl) {
+  let html = '<div class="ssl-box">';
+  if (ssl.erro) {
+    html += `<div class="ssl-row"><span class="ssl-label">Status</span><span class="ssl-value" style="color:#fca5a5">❌ Indisponível</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">Erro</span><span class="ssl-value">${ssl.erro}</span></div>`;
+  } else {
+    html += `<div class="ssl-row"><span class="ssl-label">Válido</span><span class="ssl-value" style="color:${ssl.valid ? '#6ee7b7' : '#fca5a5'}">${ssl.valid ? '✅ Sim' : '❌ Não'}</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">Subject (CN)</span><span class="ssl-value">${ssl.subject || '--'}</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">Emissor</span><span class="ssl-value">${ssl.issuer || '--'}</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">Válido desde</span><span class="ssl-value">${ssl.valid_from || '--'}</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">Válido até</span><span class="ssl-value">${ssl.valid_to || '--'}</span></div>`;
+    if (ssl.days_remaining !== null) {
+      const cor = ssl.days_remaining < 30 ? '#fca5a5' : ssl.days_remaining < 90 ? '#fcd34d' : '#6ee7b7';
+      html += `<div class="ssl-row"><span class="ssl-label">Dias restantes</span><span class="ssl-value" style="color:${cor}">${ssl.days_remaining}</span></div>`;
+    }
+  }
+  html += '</div>';
+  document.getElementById('sslAudit').innerHTML = html;
+}
+
+function renderDNS(dns) {
+  let html = '<div class="ssl-box">';
+  if (dns.erro) {
+    html += `<div class="ssl-row"><span class="ssl-label">Erro</span><span class="ssl-value">${dns.erro}</span></div>`;
+  } else {
+    html += `<div class="ssl-row"><span class="ssl-label">Registros A</span><span class="ssl-value">${(dns.a || []).join(', ') || 'nenhum'}</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">MX</span><span class="ssl-value">${(dns.mx || []).map(m => m.exchange + ':' + m.priority).join(', ') || 'nenhum'}</span></div>`;
+    html += `<div class="ssl-row"><span class="ssl-label">NS</span><span class="ssl-value">${(dns.ns || []).join(', ') || 'nenhum'}</span></div>`;
+    const txt = (dns.txt || []).map(t => t.join(''));
+    const spf = txt.some(t => t.includes('spf1'));
+    html += `<div class="ssl-row"><span class="ssl-label">TXT/SPF</span><span class="ssl-value" style="color:${spf ? '#6ee7b7' : '#fca5a5'}">${spf ? '✅ Configurado' : '❌ Ausente'}</span></div>`;
+    if (txt.length > 0) {
+      html += `<div class="ssl-row"><span class="ssl-label">Registros TXT</span><span class="ssl-value" style="font-size:11px">${txt.slice(0, 3).join(' | ')}</span></div>`;
+    }
+  }
+  html += '</div>';
+  document.getElementById('dnsAudit').innerHTML = html;
+}
+
+function renderHardening(guia) {
+  let html = '';
+  for (const cat of guia.itens) {
+    html += `<div class="hardening-cat">
+      <div class="hardening-title">🔐 ${cat.categoria}</div>
+      ${cat.acoes.map(a => `<div class="hardening-item">${a}</div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('hardening').innerHTML = html;
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/security');
+    const data = await res.json();
+    allData = data;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+    const score = data.score_seguranca;
+    document.getElementById('score').textContent = score;
+    document.getElementById('score').style.color = score >= 80 ? '#6ee7b7' : score >= 50 ? '#fcd34d' : '#fca5a5';
+    document.getElementById('scoreBar').style.width = score + '%';
+    document.getElementById('scoreBar').style.background = score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+
+    document.getElementById('ipsCount').textContent = data.ips_escaneados;
+    document.getElementById('ipsSub').textContent = `${data.scan.length} IPs públicos verificados`;
+
+    document.getElementById('openPorts').textContent = data.total_portas_abertas;
+    document.getElementById('openPortsSub').textContent = `${data.total_portas_altas} de risco alto`;
+
+    document.getElementById('critPorts').textContent = data.total_portas_criticas;
+    document.getElementById('recCount').textContent = data.recomendacoes.length;
+    const critRecs = data.recomendacoes.filter(r => r.severity === 'critico').length;
+    document.getElementById('recSub').textContent = critRecs > 0 ? `${critRecs} críticas` : 'nenhuma crítica';
+
+    // Alert banner
+    const banner = document.getElementById('alertBanner');
+    if (data.total_portas_criticas > 0) {
+      banner.className = 'alert-banner';
+      banner.innerHTML = `<span style="font-size:24px">🚨</span><span><strong>${data.total_portas_criticas} porta(s) CRÍTICA(S) aberta(s) na internet!</strong> Ação imediata necessária — revise as recomendações abaixo.</span>`;
+    } else if (data.total_portas_abertas > 5) {
+      banner.className = 'alert-banner warn';
+      banner.innerHTML = `<span style="font-size:24px">⚠️</span><span><strong>${data.total_portas_abertas} portas abertas detectadas.</strong> Verificar se todas são necessárias e aplicar hardening.</span>`;
+    } else if (score >= 80) {
+      banner.className = 'alert-banner ok';
+      banner.innerHTML = `<span style="font-size:24px">✅</span><span><strong>Configuração de segurança adequada.</strong> Score ${score}/100. Manter monitoramento periódico.</span>`;
+    } else {
+      banner.className = 'alert-banner warn';
+      banner.innerHTML = `<span style="font-size:24px">⚠️</span><span>Score de segurança ${score}/100. Revise as recomendações para melhorar a postura de segurança.</span>`;
+    }
+
+    renderRecomendacoes(data.recomendacoes);
+    renderPortScan(data);
+    renderSSL(data.ssl);
+    renderDNS(data.dns);
+    renderHardening(data.guia_hardening);
+
+    document.getElementById('lastUpdate').textContent = new Date(data.timestamp).toLocaleString('pt-BR');
+  } catch (e) {
+    document.getElementById('loading').innerHTML = `<p style="color:#ef4444">Erro: ${e.message}</p>`;
+  }
+}
+
+load();
+</script>
+</body>
+</html>
