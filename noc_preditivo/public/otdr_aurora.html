@@ -65,7 +65,8 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 <div id="map">
   <div class="sidebar">
     <h3>📍 Camadas — Topologia</h3>
-    <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Cabos (Backbone + Ramais)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Cabos Backbone (44)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-cabosftth" checked> 🔵 Cabos FTTH/Ramais (378)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-abertura" checked> 🟡 Aberturas de Área (52)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-emenda" checked> 🔴 Caixas de Emenda (19)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-poligono"> 🟣 Áreas de Cobertura (52)</label>
@@ -76,7 +77,8 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
     <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar CTO, área...">
     
     <div class="stats-box" id="statsBox">
-      <div class="stat-row">Backbone: <strong>88</strong></div>
+      <div class="stat-row">Backbone: <strong>44</strong></div>
+      <div class="stat-row">Cabos FTTH: <strong id="stat-cabos-ftth">378</strong></div>
       <div class="stat-row">Aberturas: <strong>52</strong></div>
       <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
       <div class="stat-row">CTOs offline: <strong id="stat-ctos-off" style="color:#f87171">0</strong></div>
@@ -417,6 +419,65 @@ async function loadCTOs() {
   document.getElementById('stat-ctos-off').textContent = offCount;
 }
 
+// ===== Carregar cabos FTTH do KML completo =====
+async function loadCabosFTTH() {
+  document.getElementById('loadingText').textContent = 'Carregando cabos FTTH...';
+  const res = await fetch('/cabos-pa-aurora.geojson');
+  const data = await res.json();
+  
+  layers.cabosftth = L.layerGroup();
+  let count = 0;
+  
+  for (const c of data.features) {
+    const nome = c.properties.nome;
+    const cat = c.properties.categoria;
+    const coords = c.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+    
+    // Estilo por categoria
+    var cor, weight, opacity, dashArray;
+    if (cat === 'backbone_area') {
+      // Backbone de área (12F+): laranja grosso
+      cor = '#f97316'; weight = 3; opacity = 0.7; dashArray = null;
+    } else if (cat === 'ramal_area') {
+      // Ramal de área (6F): ciano médio
+      cor = '#0ea5e9'; weight = 2; opacity = 0.5; dashArray = null;
+    } else if (cat === 'ramal_mini') {
+      // Ramal mini: verde fino
+      cor = '#22c55e'; weight = 1.5; opacity = 0.4; dashArray = '4,2';
+    } else if (cat === 'ramal_6f') {
+      // Ramal 6F numerado: azul fino
+      cor = '#3b82f6'; weight = 2; opacity = 0.4; dashArray = '3,3';
+    } else if (cat === 'drop') {
+      // Drop: cinza tracejado fino
+      cor = '#64748b'; weight = 1; opacity = 0.3; dashArray = '2,4';
+    } else {
+      // Outro: amarelo fino
+      cor = '#eab308'; weight = 1.5; opacity = 0.4; dashArray = null;
+    }
+    
+    var opts = { color: cor, weight: weight, opacity: opacity };
+    if (dashArray) opts.dashArray = dashArray;
+    
+    // Metadados do nome
+    var lengthM = c.properties.comprimento || '';
+    var fibers = c.properties.fibras || '';
+    
+    var popup = '<div class="popup-title">🔵 ' + nome + '</div>';
+    popup += '<div class="popup-info">';
+    popup += 'Categoria: <strong>' + cat + '</strong><br>';
+    if (lengthM) popup += 'Comprimento: <strong>' + lengthM + 'm</strong><br>';
+    if (fibers) popup += 'Fibras: <strong>' + fibers + '</strong><br>';
+    popup += 'Pontos: <strong>' + coords.length + '</strong>';
+    popup += '</div>';
+    
+    L.polyline(coords, opts).bindPopup(popup).addTo(layers.cabosftth);
+    count++;
+  }
+  
+  layers.cabosftth.addTo(map);
+  document.getElementById('stat-cabos-ftth').textContent = count;
+}
+
 // ===== OTDR: Análise por ÁREA =====
 function analyzeArea(areaName, lat, lon) {
   map.setView([lat, lon], 17);
@@ -495,7 +556,7 @@ function runOtdrFromCTO(ctoId, lat, lon) {
 
 // ===== Toggles =====
 function setupToggles() {
-  const ids = ['backbone','abertura','emenda','poligono','postes','ctos','otdr'];
+  const ids = ['backbone','cabosftth','abertura','emenda','poligono','postes','ctos','otdr'];
   for (const id of ids) {
     const layer = layers[id];
     if (layer) {
@@ -521,7 +582,10 @@ function setupToggles() {
 (async function() {
   try {
     await loadTopologia();
-    document.getElementById('loadingText').textContent = 'Topologia OK. Carregando CTOs...';
+    document.getElementById('loadingText').textContent = 'Topologia OK. Carregando cabos FTTH...';
+    // Carregar cabos FTTH do KML completo
+    await loadCabosFTTH();
+    document.getElementById('loadingText').textContent = 'Cabos OK. Carregando CTOs...';
     // Não bloquear: carregar CTOs em paralelo
     loadCTOs().then(function() {
       setupToggles();
