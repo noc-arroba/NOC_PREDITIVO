@@ -1,18 +1,19 @@
-// NOC PREDITIVO — Scanner COMPLETO com debug de erros
-function genBlock(prefix, octets) {
-  const ips = [];
-  for (const oct of octets) {
-    for (let j = 0; j < 256; j++) ips.push(`${prefix}.${oct}.${j}`);
-  }
-  return ips;
-}
+// NOC PREDITIVO — Scanner por bloco /24
+// Aceita ?block=143.137.32 ou ?block=168.197.56 etc.
+// Sem block, lista os 8 blocos disponíveis.
 
-const TODOS_IPS = [
-  ...genBlock('143.137.32', [32, 33, 34, 35]),
-  ...genBlock('168.197.56', [56, 57, 58, 59]),
+const BLOCOS = [
+  { cidr: '143.137.32.0/24', prefix: '143.137.32', nome: 'Bloco 1 /22 Arroba — .32' },
+  { cidr: '143.137.33.0/24', prefix: '143.137.33', nome: 'Bloco 1 /22 Arroba — .33' },
+  { cidr: '143.137.34.0/24', prefix: '143.137.34', nome: 'Bloco 1 /22 Arroba — .34' },
+  { cidr: '143.137.35.0/24', prefix: '143.137.35', nome: 'Bloco 1 /22 Arroba — .35' },
+  { cidr: '168.197.56.0/24', prefix: '168.197.56', nome: 'Bloco 2 /22 Arroba — .56' },
+  { cidr: '168.197.57.0/24', prefix: '168.197.57', nome: 'Bloco 2 /22 Arroba — .57' },
+  { cidr: '168.197.58.0/24', prefix: '168.197.58', nome: 'Bloco 2 /22 Arroba — .58' },
+  { cidr: '168.197.59.0/24', prefix: '168.197.59', nome: 'Bloco 2 /22 Arroba — .59' },
 ];
 
-const PORTAS_DISCOVERY = [80, 443, 22, 3389, 161];
+const PORTAS_DISCOVERY = [80, 443, 22, 3389, 161, 8080];
 
 const PORTAS_DETALHADO = [
   { porta: 21, servico: 'FTP', risco: 'alto', descricao: 'FTP texto puro' },
@@ -68,69 +69,74 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Sem parâmetro block → listar blocos disponíveis
+  const blockParam = req.query.block;
+  if (!blockParam) {
+    return res.json({
+      blocos_disponiveis: BLOCOS.map((b, i) => ({
+        id: i,
+        cidr: b.cidr,
+        nome: b.nome,
+        total_ips: 256,
+        url: `/api/scan-network?block=${b.prefix}`
+      })),
+      total_blocos: BLOCOS.length,
+      total_ips: BLOCOS.length * 256,
+    });
+  }
+
+  // Encontrar o bloco solicitado
+  const bloco = BLOCOS.find(b => b.prefix === blockParam);
+  if (!bloco) {
+    return res.status(400).json({
+      erro: 'Bloco nao encontrado',
+      blocos_validos: BLOCOS.map(b => b.prefix)
+    });
+  }
+
   const startTime = Date.now();
-  const debug = req.query.debug === '1';
-  const limit = parseInt(req.query.limit) || 0; // 0 = all
 
   try {
-    // IPs para escanear (com limite opcional para debug)
-    const ipsToScan = limit > 0 ? TODOS_IPS.slice(0, limit) : TODOS_IPS;
-
-    // DEBUG: Testar IP conhecido primeiro
-    if (debug) {
-      const testResult = await checkPort('143.137.32.7', 443, 3000);
-      const testResult2 = await checkPort('143.137.32.8', 80, 3000);
-      const testResult3 = await checkPort('143.137.32.14', 23, 3000);
-      console.log('Debug tests:', JSON.stringify({ test1: testResult, test2: testResult2, test3: testResult3 }));
+    // Gerar 256 IPs do /24
+    const ips = [];
+    for (let i = 0; i < 256; i++) {
+      ips.push(`${bloco.prefix}.${i}`);
     }
 
-    // === Discovery: 1 porta por vez por IP, parar no primeiro sucesso ===
-    // Batches de 40 IPs, 1 porta por vez = 40 conexões concorrentes
+    // === Phase 1: Discovery — tentar portas sequencialmente por IP, batches de 40 ===
     const hostMap = {};
-    const errorLog = [];
     const BATCH = 40;
 
-    for (let i = 0; i < ipsToScan.length; i += BATCH) {
-      const batch = ipsToScan.slice(i, i + BATCH);
-
-      const batchResults = await Promise.all(
+    for (let i = 0; i < ips.length; i += BATCH) {
+      const batch = ips.slice(i, i + BATCH);
+      const results = await Promise.all(
         batch.map(async ip => {
-          // Tentar portas sequencialmente, parar no primeiro sucesso
           for (const porta of PORTAS_DISCOVERY) {
             const result = await checkPort(ip, porta, 3000);
-            if (result.open) {
-              return { ip, alive: true, porta };
-            }
-            // Log de erros para os primeiros IPs (debug)
-            if (debug && errorLog.length < 20 && i < 200) {
-              errorLog.push({ ip, porta, error: result.error });
-            }
+            if (result.open) return { ip, alive: true, porta };
           }
           return { ip, alive: false };
         })
       );
-
-      for (const r of batchResults) {
+      for (const r of results) {
         if (r.alive) hostMap[r.ip] = [r.porta];
       }
     }
 
-    const hostsAtivos = Object.keys(hostMap).sort((a, b) => {
-      const aP = a.split('.').map(Number), bP = b.split('.').map(Number);
-      for (let i = 0; i < 4; i++) if (aP[i] !== bP[i]) return aP[i] - bP[i];
-      return 0;
-    });
+    const hostsAtivos = Object.keys(hostMap).sort();
 
-    // === Scan detalhado ===
+    // === Phase 2: Scan detalhado nos hosts ativos ===
     const detalheScan = [];
     for (const ip of hostsAtivos) {
       const portasResults = await Promise.all(
-        PORTAS_DETALHADO.map(async p => ({ ...p, aberta: (await checkPort(ip, p.porta, 3000)).open }))
+        PORTAS_DETALHADO.map(async p => ({
+          ...p, aberta: (await checkPort(ip, p.porta, 3000)).open
+        }))
       );
       const abertas = portasResults.filter(p => p.aberta);
       detalheScan.push({
         ip,
-        bloco: ip.startsWith('143.137') ? '143.137.32.0/22' : '168.197.56.0/22',
+        bloco: bloco.cidr,
         portas_abertas: abertas.length,
         portas_criticas: abertas.filter(p => p.risco === 'critico').length,
         portas_altas: abertas.filter(p => p.risco === 'alto').length,
@@ -138,16 +144,18 @@ module.exports = async (req, res) => {
       });
     }
 
-    let score = 100;
-    for (const h of detalheScan) { score -= h.portas_criticas * 15; score -= h.portas_altas * 8; score -= h.portas_abertas * 2; }
-    score = Math.max(0, Math.min(100, score));
-
+    // Recomendações
     const recomendacoes = [];
     for (const h of detalheScan) {
       for (const p of h.detalhe_abertas) {
         recomendacoes.push({
-          severity: p.risco, ip: h.ip, bloco: h.bloco, porta: `${p.porta}/${p.servico}`,
-          acao: p.risco === 'critico' ? `FECHAR: ${p.descricao} em ${h.ip}` : `${p.servico} em ${h.ip} exposto`
+          severity: p.risco,
+          ip: h.ip,
+          bloco: h.bloco,
+          porta: `${p.porta}/${p.servico}`,
+          acao: p.risco === 'critico'
+            ? `FECHAR IMEDIATAMENTE: ${p.descricao} em ${h.ip} (${h.bloco}). Bloquear via firewall.`
+            : `${p.servico} em ${h.ip} (${h.bloco}) exposto. ${p.descricaoy || p.descricao}. Restringir via ACL/VPN.`
         });
       }
     }
@@ -155,13 +163,14 @@ module.exports = async (req, res) => {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     res.json({
+      bloco: bloco.cidr,
+      nome: bloco.nome,
       timestamp: new Date().toISOString(),
       duration_seconds: parseFloat(elapsed),
-      total_ips_escaneados: ipsToScan.length,
+      total_ips: 256,
       hosts_ativos: hostsAtivos.length,
-      hosts_inativos: ipsToScan.length - hostsAtivos.length,
+      hosts_inativos: 256 - hostsAtivos.length,
       hosts_ativos_lista: hostsAtivos,
-      score_seguranca: score,
       portas_abertas_total: detalheScan.reduce((s, h) => s + h.portas_abertas, 0),
       portas_criticas_total: detalheScan.reduce((s, h) => s + h.portas_criticas, 0),
       portas_altas_total: detalheScan.reduce((s, h) => s + h.portas_altas, 0),
@@ -170,11 +179,6 @@ module.exports = async (req, res) => {
         const o = { critico: 0, alto: 1, medio: 2, baixo: 3 };
         return (o[a.severity] || 9) - (o[b.severity] || 9);
       }),
-      debug: debug ? {
-        error_sample: errorLog.slice(0, 10),
-        ips_tested: ipsToScan.length,
-        note: `Scanned ${ipsToScan.length} IPs in ${elapsed}s`
-      } : undefined,
     });
   } catch (e) {
     res.status(500).json({ erro: e.message, stack: e.stack?.split('\n').slice(0, 5) });
