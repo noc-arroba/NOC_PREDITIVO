@@ -44,6 +44,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 .popup-info strong{color:#67e8f9}
 .popup-btn{margin-top:6px;padding:5px 10px;background:#7f1d1d;border:1px solid #991b1b;border-radius:4px;color:#fca5a5;font-size:11px;cursor:pointer;font-weight:600;display:inline-block}
 .popup-btn:hover{background:#991b1b;color:#fff}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.7}}
 @media(max-width:768px){.sidebar{width:220px;font-size:11px}}
 </style>
 </head>
@@ -86,6 +87,15 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
     
     <h3 class="otdr-title">🔦 Áreas (Aberturas)</h3>
     <div id="areaList" style="max-height:200px;overflow-y:auto"></div>
+    
+    <h3 class="otdr-title">🔦 Simulação de Rompimento</h3>
+    <button id="btnSimular" style="width:100%;padding:8px;background:#7f1d1d;border:1px solid #991b1b;border-radius:6px;color:#fca5a5;font-size:12px;cursor:pointer;font-weight:600;margin-bottom:6px">
+      🔴 ATIVAR MODO SIMULAÇÃO
+    </button>
+    <div id="simInfo" style="font-size:11px;color:#64748b;padding:4px 0">
+      Clique no botão acima e depois clique em qualquer cabo para simular um rompimento.
+    </div>
+    <div id="simResult" style="display:none;font-size:11px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;margin-top:6px"></div>
     
     <h3 class="otdr-title">🔦 Análise OTDR</h3>
     <div id="otdrPanel" style="font-size:11px;color:#64748b;padding:8px 0">
@@ -228,7 +238,14 @@ async function loadTopologia() {
     popup += 'Pontos: <strong>' + coords.length + '</strong>';
     popup += '</div>';
     
-    L.polyline(coords, lineOpts).bindPopup(popup).addTo(layers.backbone);
+    var poly = L.polyline(coords, lineOpts).bindPopup(popup);
+    poly.on('click', function() {
+      if (simMode) {
+        var isBB = isBackbone;
+        simularRompimento(nome, coords, isBB ? 'backbone' : (isRamal ? 'ramal' : 'cabo_secundario'), lengthM.replace('m',''), fibers.replace(' fibras',''));
+      }
+    });
+    poly.addTo(layers.backbone);
   }
   layers.backbone.addTo(map);
   
@@ -470,12 +487,183 @@ async function loadCabosFTTH() {
     popup += 'Pontos: <strong>' + coords.length + '</strong>';
     popup += '</div>';
     
-    L.polyline(coords, opts).bindPopup(popup).addTo(layers.cabosftth);
+    var polyFTTH = L.polyline(coords, opts).bindPopup(popup);
+    polyFTTH.on('click', function() {
+      if (simMode) {
+        simularRompimento(nome, coords, cat, lengthM, fibers);
+      }
+    });
+    polyFTTH.addTo(layers.cabosftth);
+    count++;
     count++;
   }
   
   layers.cabosftth.addTo(map);
   document.getElementById('stat-cabos-ftth').textContent = count;
+}
+
+// ===== SIMULAÇÃO DE ROMPIMENTO =====
+let simMode = false;
+let simLayer = null;
+
+const oltPoint = [-21.7797, -41.3272]; // OLT aproximada (BACKBONE 3)
+
+document.getElementById('btnSimular').addEventListener('click', function() {
+  simMode = !simMode;
+  if (simMode) {
+    this.textContent = '🟢 DESATIVAR SIMULAÇÃO';
+    this.style.background = '#14532d';
+    this.style.borderColor = '#166534';
+    this.style.color = '#86efac';
+    document.getElementById('simInfo').innerHTML = '<span style="color:#fca5a5;font-weight:600">MODO ATIVO:</span> Clique em qualquer cabo (backbone ou FTTH) para simular o rompimento.';
+    document.body.style.cursor = 'crosshair';
+  } else {
+    this.textContent = '🔴 ATIVAR MODO SIMULAÇÃO';
+    this.style.background = '#7f1d1d';
+    this.style.borderColor = '#991b1b';
+    this.style.color = '#fca5a5';
+    document.getElementById('simInfo').innerHTML = 'Clique no botão acima e depois clique em qualquer cabo para simular um rompimento.';
+    document.body.style.cursor = '';
+    document.getElementById('simResult').style.display = 'none';
+    if (simLayer) { map.removeLayer(simLayer); simLayer = null; }
+  }
+});
+
+function simularRompimento(caboNome, caboCoords, caboCategoria, caboComprimento, caboFibras) {
+  if (simLayer) map.removeLayer(simLayer);
+  simLayer = L.layerGroup();
+  
+  // Determinar qual extremidade é upstream (mais perto da OLT) e qual é downstream
+  var startDist = distM(oltPoint[0], oltPoint[1], caboCoords[0][0], caboCoords[0][1]);
+  var endDist = distM(oltPoint[0], oltPoint[1], caboCoords[caboCoords.length-1][0], caboCoords[caboCoords.length-1][1]);
+  var upstream = startDist < endDist ? caboCoords[0] : caboCoords[caboCoords.length-1];
+  var downstream = startDist < endDist ? caboCoords[caboCoords.length-1] : caboCoords[0];
+  var distFromOLT = Math.min(startDist, endDist);
+  
+  // Ponto de ruptura = meio do cabo
+  var midIdx = Math.floor(caboCoords.length / 2);
+  var breakPoint = caboCoords[midIdx];
+  
+  // Raio de busca de CTOs afetadas (depende do tipo de cabo)
+  var raioBusca = caboCategoria === 'backbone' || caboCategoria === 'backbone_area' ? 800 : 400;
+  
+  // Encontrar CTOs afetadas (downstream do rompimento)
+  var ctosAfetadas = [];
+  var ctosOnline = [];
+  
+  if (window.allCTOs) {
+    for (var i = 0; i < window.allCTOs.length; i++) {
+      var c = window.allCTOs[i];
+      if (!c.lat || !c.lon) continue;
+      
+      var dToBreak = distM(breakPoint[0], breakPoint[1], c.lat, c.lon);
+      var dToUpstream = distM(upstream[0], upstream[1], c.lat, c.lon);
+      var dToDownstream = distM(downstream[0], downstream[1], c.lat, c.lon);
+      
+      // CTO é afetada se está mais perto do downstream que do upstream E dentro do raio
+      if (dToDownstream < dToUpstream && dToBreak < raioBusca + (caboComprimento ? parseInt(caboComprimento) : 500)) {
+        var totalClients = (c.online || 0) + (c.offline || 0);
+        if (totalClients > 0) {
+          ctosAfetadas.push({ id: c.id, lat: c.lat, lon: c.lon, online: c.online || 0, offline: c.offline || 0, total: totalClients, oltId: c.oltId });
+        }
+      } else if (dToBreak < raioBusca * 2 && totalClients > 0) {
+        ctosOnline.push(c);
+      }
+    }
+  }
+  
+  // Também buscar por áreas afetadas
+  var areasAfetadas = [];
+  if (topoData) {
+    var aberturas = topoData.features.filter(function(f) { return f.properties.tipo === 'abertura_area'; });
+    for (var a of aberturas) {
+      var aLat = a.geometry.coordinates[1];
+      var aLon = a.geometry.coordinates[0];
+      var dToDown = distM(downstream[0], downstream[1], aLat, aLon);
+      if (dToDown < raioBusca) {
+        areasAfetadas.push(a.properties.nome);
+      }
+    }
+  }
+  
+  // Calcular impactos
+  var totalCTOs = ctosAfetadas.length;
+  var totalClientes = ctosAfetadas.reduce(function(s, c) { return s + c.total; }, 0);
+  var totalOnline = ctosAfetadas.reduce(function(s, c) { return s + c.online; }, 0);
+  var totalOffline = ctosAfetadas.reduce(function(s, c) { return s + c.offline; }, 0);
+  
+  // Determinar criticidade
+  var criticidade, corCrit;
+  if (totalClientes > 200) { criticidade = 'CRÍTICA'; corCrit = '#ef4444'; }
+  else if (totalClientes > 50) { criticidade = 'ALTA'; corCrit = '#f97316'; }
+  else if (totalClientes > 10) { criticidade = 'MÉDIA'; corCrit = '#eab308'; }
+  else { criticidade = 'BAIXA'; corCrit = '#22c55e'; }
+  
+  // Desenhar no mapa:
+  // 1. Cabo rompido em vermelho
+  L.polyline(caboCoords, { color: '#ef4444', weight: 6, opacity: 0.9 }).addTo(simLayer);
+  
+  // 2. Marcador no ponto de ruptura
+  var breakIcon = L.divIcon({ html: '<div style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 10px #ef4444;animation:pulse 1s infinite"></div>', className: '', iconSize: [20,20], iconAnchor: [10,10] });
+  L.marker(breakPoint, { icon: breakIcon }).bindPopup('<div class="popup-title">🔴 Ponto de Ruptura Simulado</div><div class="popup-info">Cabo: <strong>' + caboNome + '</strong><br>Distância da OLT: <strong>' + Math.round(distFromOLT) + 'm</strong></div>').addTo(simLayer);
+  
+  // 3. CTOs afetadas em vermelho
+  for (var c of ctosAfetadas) {
+    L.circleMarker([c.lat, c.lon], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8, weight: 2 })
+      .bindPopup('<div class="popup-title">🔴 CTO ' + c.id + ' (SIMULADA OFFLINE)</div><div class="popup-info">Clientes: <strong>' + c.total + '</strong><br>OLT: <strong>' + (c.oltId || '?') + '</strong></div>')
+      .addTo(simLayer);
+  }
+  
+  // 4. Círculo de impacto
+  L.circle(breakPoint, { radius: raioBusca, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.08, weight: 1, dashArray: '5,5' }).addTo(simLayer);
+  
+  simLayer.addTo(map);
+  map.fitBounds(simLayer.getBounds(), { padding: [50, 50] });
+  
+  // Gerar relatório
+  var html = '<div style="color:#f1f5f9">';
+  html += '<div style="font-size:13px;font-weight:700;color:#fca5a5;margin-bottom:8px;border-bottom:1px solid #334155;padding-bottom:6px">🔴 ROMPIMENTO SIMULADO</div>';
+  html += '<div style="margin-bottom:4px"><span style="color:#64748b">Cabo:</span> <strong style="color:#f1f5f9">' + caboNome + '</strong></div>';
+  html += '<div style="margin-bottom:4px"><span style="color:#64748b">Categoria:</span> <strong>' + caboCategoria + '</strong></div>';
+  if (caboComprimento) html += '<div style="margin-bottom:4px"><span style="color:#64748b">Comprimento:</span> <strong>' + caboComprimento + 'm</strong></div>';
+  if (caboFibras) html += '<div style="margin-bottom:4px"><span style="color:#64748b">Fibras:</span> <strong>' + caboFibras + 'F</strong></div>';
+  html += '<div style="margin-bottom:4px"><span style="color:#64748b">Dist. da OLT:</span> <strong style="color:#67e8f9">' + Math.round(distFromOLT) + 'm</strong></div>';
+  html += '<div style="margin:8px 0;padding:8px;background:#1e293b;border-radius:6px">';
+  html += '<div style="font-size:12px;font-weight:700;color:' + corCrit + ';margin-bottom:4px">⚠️ CRITICIDADE: ' + criticidade + '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">';
+  html += '<div><span style="color:#64748b">CTOs afetadas:</span><br><strong style="color:#ef4444;font-size:16px">' + totalCTOs + '</strong></div>';
+  html += '<div><span style="color:#64748b">Clientes impactados:</span><br><strong style="color:#ef4444;font-size:16px">' + totalClientes + '</strong></div>';
+  html += '<div><span style="color:#64748b">Antes online:</span><br><strong style="color:#34d399">' + totalOnline + '</strong></div>';
+  html += '<div><span style="color:#64748b">Já offline:</span><br><strong style="color:#f87171">' + totalOffline + '</strong></div>';
+  html += '</div></div>';
+  
+  if (areasAfetadas.length > 0) {
+    html += '<div style="margin-bottom:4px"><span style="color:#64748b">Áreas afetadas:</span></div>';
+    html += '<div style="margin-left:8px;margin-bottom:6px">';
+    for (var a of areasAfetadas.slice(0, 8)) {
+      html += '<div style="color:#fbbf24;font-size:11px">• ' + a + '</div>';
+    }
+    if (areasAfetadas.length > 8) html += '<div style="color:#64748b">... e mais ' + (areasAfetadas.length - 8) + '</div>';
+    html += '</div>';
+  }
+  
+  // Ação recomendada
+  html += '<div style="margin-top:8px;padding:8px;background:#1e293b;border-radius:6px;border-left:3px solid ' + corCrit + '">';
+  html += '<div style="color:#93c5fd;font-size:11px;font-weight:600;margin-bottom:4px">📋 AÇÃO IMEDIATA</div>';
+  if (totalClientes > 200) {
+    html += '<div style="color:#f1f5f9;font-size:11px;line-height:1.5">1. Acionar equipe de campo IMEDIATAMENTE<br>2. Notificar clientes via URA/massa<br>3. Isolar trecho e preparar emenda<br>4. SLA crítico: 2h para normalização</div>';
+  } else if (totalClientes > 50) {
+    html += '<div style="color:#f1f5f9;font-size:11px;line-height:1.5">1. Acionar técnica responsável<br>2. Verificar alarmes OLT (PON)<br>3. Deslocar equipe para inspeção<br>4. SLA alto: 4h para normalização</div>';
+  } else {
+    html += '<div style="color:#f1f5f9;font-size:11px;line-height:1.5">1. Verificar status PON na OLT<br>2. Confirmar com técnico local<br>3. Programar reparo<br>4. SLA padrão: 8h</div>';
+  }
+  html += '</div>';
+  
+  html += '<div style="margin-top:6px;color:#64748b;font-size:10px">Simulação baseada em topologia física + CTOs ao vivo (IXC). Distâncias estimadas.</div>';
+  html += '</div>';
+  
+  document.getElementById('simResult').style.display = 'block';
+  document.getElementById('simResult').innerHTML = html;
 }
 
 // ===== OTDR: Análise por ÁREA =====
