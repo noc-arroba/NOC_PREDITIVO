@@ -16,29 +16,31 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
 .nav-tabs a:hover{color:#cbd5e1}
 .nav-tabs a.active{background:#7f1d1d;color:#fca5a5;font-weight:600}
 .container{max-width:1400px;margin:0 auto;padding:24px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
 .card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px}
 .card-title{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.card-value{font-size:32px;font-weight:700}
+.card-value{font-size:30px;font-weight:700}
 .card-sub{font-size:12px;color:#475569;margin-top:4px}
 .score-bar{height:8px;background:#1e293b;border-radius:4px;margin-top:10px;overflow:hidden}
 .score-fill{height:100%;border-radius:4px;transition:width 0.5s}
-.section-title{font-size:16px;color:#94a3b8;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between}
-.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.ssl-countdown{margin-top:8px;font-size:13px;padding:6px 12px;border-radius:6px;display:inline-block}
+.ssl-warn{background:#78350f;color:#fcd34d}
+.ssl-ok{background:#064e3b;color:#6ee7b7}
+.ssl-crit{background:#7f1d1d;color:#fca5a5;animation:pulse 2s infinite}
+.section-title{font-size:16px;color:#94a3b8;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
 .badge-critico{background:#7f1d1d;color:#fca5a5;animation:pulse 2s infinite}
 .badge-alto{background:#78350f;color:#fcd34d}
 .badge-medio{background:#1e3a5f;color:#93c5fd}
 .badge-baixo{background:#064e3b;color:#6ee7b7}
 .badge-open{background:#7f1d1d;color:#fca5a5}
 .badge-closed{background:#064e3b;color:#6ee7b7}
-.badge-ok{background:#064e3b;color:#6ee7b7}
-.badge-warn{background:#78350f;color:#fcd34d}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .bloco-row{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .bloco-info{display:flex;align-items:center;gap:10px}
 .bloco-cidr{font-family:monospace;color:#67e8f9;font-size:14px;font-weight:600}
 .bloco-nome{color:#64748b;font-size:12px}
-.bloco-stats{display:flex;gap:12px;align-items:center}
+.bloco-stats{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .stat-mini{font-size:13px;color:#94a3b8}
 .scan-btn{padding:5px 14px;border:1px solid #334155;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px;transition:all .15s}
 .scan-btn:hover{background:#1e293b;color:#cbd5e1}
@@ -47,9 +49,13 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
 .host-card{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px 16px;margin-bottom:10px}
 .host-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
 .host-ip{font-family:monospace;color:#67e8f9;font-size:15px;font-weight:600}
+.host-label{background:#1e293b;border:1px solid #334155;color:#cbd5e1;padding:3px 10px;border-radius:6px;font-size:12px;cursor:text;min-width:100px}
+.host-label:empty::before{content:'+ nomear IP';color:#475569}
+.host-label:focus{outline:none;border-color:#3b82f6;background:#0f172a}
 .host-bloco{color:#475569;font-size:11px}
 .port-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
-.port-item{padding:6px 10px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;font-family:monospace}
+.port-item{padding:6px 10px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;font-family:monospace;cursor:pointer;transition:all .15s}
+.port-item:hover{transform:scale(1.03)}
 .port-critico{background:#1a0d0d;border:1px solid #7f1d1d}
 .port-alto{background:#1a1207;border:1px solid #78350f}
 .port-medio{background:#0a0f1a;border:1px solid #1e3a5f}
@@ -60,7 +66,13 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
 .recomendacao.medio{border-left-color:#3b82f6}
 .rec-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 .rec-tipo{font-weight:600;color:#f1f5f9;font-size:14px}
-.rec-acao{color:#94a3b8;font-size:13px;line-height:1.5}
+.rec-acao{color:#94a3b8;font-size:13px;line-height:1.5;margin-bottom:8px}
+.firewall-box{background:#0a0e1a;border:1px solid #1e293b;border-radius:6px;padding:10px 12px;margin-top:8px;font-family:monospace;font-size:11px;color:#94a3b8;white-space:pre-wrap;overflow-x:auto;position:relative}
+.firewall-box .copy-btn{position:absolute;top:6px;right:6px;padding:3px 10px;border:1px solid #334155;border-radius:4px;background:#1e293b;color:#94a3b8;cursor:pointer;font-size:11px}
+.firewall-box .copy-btn:hover{background:#334155;color:#cbd5e1}
+.firewall-tabs{display:flex;gap:4px;margin-top:8px}
+.fw-tab{padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b}
+.fw-tab.active{background:#1e293b;color:#93c5fd;border-color:#3b82f6}
 .alert-banner{border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:14px}
 .alert-banner.crit{background:#7f1d1d;border:1px solid #991b1b}
 .alert-banner.warn{background:#78350f;border:1px solid #92400e}
@@ -69,14 +81,18 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
 .hardening-title{font-size:14px;font-weight:600;color:#93c5fd;margin-bottom:10px}
 .hardening-item{padding:6px 0;color:#cbd5e1;font-size:13px;padding-left:20px;position:relative}
 .hardening-item::before{content:'▸';position:absolute;left:4px;color:#475569}
-.loading{text-align:center;padding:20px;color:#64748b}
-.spinner{border:3px solid #1e293b;border-top:3px solid #ef4444;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:0 auto 10px;display:inline-block}
-@keyframes spin{to{transform:rotate(360deg)}}
 .footer{text-align:center;padding:30px;color:#334155;font-size:12px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:768px){.two-col{grid-template-columns:1fr}.port-grid{grid-template-columns:repeat(2,1fr)}}
-.progress-bar{height:4px;background:#1e293b;border-radius:2px;overflow:hidden;margin-top:6px}
-.progress-fill{height:100%;background:#3b82f6;transition:width .3s}
+.scan-progress{position:fixed;bottom:0;left:0;right:0;background:#0f172a;border-top:1px solid #1e293b;padding:12px 24px;z-index:100;display:none;align-items:center;gap:12px}
+.scan-progress.show{display:flex}
+.scan-progress-bar{flex:1;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
+.scan-progress-fill{height:100%;background:#3b82f6;transition:width .3s;border-radius:3px}
+.scan-progress-text{font-size:13px;color:#94a3b8;white-space:nowrap}
+.cve-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;margin-left:4px;background:#7f1d1d;color:#fca5a5}
+.export-btn{padding:6px 16px;border:1px solid #334155;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;transition:all .15s;text-decoration:none}
+.export-btn:hover{background:#1e293b;color:#cbd5e1}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 </style>
 </head>
 <body>
@@ -107,27 +123,35 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
     <div class="card">
       <div class="card-title">Hosts Ativos</div>
       <div class="card-value" style="color:#6ee7b7" id="hostsCount">14</div>
-      <div class="card-sub">2.034 inativos</div>
+      <div class="card-sub" id="hostsSub">2.034 inativos</div>
     </div>
     <div class="card">
       <div class="card-title">Portas Abertas</div>
       <div class="card-value" style="color:#fcd34d" id="openPorts">31</div>
-      <div class="card-sub">7 de risco alto</div>
+      <div class="card-sub" id="openPortsSub">7 de risco alto</div>
     </div>
     <div class="card">
       <div class="card-title">Portas Críticas</div>
       <div class="card-value" style="color:#fca5a5" id="critPorts">3</div>
       <div class="card-sub">⚠️ Ação imediata</div>
     </div>
+    <div class="card">
+      <div class="card-title">SSL IXC — Expira em</div>
+      <div class="card-value" id="sslDays" style="color:#fcd34d">--</div>
+      <div class="card-sub" id="sslDate">central.arrobabandalarga.com.br</div>
+    </div>
   </div>
 
   <div class="section-title">
     <span>📦 Status por Bloco /24</span>
-    <button class="scan-btn" onclick="scanAllBlocks()" id="scanAllBtn">🔄 Re-scan Todos</button>
+    <div class="action-row">
+      <button class="scan-btn" onclick="exportCSV()" id="exportBtn">📥 Exportar CSV</button>
+      <button class="scan-btn" onclick="scanAllBlocks()" id="scanAllBtn">🔄 Re-scan Todos</button>
+    </div>
   </div>
   <div id="blocosList"></div>
 
-  <div class="section-title">🚨 Recomendações de Segurança</div>
+  <div class="section-title">🚨 Recomendações de Segurança + Regras de Firewall</div>
   <div id="recomendacoes"></div>
 
   <div class="section-title">🔍 Hosts Ativos — Detalhamento de Portas</div>
@@ -147,6 +171,8 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
         <div class="hardening-item">Phase 2: Scan detalhado — 32 portas nos hosts ativos</div>
         <div class="hardening-item">Cada bloco /24 (256 IPs) leva ~2 minutos</div>
         <div class="hardening-item">Score: -15 por crítica, -8 por alta, -2 por aberta</div>
+        <div class="hardening-item">Clique em uma porta para ver regras de firewall</div>
+        <div class="hardening-item">Clique no campo "+ nomear IP" para identificar cada servidor</div>
       </div>
       <div class="hardening-cat">
         <div class="hardening-title">Legenda de Risco</div>
@@ -154,6 +180,15 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
         <div class="hardening-item"><span class="badge badge-alto">ALTO</span> — Restringir via VPN/ACL (SSH, FTP, SNMP, PPTP, VNC)</div>
         <div class="hardening-item"><span class="badge badge-medio">MÉDIO</span> — Avaliar necessidade (HTTP, Prometheus, HTTP Alt)</div>
         <div class="hardening-item"><span class="badge badge-baixo">BAIXO</span> — Aceitável (HTTPS, DNS, SMTPS)</div>
+      </div>
+      <div class="hardening-cat">
+        <div class="hardening-title">Vulnerabilidades Conhecidas</div>
+        <div class="hardening-item">Telnet (23): sem criptografia — credenciais capturadas em texto puro</div>
+        <div class="hardening-item">RDP (3389): BlueKeep (CVE-2019-0708), brute force, ransomware</div>
+        <div class="hardening-item">MySQL (3306): acesso não autorizado, SQL injection na camada de conexão</div>
+        <div class="hardening-item">PPTP (1723): MS-CHAPv2 quebrado (CVE-2012-2952)</div>
+        <div class="hardening-item">FTP (21): credenciais em texto puro, bounce attack</div>
+        <div class="hardening-item">SSH (22): brute force se sem fail2ban/chave</div>
       </div>
     </div>
   </div>
@@ -163,35 +198,37 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
   </div>
 </div>
 
+<div class="scan-progress" id="scanProgress">
+  <div class="scan-progress-text" id="scanProgressText">Scaneando...</div>
+  <div class="scan-progress-bar"><div class="scan-progress-fill" id="scanProgressFill" style="width:0%"></div></div>
+</div>
+
 <script>
-// Resultados consolidados do scan completo de 26/07/2026
+// === DADOS DO SCAN ===
 const SCAN_RESULTS = {
   timestamp: '2026-07-26T23:00:00-03:00',
   total_ips: 2048,
-  hosts_ativos: 14,
-  portas_abertas: 31,
-  portas_criticas: 3,
-  portas_altas: 7,
   score: 0,
+  ssl_expiry: '2026-08-07T00:00:00-03:00',
   blocos: [
-    { cidr: '143.137.32.0/24', prefix: '143.137.32', nome: 'Bloco 1 /22 — .32', hosts: 11, abertas: 26, criticas: 3, status: 'done' },
-    { cidr: '143.137.33.0/24', prefix: '143.137.33', nome: 'Bloco 1 /22 — .33', hosts: 0, abertas: 0, criticas: 0, status: 'done' },
-    { cidr: '143.137.34.0/24', prefix: '143.137.34', nome: 'Bloco 1 /22 — .34', hosts: 0, abertas: 0, criticas: 0, status: 'done' },
-    { cidr: '143.137.35.0/24', prefix: '143.137.35', nome: 'Bloco 1 /22 — .35', hosts: 0, abertas: 0, criticas: 0, status: 'done' },
-    { cidr: '168.197.56.0/24', prefix: '168.197.56', nome: 'Bloco 2 /22 — .56', hosts: 3, abertas: 5, criticas: 0, status: 'done' },
-    { cidr: '168.197.57.0/24', prefix: '168.197.57', nome: 'Bloco 2 /22 — .57', hosts: 0, abertas: 0, criticas: 0, status: 'done' },
-    { cidr: '168.197.58.0/24', prefix: '168.197.58', nome: 'Bloco 2 /22 — .58', hosts: 0, abertas: 0, criticas: 0, status: 'done' },
-    { cidr: '168.197.59.0/24', prefix: '168.197.59', nome: 'Bloco 2 /22 — .59', hosts: 0, abertas: 0, criticas: 0, status: 'done' },
+    { cidr: '143.137.32.0/24', prefix: '143.137.32', nome: 'Bloco 1 /22 — .32', hosts: 11, abertas: 26, criticas: 3 },
+    { cidr: '143.137.33.0/24', prefix: '143.137.33', nome: 'Bloco 1 /22 — .33', hosts: 0, abertas: 0, criticas: 0 },
+    { cidr: '143.137.34.0/24', prefix: '143.137.34', nome: 'Bloco 1 /22 — .34', hosts: 0, abertas: 0, criticas: 0 },
+    { cidr: '143.137.35.0/24', prefix: '143.137.35', nome: 'Bloco 1 /22 — .35', hosts: 0, abertas: 0, criticas: 0 },
+    { cidr: '168.197.56.0/24', prefix: '168.197.56', nome: 'Bloco 2 /22 — .56', hosts: 3, abertas: 5, criticas: 0 },
+    { cidr: '168.197.57.0/24', prefix: '168.197.57', nome: 'Bloco 2 /22 — .57', hosts: 0, abertas: 0, criticas: 0 },
+    { cidr: '168.197.58.0/24', prefix: '168.197.58', nome: 'Bloco 2 /22 — .58', hosts: 0, abertas: 0, criticas: 0 },
+    { cidr: '168.197.59.0/24', prefix: '168.197.59', nome: 'Bloco 2 /22 — .59', hosts: 0, abertas: 0, criticas: 0 },
   ],
   hosts: [
     { ip: '143.137.32.14', bloco: '143.137.32.0/24', portas: [
       { porta: 21, servico: 'FTP', risco: 'alto', descricao: 'FTP texto puro' },
-      { porta: 23, servico: 'Telnet', risco: 'critico', descricao: 'Telnet VULNERAVEL — credenciais em texto puro' },
+      { porta: 23, servico: 'Telnet', risco: 'critico', descricao: 'Telnet — credenciais em texto puro' },
       { porta: 80, servico: 'HTTP', risco: 'medio', descricao: 'Web sem criptografia' },
-      { porta: 1723, servico: 'PPTP', risco: 'alto', descricao: 'VPN antigo — vulnerabilidades conhecidas' },
+      { porta: 1723, servico: 'PPTP', risco: 'alto', descricao: 'VPN antigo — MS-CHAPv2 quebrado' },
     ]},
     { ip: '143.137.32.15', bloco: '143.137.32.0/24', portas: [
-      { porta: 3389, servico: 'RDP', risco: 'critico', descricao: 'Remote Desktop — alvo #1 de ransomware' },
+      { porta: 3389, servico: 'RDP', risco: 'critico', descricao: 'Remote Desktop — alvo #1 ransomware' },
     ]},
     { ip: '143.137.32.18', bloco: '143.137.32.0/24', portas: [
       { porta: 22, servico: 'SSH', risco: 'alto', descricao: 'SSH exposto' },
@@ -226,7 +263,7 @@ const SCAN_RESULTS = {
     { ip: '143.137.32.8', bloco: '143.137.32.0/24', portas: [
       { porta: 80, servico: 'HTTP', risco: 'medio', descricao: 'Web sem HTTPS' },
       { porta: 443, servico: 'HTTPS', risco: 'baixo', descricao: 'Web criptografada' },
-      { porta: 3306, servico: 'MySQL', risco: 'critico', descricao: 'Banco MySQL exposto — NUNCA expor à internet' },
+      { porta: 3306, servico: 'MySQL', risco: 'critico', descricao: 'Banco MySQL exposto à internet' },
       { porta: 9090, servico: 'Prometheus', risco: 'medio', descricao: 'Monitoramento exposto' },
     ]},
     { ip: '143.137.32.92', bloco: '143.137.32.0/24', portas: [
@@ -244,33 +281,96 @@ const SCAN_RESULTS = {
       { porta: 8080, servico: 'HTTP Alt', risco: 'medio', descricao: 'Web alternativo' },
     ]},
   ],
-  recomendacoes: [
-    { severity: 'critico', ip: '143.137.32.14', porta: '23/Telnet', acao: 'FECHAR IMEDIATAMENTE: Telnet envia credenciais em texto puro. Qualquer pessoa na internet pode interceptar. Desabilitar serviço e usar SSH com chave.' },
-    { severity: 'critico', ip: '143.137.32.15', porta: '3389/RDP', acao: 'FECHAR IMEDIATAMENTE: RDP é alvo #1 de ransomware e ataques de brute force. Bloquear porta 3389 no firewall, acessar apenas via VPN.' },
-    { severity: 'critico', ip: '143.137.32.8', porta: '3306/MySQL', acao: 'FECHAR IMEDIATAMENTE: MySQL exposto à internet permite tentativas de conexão de qualquer origem. Restringir a localhost/VPN apenas. Verificar se há senha forte configurada.' },
-    { severity: 'alto', ip: '143.137.32.14', porta: '21/FTP', acao: 'FTP envia dados em texto puro. Substituir por SFTP (porta 22) ou FTPS (porta 990).' },
-    { severity: 'alto', ip: '143.137.32.14', porta: '1723/PPTP', acao: 'PPTP tem vulnerabilidades conhecidas (MS-CHAPv2 quebrado). Migrar para WireGuard ou OpenVPN.' },
-    { severity: 'alto', ip: '143.137.32.6', porta: '1723/PPTP', acao: 'PPTP exposto. Migrar para WireGuard ou OpenVPN imediatamente.' },
-    { severity: 'alto', ip: '143.137.32.18', porta: '22/SSH', acao: 'SSH exposto. Implementar: chave SSH (desabilitar senha), fail2ban, mudar porta, AllowUsers.' },
-    { severity: 'alto', ip: '143.137.32.19', porta: '22/SSH', acao: 'SSH exposto. Implementar: chave SSH (desabilitar senha), fail2ban, mudar porta, AllowUsers.' },
-    { severity: 'alto', ip: '143.137.32.21', porta: '22/SSH', acao: 'SSH exposto. Implementar: chave SSH (desabilitar senha), fail2ban, mudar porta, AllowUsers.' },
-    { severity: 'alto', ip: '143.137.32.22', porta: '22/SSH', acao: 'SSH exposto. Implementar: chave SSH (desabilitar senha), fail2ban, mudar porta, AllowUsers.' },
-    { severity: 'alto', ip: '168.197.56.6', porta: '22/SSH', acao: 'SSH exposto no bloco 2. Implementar: chave SSH, fail2ban, restringir via VPN.' },
-    { severity: 'alto', ip: '168.197.56.30', porta: '22/SSH', acao: 'SSH exposto no bloco 2. Implementar: chave SSH, fail2ban, restringir via VPN.' },
-  ],
 };
 
+// === VULNERABILIDADES CONHECIDAS ===
+const VULNS = {
+  23: { cves: 'CVE-2019-0708-like', desc: 'Sem criptografia. Captura de credenciais via sniffing.' },
+  3389: { cves: 'CVE-2019-0708 (BlueKeep)', desc: 'Execução remota de código. Ransomware via brute force.' },
+  3306: { cves: 'Acesso não autorizado', desc: 'MySQL exposto permite tentativas de conexão de qualquer origem.' },
+  1723: { cves: 'CVE-2012-2952', desc: 'MS-CHAPv2 quebrado. Descriptografia de tráfego VPN.' },
+  21: { cves: 'Bounce attack', desc: 'Credenciais em texto puro. Uso como proxy de scan.' },
+  22: { cves: 'Brute force', desc: 'Sem fail2ban/chave, SSH é alvo constante de bots.' },
+  80: { cves: 'Sem criptografia', desc: 'Tráfego web em texto puro. MitM possível.' },
+  161: { cves: 'SNMPv1/v2c', desc: 'Community string default expõe toda a configuração do equipamento.' },
+  9090: { cves: 'Prometheus aberto', desc: 'Dados de monitoramento acessíveis a qualquer um.' },
+};
+
+// === REGRAS DE FIREWALL ===
+function genMikrotik(ip, porta, servico) {
+  const regras = {
+    23: `/ip firewall filter add chain=input dst-port=23 protocol=tcp src-address-list=!VPN action=drop comment="BLOQUEAR Telnet - ${ip}"`,
+    3389: `/ip firewall filter add chain=input dst-port=3389 protocol=tcp src-address-list=!VPN action=drop comment="BLOQUEAR RDP - ${ip}"`,
+    3306: `/ip firewall filter add chain=input dst-port=3306 protocol=tcp src-address-list=!VPN action=drop comment="BLOQUEAR MySQL - ${ip}"`,
+    21: `/ip firewall filter add chain=input dst-port=21 protocol=tcp src-address-list=!VPN action=drop comment="BLOQUEAR FTP - ${ip}"`,
+    1723: `/ip firewall filter add chain=input dst-port=1723 protocol=tcp src-address-list=!VPN action=drop comment="BLOQUEAR PPTP - ${ip}"`,
+    22: `/ip firewall filter add chain=input dst-port=22 protocol=tcp src-address-list=!VPN action=drop comment="RESTRINGIR SSH - ${ip} (apenas VPN)"`,
+    80: `/ip firewall filter add chain=input dst-port=80 protocol=tcp src-address-list=!LAN_interna action=drop comment="AVALIAR HTTP - ${ip}"`,
+    8080: `/ip firewall filter add chain=input dst-port=8080 protocol=tcp src-address-list=!LAN_interna action=drop comment="AVALIAR HTTP Alt - ${ip}"`,
+    9090: `/ip firewall filter add chain=input dst-port=9090 protocol=tcp src-address-list=!VPN action=drop comment="RESTRINGIR Prometheus - ${ip}"`,
+  };
+  return regras[porta] || `/ip firewall filter add chain=input dst-port=${porta} protocol=tcp src-address-list=!VPN action=drop comment="Bloquear ${servico} - ${ip}"`;
+}
+
+function genIptables(ip, porta, servico) {
+  const regras = {
+    23: `iptables -A INPUT -p tcp --dport 23 -s 0/0 -j DROP  # FECHAR Telnet ${ip}`,
+    3389: `iptables -A INPUT -p tcp --dport 3389 -s 0/0 -j DROP  # FECHAR RDP ${ip}`,
+    3306: `iptables -A INPUT -p tcp --dport 3306 -s 0/0 -j DROP  # FECHAR MySQL ${ip}\n# OU restringir: iptables -A INPUT -p tcp --dport 3306 -s 127.0.0.1 -j ACCEPT`,
+    21: `iptables -A INPUT -p tcp --dport 21 -j DROP  # FECHAR FTP ${ip}`,
+    1723: `iptables -A INPUT -p tcp --dport 1723 -j DROP  # FECHAR PPTP ${ip}`,
+    22: `iptables -A INPUT -p tcp --dport 22 -s 0/0 -j DROP\n# Liberar apenas VPN: iptables -A INPUT -p tcp --dport 22 -s <VPN_IP> -j ACCEPT  # SSH ${ip}`,
+    80: `# Avaliar se precisa: iptables -A INPUT -p tcp --dport 80 -j DROP  # HTTP ${ip}`,
+    8080: `iptables -A INPUT -p tcp --dport 8080 -j DROP  # HTTP Alt ${ip}`,
+    9090: `iptables -A INPUT -p tcp --dport 9090 -j DROP  # Prometheus ${ip}`,
+  };
+  return regras[porta] || `iptables -A INPUT -p tcp --dport ${porta} -j DROP  # ${servico} ${ip}`;
+}
+
+// === IP LABELS (localStorage) ===
+function getLabels() {
+  try { return JSON.parse(localStorage.getItem('ip_labels') || '{}'); } catch { return {}; }
+}
+function saveLabel(ip, label) {
+  const labels = getLabels();
+  if (label) labels[ip] = label; else delete labels[ip];
+  localStorage.setItem('ip_labels', JSON.stringify(labels));
+}
+
+// === RENDER ===
 function badge(risco) {
   return `<span class="badge badge-${risco}">${risco.toUpperCase()}</span>`;
 }
 
+function calcScore() {
+  let s = 100;
+  for (const h of SCAN_RESULTS.hosts) {
+    for (const p of h.portas) {
+      if (p.risco === 'critico') s -= 15;
+      else if (p.risco === 'alto') s -= 8;
+      else s -= 2;
+    }
+  }
+  return Math.max(0, Math.min(100, s));
+}
+
+function renderSSL() {
+  const expiry = new Date(SCAN_RESULTS.ssl_expiry);
+  const now = new Date();
+  const days = Math.ceil((expiry - now) / 86400000);
+  const el = document.getElementById('sslDays');
+  el.textContent = days > 0 ? `${days} dias` : 'EXPIRADO';
+  const cls = days < 0 ? 'ssl-crit' : days < 15 ? 'ssl-warn' : days < 30 ? 'ssl-warn' : 'ssl-ok';
+  el.className = 'ssl-countdown ' + cls;
+  document.getElementById('sslDate').textContent = `central.arrobabandalarga.com.br — ${expiry.toLocaleDateString('pt-BR')}`;
+}
+
 function renderBlocos() {
   const html = SCAN_RESULTS.blocos.map(b => {
-    const hasIssues = b.criticas > 0;
-    const statusIcon = b.hosts === 0 ? '✅' : hasIssues ? '🚨' : '⚠️';
+    const icon = b.hosts === 0 ? '✅' : b.criticas > 0 ? '🚨' : '⚠️';
     return `<div class="bloco-row" id="bloco-${b.prefix}">
       <div class="bloco-info">
-        <span style="font-size:18px">${statusIcon}</span>
+        <span style="font-size:18px">${icon}</span>
         <div>
           <div class="bloco-cidr">${b.cidr}</div>
           <div class="bloco-nome">${b.nome}</div>
@@ -280,7 +380,7 @@ function renderBlocos() {
         <span class="stat-mini">256 IPs</span>
         <span class="stat-mini">🟢 ${b.hosts} hosts</span>
         <span class="stat-mini">🔓 ${b.abertas} portas</span>
-        ${b.criticas > 0 ? `<span class="badge badge-critico">${b.criticas} CRÍTICA(S)</span>` : ''}
+        ${b.criticas > 0 ? `<span class="badge badge-critico">${b.criticas} CRÍT</span>` : ''}
         <button class="scan-btn" onclick="scanBlock('${b.prefix}')">🔄 Scan</button>
       </div>
     </div>`;
@@ -289,42 +389,106 @@ function renderBlocos() {
 }
 
 function renderRecomendacoes() {
-  const recs = SCAN_RESULTS.recomendacoes;
+  const recs = [];
+  const labels = getLabels();
+  for (const h of SCAN_RESULTS.hosts) {
+    for (const p of h.portas) {
+      if (p.risco === 'critico' || p.risco === 'alto') {
+        recs.push({ ...p, ip: h.ip, bloco: h.bloco, label: labels[h.ip] || '' });
+      }
+    }
+  }
+  recs.sort((a, b) => {
+    const o = { critico: 0, alto: 1 };
+    return (o[a.risco] || 9) - (o[b.risco] || 9);
+  });
+
   if (recs.length === 0) {
-    document.getElementById('recomendacoes').innerHTML = '<div class="recomendacao medio"><div class="rec-acao">✅ Nenhuma recomendação. Configuração adequada.</div></div>';
+    document.getElementById('recomendacoes').innerHTML = '<div class="recomendacao medio"><div class="rec-acao">✅ Nenhuma recomendação crítica ou de risco alto.</div></div>';
     return;
   }
-  document.getElementById('recomendacoes').innerHTML = recs.map(r => `
-    <div class="recomendacao ${r.severity}">
+
+  document.getElementById('recomendacoes').innerHTML = recs.map((r, i) => {
+    const ipLabel = r.label ? ` (${r.label})` : '';
+    const mikrotik = genMikrotik(r.ip, r.porta, r.servico);
+    const iptables = genIptables(r.ip, r.porta, r.servico);
+    const vuln = VULNS[r.porta];
+    const acoes = {
+      critico: `FECHAR IMEDIATAMENTE: ${r.descricao}. ${r.servico} em ${r.ip}${ipLabel} está acessível pela internet. Bloquear via firewall, permitir apenas VPN/rede interna.`,
+      alto: `${r.servico} em ${r.ip}${ipLabel} exposto. ${r.descricao}. Restringir via ACL/VPN.`,
+    };
+    return `<div class="recomendacao ${r.risco}">
       <div class="rec-header">
-        <span class="badge badge-${r.severity}">${r.severity.toUpperCase()}</span>
-        <span class="rec-tipo">${r.porta}</span>
-        <span style="font-family:monospace;color:#67e8f9;font-size:12px">${r.ip}</span>
+        <span class="badge badge-${r.risco}">${r.risco.toUpperCase()}</span>
+        <span class="rec-tipo">${r.porta}/${r.servico}</span>
+        <span style="font-family:monospace;color:#67e8f9;font-size:12px">${r.ip}${ipLabel}</span>
+        ${vuln ? `<span class="cve-badge">${vuln.cves}</span>` : ''}
       </div>
-      <div class="rec-acao">${r.acao}</div>
-    </div>
-  `).join('');
+      <div class="rec-acao">${acoes[r.risco]}</div>
+      ${vuln ? `<div style="font-size:12px;color:#64748b;margin-bottom:8px">⚠️ ${vuln.desc}</div>` : ''}
+      <div class="firewall-tabs">
+        <span class="fw-tab active" onclick="switchFW(${i},'mikrotik')">Mikrotik</span>
+        <span class="fw-tab" onclick="switchFW(${i},'iptables')">iptables</span>
+      </div>
+      <div class="firewall-box" id="fw-${i}">
+        <button class="copy-btn" onclick="copyFW(${i})">📋 Copiar</button>
+        <span id="fw-code-${i}">${mikrotik}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchFW(idx, type) {
+  const recs = [];
+  for (const h of SCAN_RESULTS.hosts) {
+    for (const p of h.portas) {
+      if (p.risco === 'critico' || p.risco === 'alto') recs.push({ ...p, ip: h.ip });
+    }
+  }
+  recs.sort((a, b) => {
+    const o = { critico: 0, alto: 1 };
+    return (o[a.risco] || 9) - (o[b.risco] || 9);
+  });
+  const r = recs[idx];
+  const code = type === 'mikrotik' ? genMikrotik(r.ip, r.porta, r.servico) : genIptables(r.ip, r.porta, r.servico);
+  document.getElementById(`fw-code-${idx}`).textContent = code;
+  document.querySelectorAll(`#fw-${idx} ~ .firewall-tabs .fw-tab, .recomendacao:nth-child(${idx+1}) .fw-tab`).forEach((t, ti) => {
+    t.classList.toggle('active', ti === (type === 'mikrotik' ? 0 : 1));
+  });
+}
+
+function copyFW(idx) {
+  const text = document.getElementById(`fw-code-${idx}`).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector(`#fw-${idx} .copy-btn`);
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar', 2000);
+  });
 }
 
 function renderHosts() {
+  const labels = getLabels();
   const html = SCAN_RESULTS.hosts.map(h => {
     const crit = h.portas.filter(p => p.risco === 'critico').length;
     const alta = h.portas.filter(p => p.risco === 'alto').length;
     const flags = [];
     if (crit) flags.push(`<span class="badge badge-critico">${crit} CRÍT</span>`);
     if (alta) flags.push(`<span class="badge badge-alto">${alta} ALTA</span>`);
+    const label = labels[h.ip] || '';
 
-    const portHtml = h.portas.map(p => `
-      <div class="port-item port-${p.risco}" title="${p.descricao}">
+    const portHtml = h.portas.map(p => {
+      const vuln = VULNS[p.porta];
+      return `<div class="port-item port-${p.risco}" title="${p.descricao}${vuln ? '\n\n⚠️ ' + vuln.desc : ''}" onclick="toggleFirewall('${h.ip}',${p.porta},'${p.servico}',${p.risco==='critico'||p.risco==='alto'})">
         <span>${p.porta}/${p.servico}</span>
         ${badge(p.risco)}
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     return `<div class="host-card">
       <div class="host-header">
-        <div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span class="host-ip">${h.ip}</span>
+          <span class="host-label" contenteditable="true" data-ip="${h.ip}" onblur="saveLabel(this)">${label}</span>
           <span class="host-bloco">${h.bloco}</span>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -336,6 +500,21 @@ function renderHosts() {
     </div>`;
   }).join('');
   document.getElementById('hostsList').innerHTML = html;
+}
+
+function saveLabel(el) {
+  const ip = el.dataset.ip;
+  const label = el.textContent.trim();
+  saveLabel(ip, label);
+}
+
+function toggleFirewall(ip, porta, servico, showRules) {
+  if (!showRules) return;
+  const mikrotik = genMikrotik(ip, porta, servico);
+  const iptables = genIptables(ip, porta, servico);
+  const vuln = VULNS[porta];
+  const w = window.open('', '_blank', 'width=600,height=400');
+  w.document.write(`<pre style="font-family:monospace;background:#0a0e1a;color:#e0e0e0;padding:20px">${mikrotik}\n\n--- iptables ---\n${iptables}${vuln ? '\n\n⚠️ ' + vuln.cves + ': ' + vuln.desc : ''}</pre>`);
 }
 
 function renderHardening() {
@@ -380,6 +559,27 @@ function renderHardening() {
   `).join('');
 }
 
+// === EXPORT CSV ===
+function exportCSV() {
+  const labels = getLabels();
+  let csv = 'IP,Bloco,Label,Porta,Servico,Risco,Descricao,Vulnerabilidade\n';
+  for (const h of SCAN_RESULTS.hosts) {
+    for (const p of h.portas) {
+      const vuln = VULNS[p.porta] ? VULNS[p.porta].cves : '';
+      const label = labels[h.ip] || '';
+      csv += `${h.ip},${h.bloco},"${label}",${p.porta},${p.servico},${p.risco},"${p.descricao}",${vuln}\n`;
+    }
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `seguranca_arroba_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// === RE-SCAN ===
 async function scanBlock(prefix) {
   const row = document.getElementById(`bloco-${prefix}`);
   const btn = row.querySelector('.scan-btn');
@@ -392,31 +592,17 @@ async function scanBlock(prefix) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
 
-    // Atualizar contadores do bloco
     const bloco = SCAN_RESULTS.blocos.find(b => b.prefix === prefix);
     if (bloco) {
       bloco.hosts = data.hosts_ativos;
       bloco.abertas = data.portas_abertas_total;
       bloco.criticas = data.portas_criticas_total;
-      bloco.status = 'done';
     }
 
-    // Atualizar hosts deste bloco
     SCAN_RESULTS.hosts = SCAN_RESULTS.hosts.filter(h => h.bloco !== data.bloco);
     for (const h of data.hosts || []) {
-      SCAN_RESULTS.hosts.push({
-        ip: h.ip,
-        bloco: h.bloco,
-        portas: h.detalhe_abertas || [],
-      });
+      SCAN_RESULTS.hosts.push({ ip: h.ip, bloco: h.bloco, portas: h.detalhe_abertas || [] });
     }
-
-    // Recalcular totais
-    SCAN_RESULTS.hosts_ativos = SCAN_RESULTS.hosts.length;
-    SCAN_RESULTS.portas_abertas = SCAN_RESULTS.hosts.reduce((s, h) => s + h.portas.length, 0);
-    SCAN_RESULTS.portas_criticas = SCAN_RESULTS.hosts.reduce((s, h) => s + h.portas.filter(p => p.risco === 'critico').length, 0);
-    SCAN_RESULTS.portas_altas = SCAN_RESULTS.hosts.reduce((s, h) => s + h.portas.filter(p => p.risco === 'alto').length, 0);
-    SCAN_RESULTS.score = Math.max(0, 100 - SCAN_RESULTS.portas_criticas * 15 - SCAN_RESULTS.portas_altas * 8 - SCAN_RESULTS.portas_abertas * 2);
 
     updateAll();
     btn.textContent = '✅ Atualizado';
@@ -424,53 +610,74 @@ async function scanBlock(prefix) {
   } catch (e) {
     btn.textContent = '❌ Erro';
     setTimeout(() => { btn.disabled = false; btn.classList.remove('scanning'); btn.textContent = '🔄 Scan'; }, 2000);
-    console.error(e);
   }
 }
 
 async function scanAllBlocks() {
   const btn = document.getElementById('scanAllBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Scaneando 8 blocos...';
+  const progress = document.getElementById('scanProgress');
+  const progressFill = document.getElementById('scanProgressFill');
+  const progressText = document.getElementById('scanProgressText');
+
+  progress.classList.add('show');
 
   for (let i = 0; i < SCAN_RESULTS.blocos.length; i++) {
-    btn.textContent = `⏳ Bloco ${i+1}/8...`;
-    await scanBlock(SCAN_RESULTS.blocos[i].prefix);
+    const b = SCAN_RESULTS.blocos[i];
+    progressText.textContent = `Bloco ${i+1}/8: ${b.cidr}...`;
+    progressFill.style.width = `${((i) / 8) * 100}%`;
+    btn.textContent = `⏳ ${i+1}/8...`;
+    await scanBlock(b.prefix);
+    progressFill.style.width = `${((i+1) / 8) * 100}%`;
   }
 
+  progressText.textContent = '✅ Completo!';
+  progressFill.style.width = '100%';
   btn.textContent = '✅ Completo';
-  setTimeout(() => { btn.disabled = false; btn.textContent = '🔄 Re-scan Todos'; }, 3000);
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '🔄 Re-scan Todos';
+    progress.classList.remove('show');
+  }, 3000);
 }
 
+// === UPDATE ALL ===
 function updateAll() {
-  const score = SCAN_RESULTS.score;
-  document.getElementById('score').textContent = score;
-  document.getElementById('score').style.color = score >= 80 ? '#6ee7b7' : score >= 50 ? '#fcd34d' : '#fca5a5';
-  document.getElementById('scoreBar').style.width = score + '%';
-  document.getElementById('scoreBar').style.background = score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
-  document.getElementById('hostsCount').textContent = SCAN_RESULTS.hosts_ativos;
-  document.getElementById('openPorts').textContent = SCAN_RESULTS.portas_abertas;
-  document.getElementById('critPorts').textContent = SCAN_RESULTS.portas_criticas;
+  SCAN_RESULTS.score = calcScore();
+  const totalPortas = SCAN_RESULTS.hosts.reduce((s, h) => s + h.portas.length, 0);
+  const totalCrit = SCAN_RESULTS.hosts.reduce((s, h) => s + h.portas.filter(p => p.risco === 'critico').length, 0);
+  const totalAltas = SCAN_RESULTS.hosts.reduce((s, h) => s + h.portas.filter(p => p.risco === 'alto').length, 0);
+
+  document.getElementById('score').textContent = SCAN_RESULTS.score;
+  document.getElementById('score').style.color = SCAN_RESULTS.score >= 80 ? '#6ee7b7' : SCAN_RESULTS.score >= 50 ? '#fcd34d' : '#fca5a5';
+  document.getElementById('scoreBar').style.width = SCAN_RESULTS.score + '%';
+  document.getElementById('scoreBar').style.background = SCAN_RESULTS.score >= 80 ? '#10b981' : SCAN_RESULTS.score >= 50 ? '#f59e0b' : '#ef4444';
+  document.getElementById('hostsCount').textContent = SCAN_RESULTS.hosts.length;
+  document.getElementById('hostsSub').textContent = `${2048 - SCAN_RESULTS.hosts.length} inativos`;
+  document.getElementById('openPorts').textContent = totalPortas;
+  document.getElementById('openPortsSub').textContent = `${totalAltas} de risco alto`;
+  document.getElementById('critPorts').textContent = totalCrit;
 
   const banner = document.getElementById('alertBanner');
-  if (SCAN_RESULTS.portas_criticas > 0) {
+  if (totalCrit > 0) {
     banner.className = 'alert-banner crit';
-    banner.innerHTML = `<span style="font-size:24px">🚨</span><span><strong>${SCAN_RESULTS.portas_criticas} porta(s) CRÍTICA(S) expostas à internet!</strong> Ação imediata necessária — revise as recomendações abaixo.</span>`;
-  } else if (SCAN_RESULTS.portas_altas > 3) {
+    banner.innerHTML = `<span style="font-size:24px">🚨</span><span><strong>${totalCrit} porta(s) CRÍTICA(S) expostas à internet!</strong> Ação imediata necessária — clique nas portas críticas para gerar regras de firewall.</span>`;
+  } else if (totalAltas > 3) {
     banner.className = 'alert-banner warn';
-    banner.innerHTML = `<span style="font-size:24px">⚠️</span><span><strong>${SCAN_RESULTS.portas_altas} portas de risco alto detectadas.</strong> Verificar e aplicar hardening.</span>`;
-  } else if (score >= 80) {
+    banner.innerHTML = `<span style="font-size:24px">⚠️</span><span><strong>${totalAltas} portas de risco alto detectadas.</strong> Verificar e aplicar hardening.</span>`;
+  } else if (SCAN_RESULTS.score >= 80) {
     banner.className = 'alert-banner ok';
-    banner.innerHTML = `<span style="font-size:24px">✅</span><span><strong>Configuração adequada.</strong> Score ${score}/100.</span>`;
+    banner.innerHTML = `<span style="font-size:24px">✅</span><span><strong>Configuração adequada.</strong> Score ${SCAN_RESULTS.score}/100.</span>`;
   } else {
     banner.className = 'alert-banner warn';
-    banner.innerHTML = `<span style="font-size:24px">⚠️</span><span>Score ${score}/100. Revise as recomendações.</span>`;
+    banner.innerHTML = `<span style="font-size:24px">⚠️</span><span>Score ${SCAN_RESULTS.score}/100. Revise as recomendações.</span>`;
   }
 
   renderBlocos();
   renderRecomendacoes();
   renderHosts();
   renderHardening();
+  renderSSL();
 }
 
 updateAll();
