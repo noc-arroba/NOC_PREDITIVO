@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OTDR Virtual — Parque Aurora — Arroba</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:hidden}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:12px 18px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:16px;color:#f8fafc}
+.header .sub{font-size:11px;color:#64748b;margin-top:2px}
+.nav-tabs{display:flex;gap:3px;background:#0f172a;border-radius:8px;padding:3px;border:1px solid #1e293b;flex-wrap:wrap}
+.nav-tabs a{padding:4px 9px;border-radius:6px;font-size:11px;color:#94a3b8;text-decoration:none}
+.nav-tabs a:hover{color:#cbd5e1}
+.nav-tabs a.active{background:#7f1d1d;color:#fca5a5;font-weight:600}
+#map{height:calc(100vh - 52px);width:100%;background:#1a1a2e}
+.sidebar{position:absolute;top:62px;right:8px;width:320px;max-height:calc(100vh - 80px);background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px;z-index:1000;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.sidebar h3{font-size:12px;color:#93c5fd;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.sidebar h3.otdr-title{color:#fca5a5;border-top:1px solid #1e293b;padding-top:10px;margin-top:12px}
+.layer-toggle{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:12px;color:#cbd5e1}
+.layer-toggle input{accent-color:#3b82f6}
+.search-box{margin-top:8px;width:100%;padding:7px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:12px}
+.search-box:focus{outline:none;border-color:#3b82f6}
+.stats-box{margin-top:10px;padding-top:10px;border-top:1px solid #1e293b}
+.stat-row{display:flex;justify-content:space-between;padding:2px 0;font-size:11px;color:#94a3b8}
+.stat-row strong{color:#67e8f9}
+.otdr-result{margin-top:8px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;font-size:12px;line-height:1.5}
+.otdr-result .label{color:#64748b;font-size:10px;text-transform:uppercase;margin-top:6px}
+.otdr-result .val{color:#f1f5f9;font-weight:600}
+.otdr-result .alert{color:#f87171;font-weight:700}
+.otdr-result .ok{color:#34d399;font-weight:600}
+.otdr-result .warn{color:#fbbf24;font-weight:600}
+.area-item{padding:6px 8px;margin:3px 0;background:#0f172a;border:1px solid #1e293b;border-radius:6px;cursor:pointer;font-size:11px;color:#cbd5e1;display:flex;justify-content:space-between;align-items:center}
+.area-item:hover{border-color:#3b82f6;background:#1e293b}
+.area-item .status-dot{width:8px;height:8px;border-radius:50%}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111827;border:1px solid #1e293b;padding:20px;border-radius:10px;text-align:center;z-index:2000}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.leaflet-popup-content{font-size:12px;line-height:1.4}
+.popup-title{font-weight:700;color:#f1f5f9;font-size:13px;margin-bottom:4px}
+.popup-info{color:#94a3b8}
+.popup-info strong{color:#67e8f9}
+.popup-btn{margin-top:6px;padding:5px 10px;background:#7f1d1d;border:1px solid #991b1b;border-radius:4px;color:#fca5a5;font-size:11px;cursor:pointer;font-weight:600;display:inline-block}
+.popup-btn:hover{background:#991b1b;color:#fff}
+@media(max-width:768px){.sidebar{width:220px;font-size:11px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🔦 OTDR Virtual — Parque Aurora (Topologia InMap)</h1>
+    <div class="sub">OLT → Backbone → Abertura de Área → Fusão → CTO | Click numa CTO offline para analisar</div>
+  </div>
+  <div class="nav-tabs">
+    <a href="index.html">📊 BGP</a>
+    <a href="security.html">🛡️ Segurança</a>
+    <a href="mapa-rede.html">🗺️ Mapa</a>
+    <a href="otdr-rede.html">🔦 OTDR Geral</a>
+    <a href="otdr-aurora.html" class="active">🔦 Aurora</a>
+  </div>
+</div>
+
+<div id="map">
+  <div class="sidebar">
+    <h3>📍 Camadas — Topologia</h3>
+    <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Backbone (88)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-abertura" checked> 🟡 Aberturas de Área (52)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-fusao" checked> 🔵 Fusões (916)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-emenda" checked> 🔴 Caixas de Emenda (19)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-poligono"> 🟣 Áreas de Cobertura (52)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-postes"> ⚡ Postes (4136)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-ctos" checked> 🟢 CTOs ao vivo (IXC)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-otdr" checked> 🔦 Análise OTDR</label>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar CTO, área...">
+    
+    <div class="stats-box" id="statsBox">
+      <div class="stat-row">Backbone: <strong>88</strong></div>
+      <div class="stat-row">Aberturas: <strong>52</strong></div>
+      <div class="stat-row">Fusões: <strong>916</strong></div>
+      <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
+      <div class="stat-row">CTOs offline: <strong id="stat-ctos-off" style="color:#f87171">0</strong></div>
+    </div>
+    
+    <h3 class="otdr-title">🔦 Áreas (Aberturas)</h3>
+    <div id="areaList" style="max-height:200px;overflow-y:auto"></div>
+    
+    <h3 class="otdr-title">🔦 Análise OTDR</h3>
+    <div id="otdrPanel" style="font-size:11px;color:#64748b;padding:8px 0">
+      Clique numa CTO com clientes offline ou numa abertura de área para iniciar a análise.
+    </div>
+  </div>
+  
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Carregando topologia InMap + CTOs IXC...</div>
+  </div>
+</div>
+
+<script>
+const map = L.map('map', { zoomControl: true }).setView([-21.78, -41.33], 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap', maxZoom: 20
+}).addTo(map);
+
+let layers = {};
+let topoData = null;
+let ctoList = [];
+let areaMap = {};  // area_name -> {abertura, fusoes, ctos}
+
+function distM(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function loadTopologia() {
+  const res = await fetch('/parque-aurora.geojson');
+  topoData = await res.json();
+  
+  const backbone = topoData.features.filter(f => f.properties.tipo === 'backbone');
+  const aberturas = topoData.features.filter(f => f.properties.tipo === 'abertura_area');
+  const fusoes = topoData.features.filter(f => f.properties.tipo === 'fusao');
+  const caixas = topoData.features.filter(f => f.properties.tipo === 'caixa_emenda');
+  const poligonos = topoData.features.filter(f => f.properties.tipo === 'area_cobertura');
+  const postes = topoData.features.filter(f => f.properties.tipo === 'poste');
+  
+  // Backbone (linhas laranja)
+  layers.backbone = L.layerGroup();
+  for (const b of backbone) {
+    const coords = b.geometry.coordinates.map(c => [c[1], c[0]]);
+    L.polyline(coords, { color: '#f59e0b', weight: 3, opacity: 0.6 })
+      .bindPopup(`<div class="popup-title">🟠 Backbone: ${b.properties.nome}</div>`)
+      .addTo(layers.backbone);
+  }
+  layers.backbone.addTo(map);
+  
+  // Aberturas de área (pontos amarelos grandes)
+  layers.abertura = L.layerGroup();
+  for (const a of aberturas) {
+    const [lon, lat] = a.geometry.coordinates;
+    const m = L.circleMarker([lat, lon], {
+      radius: 8, fillColor: '#fbbf24', fillOpacity: 0.9, color: '#92400e', weight: 2
+    });
+    m.bindPopup(`<div class="popup-title">🟡 ${a.properties.nome}</div>
+      <div class="popup-info">Abertura de Área FTTH<br>Ponto de distribuição do backbone</div>
+      <br><div class="popup-btn" onclick="analyzeArea('${a.properties.nome}', ${lat}, ${lon})">🔦 Analisar Área</div>`);
+    m.addTo(layers.abertura);
+    
+    // Indexar área
+    areaMap[a.properties.nome] = {
+      lat, lon,
+      fusoes: fusoes.filter(f => f.properties.area === a.properties.nome),
+      ctos: []
+    };
+  }
+  layers.abertura.addTo(map);
+  
+  // Fusões (linhas azuis finas)
+  layers.fusao = L.layerGroup();
+  for (const f of fusoes) {
+    const coords = f.geometry.coordinates.map(c => [c[1], c[0]]);
+    L.polyline(coords, { color: '#3b82f6', weight: 1.5, opacity: 0.4 })
+      .bindPopup(`<div class="popup-title">🔵 Fusão: ${f.properties.nome}</div>
+        <div class="popup-info">Área: <strong>${f.properties.area}</strong></div>`)
+      .addTo(layers.fusao);
+  }
+  layers.fusao.addTo(map);
+  
+  // Caixas de emenda
+  layers.emenda = L.layerGroup();
+  for (const c of caixas) {
+    const [lon, lat] = c.geometry.coordinates;
+    L.circleMarker([lat, lon], { radius: 5, fillColor: '#ef4444', fillOpacity: 0.8, color: '#7f1d1d', weight: 1 })
+      .bindPopup(`<div class="popup-title">🔴 ${c.properties.nome}</div><div class="popup-info">Caixa de emenda / CEO</div>`)
+      .addTo(layers.emenda);
+  }
+  layers.emenda.addTo(map);
+  
+  // Polígonos
+  layers.poligono = L.layerGroup();
+  for (const p of poligonos) {
+    const coords = p.geometry.coordinates[0].map(c => [c[1], c[0]]);
+    L.polygon(coords, { color: '#a855f7', weight: 1, opacity: 0.3, fillColor: '#a855f7', fillOpacity: 0.05 })
+      .bindPopup(`<div class="popup-title">🟣 ${p.properties.nome}</div>`)
+      .addTo(layers.poligono);
+  }
+  
+  // Postes (apenas se ativado)
+  layers.postes = L.layerGroup();
+  for (const p of postes) {
+    const [lon, lat] = p.geometry.coordinates;
+    L.circleMarker([lat, lon], { radius: 1.5, fillColor: '#64748b', fillOpacity: 0.5, color: '#64748b', weight: 0.5 })
+      .addTo(layers.postes);
+  }
+  
+  // Preencher lista de áreas
+  const areaList = document.getElementById('areaList');
+  for (const [name, data] of Object.entries(areaMap).sort()) {
+    const div = document.createElement('div');
+    div.className = 'area-item';
+    div.innerHTML = `<span>${name}</span><span style="color:#64748b">${data.fusoes.length} fusões</span>`;
+    div.onclick = () => {
+      map.setView([data.lat, data.lon], 17);
+      analyzeArea(name, data.lat, data.lon);
+    };
+    areaList.appendChild(div);
+  }
+}
+
+async function loadCTOs() {
+  const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede');
+  const data = await res.json();
+  const ctos = data.ctos || [];
+  ctoList = ctos;
+  
+  layers.ctos = L.layerGroup();
+  layers.otdr = L.layerGroup();
+  layers.otdr.addTo(map);
+  
+  let ctosCount = 0, offCount = 0;
+  
+  // Filtrar CTOs próximas do Parque Aurora
+  const paCtos = ctos.filter(c => c.lat && c.lon && distM(-21.78, -41.33, c.lat, c.lon) < 2000);
+  
+  for (const cto of paCtos) {
+    ctosCount++;
+    const someOff = cto.offline > 0;
+    const allOff = cto.offline > 0 && cto.online === 0;
+    
+    let cor, radius;
+    if (allOff) { cor = '#f87171'; radius = 5; offCount++; }
+    else if (someOff) { cor = '#fbbf24'; radius = 4; }
+    else { cor = '#34d399'; radius = 3; }
+    
+    const m = L.circleMarker([cto.lat, cto.lon], { radius, fillColor: cor, fillOpacity: 0.8, color: cor, weight: 1 });
+    
+    let popup = `<div class="popup-title">CTO ${cto.id}</div>`;
+    popup += `<div class="popup-info">OLT: <strong>${cto.oltNome}</strong><br>`;
+    popup += `Clientes: <strong>${cto.total}</strong> (${cto.online} on / ${cto.offline} off)</div>`;
+    if (someOff) {
+      popup += `<br><div class="popup-btn" onclick="runOtdrFromCTO(${cto.id}, ${cto.lat}, ${cto.lon})">🔦 Analisar OTDR</div>`;
+    }
+    m.bindPopup(popup);
+    m.addTo(layers.ctos);
+    
+    // Associar CTO à área mais próxima
+    let minDist = Infinity, nearestArea = null;
+    for (const [areaName, areaData] of Object.entries(areaMap)) {
+      const d = distM(cto.lat, cto.lon, areaData.lat, areaData.lon);
+      if (d < minDist) { minDist = d; nearestArea = areaName; }
+    }
+    if (nearestArea && minDist < 300) {
+      areaMap[nearestArea].ctos.push(cto);
+    }
+  }
+  
+  layers.ctos.addTo(map);
+  
+  document.getElementById('stat-ctos').textContent = ctosCount;
+  document.getElementById('stat-ctos-off').textContent = offCount;
+}
+
+// ===== OTDR: Análise por ÁREA =====
+function analyzeArea(areaName, lat, lon) {
+  map.setView([lat, lon], 17);
+  const area = areaMap[areaName];
+  if (!area) return;
+  
+  const ctos = area.ctos;
+  const total = ctos.length;
+  const offline = ctos.filter(c => c.offline > 0 && c.online === 0);
+  const parcial = ctos.filter(c => c.offline > 0 && c.online > 0);
+  const online = ctos.filter(c => c.offline === 0 && c.online > 0);
+  
+  layers.otdr.clearLayers();
+  
+  // Destacar abertura
+  L.circleMarker([lat, lon], { radius: 12, fillColor: '#fbbf24', fillOpacity: 0.3, color: '#fbbf24', weight: 3 })
+    .addTo(layers.otdr);
+  
+  // Destacar fusões da área
+  for (const f of area.fusoes) {
+    const coords = f.geometry.coordinates.map(c => [c[1], c[0]]);
+    L.polyline(coords, { color: '#3b82f6', weight: 2, opacity: 0.7 })
+      .addTo(layers.otdr);
+  }
+  
+  // Destacar CTOs da área
+  for (const cto of ctos) {
+    const allOff = cto.offline > 0 && cto.online === 0;
+    const cor = allOff ? '#ef4444' : cto.offline > 0 ? '#fbbf24' : '#34d399';
+    L.circleMarker([cto.lat, cto.lon], { radius: 6, fillColor: cor, fillOpacity: 0.9, color: '#fff', weight: 2 })
+      .bindPopup(`CTO ${cto.id}: ${cto.online}on/${cto.offline}off`)
+      .addTo(layers.otdr);
+  }
+  
+  // Diagnóstico
+  const panel = document.getElementById('otdrPanel');
+  let html = `<div class="otdr-result">`;
+  html += `<div class="label">ÁREA ANALISADA</div><div class="val">${areaName}</div>`;
+  html += `<div class="label">Abertura</div><div class="val">${lat.toFixed(6)}, ${lon.toFixed(6)}</div>`;
+  html += `<div class="label">Fusões</div><div class="val">${area.fusoes.length} ramais</div>`;
+  html += `<div class="label">CTOs na área</div><div class="val">${total} (${online.length} online, ${parcial.length} parcial, ${offline.length} offline)</div>`;
+  
+  if (total === 0) {
+    html += `<div class="warn" style="margin-top:8px">⚠️ Nenhuma CTO do IXC associada a esta área (raio 300m)</div>`;
+  } else if (offline.length === total && total > 0) {
+    html += `<div class="alert" style="margin-top:8px">🚨 BAIRRO INTEIRO PARADO — ${offline.length} CTOs offline</div>`;
+    html += `<div class="label">Diagnóstico</div><div class="alert">ROMPIMENTO DE BACKBONE</div>`;
+    html += `<div class="label">Local provável</div><div class="val">Trecho do backbone antes da abertura de área</div>`;
+    html += `<div class="label">Ação</div><div class="val">Verificar cabo backbone → esta abertura</div>`;
+  } else if (offline.length > 0 || parcial.length > 0) {
+    html += `<div class="warn" style="margin-top:8px">⚠️ FALHA PARCIAL — ${offline.length} CTOs offline, ${parcial.length} com perda</div>`;
+    html += `<div class="label">Diagnóstico</div><div class="warn">ROMPIMENTO DE RAMAL (após abertura)</div>`;
+    html += `<div class="label">CTOs offline</div>`;
+    for (const c of offline) {
+      html += `<div style="color:#f87171">🔴 CTO ${c.id} (${c.offline} off)</div>`;
+    }
+    for (const c of parcial) {
+      html += `<div style="color:#fbbf24">🟡 CTO ${c.id} (${c.online}on/${c.offline}off)</div>`;
+    }
+    html += `<div class="label" style="margin-top:6px">Ação</div>`;
+    html += `<div class="val">Traçar da abertura → CTO offline via fusão</div>`;
+  } else {
+    html += `<div class="ok" style="margin-top:8px">✅ ÁREA NORMAL — todas as CTOs online</div>`;
+  }
+  html += `</div>`;
+  panel.innerHTML = html;
+}
+
+// ===== OTDR: Análise a partir de CTO offline =====
+function runOtdrFromCTO(ctoId, lat, lon) {
+  map.closePopup();
+  
+  // Encontrar área mais próxima
+  let minDist = Infinity, nearestArea = null, nearestData = null;
+  for (const [name, data] of Object.entries(areaMap)) {
+    const d = distM(lat, lon, data.lat, data.lon);
+    if (d < minDist) { minDist = d; nearestArea = name; nearestData = data; }
+  }
+  
+  if (nearestArea) {
+    analyzeArea(nearestArea, nearestData.lat, nearestData.lon);
+  }
+}
+
+// Toggles
+function setupToggles() {
+  const ids = ['backbone','abertura','fusao','emenda','poligono','postes','ctos','otdr'];
+  for (const id of ids) {
+    const key = id === 'ctos' ? 'ctos' : id === 'otdr' ? 'otdr' : id;
+    const layer = layers[key];
+    if (layer) {
+      document.getElementById(`layer-${id}`).addEventListener('change', e => {
+        e.target.checked ? layer.addTo(map) : map.removeLayer(layer);
+      });
+    }
+  }
+  
+  document.getElementById('searchBox').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    if (q.length < 2) return;
+    // Buscar área
+    for (const [name, data] of Object.entries(areaMap)) {
+      if (name.toLowerCase().includes(q)) {
+        map.setView([data.lat, data.lon], 17);
+        return;
+      }
+    }
+    // Buscar CTO
+    if (layers.ctos) {
+      layers.ctos.eachLayer(l => {
+        if (l.getPopup && l.getPopup().getContent().toLowerCase().includes(q)) {
+          map.setView(l.getLatLng(), 17);
+          l.openPopup();
+        }
+      });
+    }
+  });
+}
+
+(async () => {
+  await loadTopologia();
+  await loadCTOs();
+  setupToggles();
+  document.getElementById('loading').style.display = 'none';
+})();
+</script>
+</body>
+</html>
