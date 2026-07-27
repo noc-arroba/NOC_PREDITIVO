@@ -15,6 +15,8 @@
     { "src": "/config.html", "dest": "/public/config.html" },
     { "src": "/security.html", "dest": "/public/security.html" },
     { "src": "/index.html", "dest": "/public/index.html" },
+    { "src": "/mapa-rede.html", "dest": "/public/mapa_rede.html" },
+    { "src": "/inmap.geojson", "dest": "/public/inmap_filtrado.geojson" },
     { "src": "/", "dest": "/public/index.html" }
   ]
 }
