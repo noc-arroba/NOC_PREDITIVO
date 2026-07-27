@@ -204,15 +204,22 @@ async function loadTopologia() {
   }
   layers.abertura.addTo(map);
   
-  // Caixas de emenda
+  // Caixas de emenda (CEO) — numeradas e visíveis
   layers.emenda = L.layerGroup();
-  for (const c of caixas) {
+  caixas.forEach(function(c, idx) {
     const lon = c.geometry.coordinates[0];
     const lat = c.geometry.coordinates[1];
-    L.circleMarker([lat, lon], { radius: 5, fillColor: '#ef4444', fillOpacity: 0.8, color: '#7f1d1d', weight: 1 })
-      .bindPopup('<div class="popup-title">🔴 ' + c.properties.nome + '</div><div class="popup-info">Caixa de emenda / CEO</div>')
+    // Ícone em formato de quadrado laranja com número
+    const icon = L.divIcon({
+      className: '',
+      html: '<div style="background:#ef4444;border:2px solid #7f1d1d;border-radius:4px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)">' + (idx+1) + '</div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+    L.marker([lat, lon], { icon: icon })
+      .bindPopup('<div class="popup-title">🔴 CEO ' + (idx+1) + '</div><div class="popup-info">Caixa de Emenda / CEO<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6) + '</div>')
       .addTo(layers.emenda);
-  }
+  });
   layers.emenda.addTo(map);
   
   // Polígonos (oculto por padrão)
