@@ -3,56 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OTDR Virtual — Parque Aurora — Arroba</title>
+<title>OTDR Virtual — Parque Aurora — NOC Arroba</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:hidden}
-.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:12px 18px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-.header h1{font-size:16px;color:#f8fafc}
-.header .sub{font-size:11px;color:#64748b;margin-top:2px}
-.nav-tabs{display:flex;gap:3px;background:#0f172a;border-radius:8px;padding:3px;border:1px solid #1e293b;flex-wrap:wrap}
-.nav-tabs a{padding:4px 9px;border-radius:6px;font-size:11px;color:#94a3b8;text-decoration:none}
+.header{background:#0f172a;padding:10px 16px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.header h1{font-size:15px;color:#f1f5f9;font-weight:600}
+.header .sub{font-size:10px;color:#475569;margin-top:2px}
+.nav-tabs{display:flex;gap:3px;background:#0a0e1a;border-radius:7px;padding:3px;border:1px solid #1e293b}
+.nav-tabs a{padding:4px 9px;border-radius:5px;font-size:11px;color:#64748b;text-decoration:none;transition:.15s}
 .nav-tabs a:hover{color:#cbd5e1}
 .nav-tabs a.active{background:#7f1d1d;color:#fca5a5;font-weight:600}
-#map{height:calc(100vh - 52px);width:100%;background:#1a1a2e}
-.sidebar{position:absolute;top:62px;right:8px;width:320px;max-height:calc(100vh - 80px);background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px;z-index:1000;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.sidebar h3{font-size:12px;color:#93c5fd;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
-.sidebar h3.otdr-title{color:#fca5a5;border-top:1px solid #1e293b;padding-top:10px;margin-top:12px}
-.layer-toggle{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:12px;color:#cbd5e1}
-.layer-toggle input{accent-color:#3b82f6}
-.search-box{margin-top:8px;width:100%;padding:7px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:12px}
-.search-box:focus{outline:none;border-color:#3b82f6}
-.stats-box{margin-top:10px;padding-top:10px;border-top:1px solid #1e293b}
-.stat-row{display:flex;justify-content:space-between;padding:2px 0;font-size:11px;color:#94a3b8}
-.stat-row strong{color:#67e8f9}
-.otdr-result{margin-top:8px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;font-size:12px;line-height:1.5}
-.otdr-result .label{color:#64748b;font-size:10px;text-transform:uppercase;margin-top:6px}
-.otdr-result .val{color:#f1f5f9;font-weight:600}
-.otdr-result .alert{color:#f87171;font-weight:700}
-.otdr-result .ok{color:#34d399;font-weight:600}
-.otdr-result .warn{color:#fbbf24;font-weight:600}
-.area-item{padding:6px 8px;margin:3px 0;background:#0f172a;border:1px solid #1e293b;border-radius:6px;cursor:pointer;font-size:11px;color:#cbd5e1;display:flex;justify-content:space-between;align-items:center}
-.area-item:hover{border-color:#3b82f6;background:#1e293b}
-.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111827;border:1px solid #1e293b;padding:20px;border-radius:10px;text-align:center;z-index:2000}
-.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:0 auto 10px}
+#map{height:calc(100vh - 48px);width:100%;background:#1a1a2e}
+.panel{position:absolute;top:58px;right:8px;width:300px;max-height:calc(100vh - 70px);background:#111827;border:1px solid #1e293b;border-radius:10px;z-index:1000;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+.panel-section{padding:12px 14px;border-bottom:1px solid #1e293b}
+.panel-section:last-child{border-bottom:none}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#475569;margin-bottom:8px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.kpi{background:#0f172a;border:1px solid #1e293b;border-radius:7px;padding:8px 10px}
+.kpi .label{font-size:10px;color:#475569}
+.kpi .val{font-size:20px;font-weight:700;color:#f1f5f9;line-height:1.1}
+.kpi .val.red{color:#ef4444}
+.kpi .val.green{color:#22c55e}
+.kpi .val.yellow{color:#fbbf24}
+.layer-row{display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;font-size:11px;color:#94a3b8}
+.layer-row input{accent-color:#3b82f6;cursor:pointer}
+.layer-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.layer-row .line{width:16px;height:3px;border-radius:2px;flex-shrink:0}
+.ocorrencia-card{background:#0f172a;border-radius:7px;border:1px solid #1e293b;overflow:hidden;margin-bottom:6px}
+.ocorrencia-header{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.ocorrencia-header:hover{background:#1e293b}
+.ocorrencia-titulo{font-size:12px;font-weight:600;color:#f1f5f9}
+.ocorrencia-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:12px}
+.badge-backbone{background:#7f1d1d;color:#fca5a5}
+.badge-ramal{background:#7c2d12;color:#fed7aa}
+.badge-local{background:#713f12;color:#fef08a}
+.ocorrencia-body{padding:0 10px 10px;display:none;border-top:1px solid #1e293b}
+.ocorrencia-body.open{display:block}
+.info-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}
+.info-row .lbl{color:#475569}
+.info-row .val{color:#cbd5e1;font-weight:500}
+.acao-box{margin-top:8px;padding:8px;background:#1e293b;border-radius:6px;border-left:3px solid #ef4444;font-size:11px;line-height:1.5;color:#f1f5f9}
+.acao-box.ramal{border-left-color:#f97316}
+.acao-box.local{border-left-color:#eab308}
+.ceo-tag{display:inline-block;padding:2px 6px;background:#1e3a5f;border:1px solid #1d4ed8;border-radius:4px;font-size:10px;color:#93c5fd;margin:2px 2px 2px 0}
+.btn-localizar{width:100%;margin-top:8px;padding:6px;background:#1d4ed8;border:none;border-radius:5px;color:#fff;font-size:11px;cursor:pointer;font-weight:600}
+.btn-localizar:hover{background:#2563eb}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111827;border:1px solid #1e293b;padding:20px 30px;border-radius:10px;text-align:center;z-index:2000}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:28px;height:28px;animation:spin 1s linear infinite;margin:0 auto 10px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.leaflet-popup-content{font-size:12px;line-height:1.4}
-.popup-title{font-weight:700;color:#f1f5f9;font-size:13px;margin-bottom:4px}
-.popup-info{color:#94a3b8}
-.popup-info strong{color:#67e8f9}
-.popup-btn{margin-top:6px;padding:5px 10px;background:#7f1d1d;border:1px solid #991b1b;border-radius:4px;color:#fca5a5;font-size:11px;cursor:pointer;font-weight:600;display:inline-block}
-.popup-btn:hover{background:#991b1b;color:#fff}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.7}}
-@media(max-width:768px){.sidebar{width:220px;font-size:11px}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.5);opacity:0}100%{transform:scale(2.5);opacity:0}}
+.ruptura-marker{position:relative;width:16px;height:16px}
+.ruptura-ping{position:absolute;inset:0;border-radius:50%;background:#ef4444;animation:pulse-ring 1.5s ease-out infinite}
+.ruptura-dot{position:absolute;inset:3px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+.empty{color:#475569;font-size:11px;padding:8px 0}
+.leaflet-popup-content-wrapper{background:#111827;border:1px solid #1e293b;color:#e2e8f0;border-radius:8px}
+.leaflet-popup-tip{background:#111827}
+.leaflet-popup-content{font-size:12px;line-height:1.4;margin:10px 14px}
+.pop-title{font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:5px}
+.pop-info{color:#94a3b8}
+.pop-info strong{color:#67e8f9}
+.pop-alerta{color:#fca5a5;font-weight:600;margin-top:4px}
 </style>
 </head>
 <body>
 <div class="header">
   <div>
-    <h1>🔦 OTDR Virtual — Parque Aurora (Topologia InMap)</h1>
-    <div class="sub">OLT → Backbone → Abertura de Área → CTO | Cor da borda = fibra que atende a CTO</div>
+    <h1>🔦 OTDR Virtual — Parque Aurora</h1>
+    <div class="sub">OLT → Backbone → Abertura de Área → CEO → CTO | Rompimento automático por ocorrência</div>
   </div>
   <div class="nav-tabs">
     <a href="index.html">📊 BGP</a>
@@ -64,727 +84,515 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 </div>
 
 <div id="map">
-  <div class="sidebar">
-    <h3>📍 Camadas — Topologia</h3>
-    <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Cabos Backbone (44)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-cabosftth" checked> 🔵 Cabos FTTH/Ramais (378)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-abertura" checked> 🟡 Aberturas de Área (52)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-emenda" checked> 🔴 Caixas de Emenda (19)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-poligono"> 🟣 Áreas de Cobertura (52)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-postes"> ⚡ Postes (4136)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-ctos" checked> 🟢 CTOs ao vivo (IXC)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-otdr" checked> 🔦 Análise OTDR</label>
-    
-    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar CTO, área...">
-    
-    <div class="stats-box" id="statsBox">
-      <div class="stat-row">Backbone: <strong>44</strong></div>
-      <div class="stat-row">Cabos FTTH: <strong id="stat-cabos-ftth">378</strong></div>
-      <div class="stat-row">Aberturas: <strong>52</strong></div>
-      <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
-      <div class="stat-row">CTOs offline: <strong id="stat-ctos-off" style="color:#f87171">0</strong></div>
+  <div class="panel" id="panel">
+
+    <!-- KPIs -->
+    <div class="panel-section">
+      <div class="section-title">📊 Status Parque Aurora</div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">CTOs</div><div class="val" id="kpi-ctos">—</div></div>
+        <div class="kpi"><div class="label">Offline</div><div class="val red" id="kpi-off">—</div></div>
+        <div class="kpi"><div class="label">Clientes online</div><div class="val green" id="kpi-cli-on">—</div></div>
+        <div class="kpi"><div class="label">Clientes off</div><div class="val red" id="kpi-cli-off">—</div></div>
+      </div>
     </div>
-    
-    <h3 class="otdr-title">🔦 Áreas (Aberturas)</h3>
-    <div id="areaList" style="max-height:200px;overflow-y:auto"></div>
-    
-    <h3 class="otdr-title">🔦 Simulação de Rompimento</h3>
-    <button id="btnSimular" style="width:100%;padding:8px;background:#7f1d1d;border:1px solid #991b1b;border-radius:6px;color:#fca5a5;font-size:12px;cursor:pointer;font-weight:600;margin-bottom:6px">
-      🔴 ATIVAR MODO SIMULAÇÃO
-    </button>
-    <div id="simInfo" style="font-size:11px;color:#64748b;padding:4px 0">
-      Clique no botão acima e depois clique em qualquer cabo para simular um rompimento.
+
+    <!-- Camadas -->
+    <div class="panel-section">
+      <div class="section-title">📍 Camadas</div>
+      <label class="layer-row"><input type="checkbox" id="lyr-backbone" checked><span class="line" style="background:#f59e0b"></span>Backbone principal</label>
+      <label class="layer-row"><input type="checkbox" id="lyr-ramais" checked><span class="line" style="background:#0ea5e9"></span>Ramais FTTH</label>
+      <label class="layer-row"><input type="checkbox" id="lyr-ceos" checked><span class="dot" style="background:#f97316;border-radius:3px"></span>Caixas de emenda (CEO)</label>
+      <label class="layer-row"><input type="checkbox" id="lyr-aberturas" checked><span class="dot" style="background:#a855f7;border-radius:3px"></span>Aberturas de área</label>
+      <label class="layer-row"><input type="checkbox" id="lyr-ctos" checked><span class="dot" style="background:#22c55e"></span>CTOs ao vivo</label>
+      <label class="layer-row"><input type="checkbox" id="lyr-ruptura" checked><span class="dot" style="background:#ef4444"></span>Zona de rompimento</label>
     </div>
-    <div id="simResult" style="display:none;font-size:11px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;margin-top:6px"></div>
-    
-    <h3 class="otdr-title">🔦 Análise OTDR</h3>
-    <div id="otdrPanel" style="font-size:11px;color:#64748b;padding:8px 0">
-      Clique numa CTO com clientes offline ou numa abertura de área para iniciar a análise.
+
+    <!-- Ocorrências ativas -->
+    <div class="panel-section">
+      <div class="section-title">🔴 Ocorrências Ativas</div>
+      <div id="ocorrencias-list"><div class="empty">Analisando rede...</div></div>
     </div>
+
   </div>
-  
+
   <div class="loading" id="loading">
     <div class="spinner"></div>
-    <div id="loadingText">Carregando topologia InMap...</div>
+    <div id="loadingText" style="font-size:12px;color:#94a3b8">Carregando topologia...</div>
   </div>
 </div>
 
 <script>
-// ===== Globais =====
-const map = L.map('map', { zoomControl: true }).setView([-21.784, -41.331], 14);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap', maxZoom: 20
+// =========================================================
+// CORES DE FIBRA — padrão ITU-T G.652
+// =========================================================
+const COR_FIBRA = {
+  'F1':'#0055cc','F2':'#ff7700','F3':'#00aa00','F4':'#8B4513',
+  'F5':'#888888','F6':'#dddddd','F7':'#cc0000','F8':'#222222',
+  'F9':'#ddcc00','F10':'#8800cc','F11':'#ff66aa','F12':'#00bbcc',
+  'F13':'#330066','F14':'#cc5500','F15':'#336600','F16':'#660066'
+};
+function corFibra(nome){
+  var m = nome.match(/^F(\d+)/);
+  if(m) return COR_FIBRA['F'+m[1]] || '#0ea5e9';
+  if(nome.toUpperCase().indexOf('BACKBONE')>=0) return '#f59e0b';
+  return '#0ea5e9';
+}
+
+// =========================================================
+// INICIALIZAÇÃO DO MAPA
+// =========================================================
+const map = L.map('map',{zoomControl:true}).setView([-21.784,-41.331],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OpenStreetMap',maxZoom:20
 }).addTo(map);
 
-let layers = {};
-let topoData = null;
-let areaMap = {};
+const layers = {};
 
-// Tabela de cores de fibra (padrão ITU-T)
-const fiberColors = {
-  '1':'#0066CC','F1':'#0066CC',
-  '2':'#FF8800','F2':'#FF8800',
-  '3':'#00AA00','F3':'#00AA00',
-  '4':'#8B4513','F4':'#8B4513',
-  '5':'#708090','F5':'#708090',
-  '6':'#E0E0E0','F6':'#E0E0E0',
-  '7':'#FF0000','F7':'#FF0000',
-  '8':'#333333','F8':'#333333',
-  '9':'#FFDD00','F9':'#FFDD00',
-  '10':'#AA00FF','F10':'#AA00FF',
-  '11':'#FF66AA','F11':'#FF66AA',
-  '12':'#00CCFF','F12':'#00CCFF',
-  '13':'#4B0082','F13':'#4B0082',
-  '14':'#FF6600','F14':'#FF6600',
-  '15':'#336600','F15':'#336600',
-  '16':'#660066','F16':'#660066',
-  '17':'#666600','F17':'#666600',
-  '19':'#006666','F19':'#006666'
-};
+function setLoad(t){document.getElementById('loadingText').textContent=t;}
+function hideLoad(){document.getElementById('loading').style.display='none';}
 
-const fiberNames = {
-  '1':'Azul','F1':'Azul',
-  '2':'Laranja','F2':'Laranja',
-  '3':'Verde','F3':'Verde',
-  '4':'Marrom','F4':'Marrom',
-  '5':'Cinza','F5':'Cinza',
-  '6':'Branco','F6':'Branco',
-  '7':'Vermelho','F7':'Vermelho',
-  '8':'Preto','F8':'Preto',
-  '9':'Amarelo','F9':'Amarelo',
-  '10':'Roxo','F10':'Roxo',
-  '11':'Rosa','F11':'Rosa',
-  '12':'Turquesa','F12':'Turquesa',
-  '13':'Indigo','F13':'Indigo',
-  '14':'Laranja Esc','F14':'Laranja Esc',
-  '15':'Verde Esc','F15':'Verde Esc',
-  '16':'Roxo Esc','F16':'Roxo Esc',
-  '17':'Oliva','F17':'Oliva',
-  '19':'Teal','F19':'Teal'
-};
-
-// Cache de endpoints de fusão por área (pré-computado)
-let fusaoEndpoints = {}; // areaName -> [{nome, lat, lon}]
-
-function distM(lat1, lon1, lat2, lon2) {
-  const R = 6371000;
-  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function distM(lat1,lon1,lat2,lon2){
+  var R=6371000,dlat=(lat2-lat1)*Math.PI/180,dlon=(lon2-lon1)*Math.PI/180;
+  var a=Math.sin(dlat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dlon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// ===== Carregar topologia InMap =====
-async function loadTopologia() {
-  document.getElementById('loadingText').textContent = 'Carregando topologia InMap...';
-  const res = await fetch('/parque-aurora.geojson');
-  topoData = await res.json();
-  
-  const backbone = topoData.features.filter(f => f.properties.tipo === 'backbone');
-  const aberturas = topoData.features.filter(f => f.properties.tipo === 'abertura_area');
-  const fusoes = topoData.features.filter(f => f.properties.tipo === 'fusao');
-  const caixas = topoData.features.filter(f => f.properties.tipo === 'caixa_emenda');
-  const poligonos = topoData.features.filter(f => f.properties.tipo === 'area_cobertura');
-  const postes = topoData.features.filter(f => f.properties.tipo === 'poste');
-  
-  // Cabos — separar backbone de ramais
+// =========================================================
+// CARREGAR TOPOLOGIA (backbone + ceos + aberturas)
+// =========================================================
+var topoData, cabosData;
+
+async function loadTopologia(){
+  setLoad('Carregando topologia...');
+  const r = await fetch('/parque-aurora.geojson');
+  topoData = await r.json();
+
+  setLoad('Carregando cabos FTTH...');
+  const r2 = await fetch('/cabos-pa-aurora.geojson');
+  cabosData = await r2.json();
+}
+
+function renderTopologia(){
+  const backbone = topoData.features.filter(f=>f.properties.tipo==='backbone');
+  const aberturas = topoData.features.filter(f=>f.properties.tipo==='abertura_area');
+  const emendas   = topoData.features.filter(f=>f.properties.tipo==='caixa_emenda');
+
+  // --- Backbone ---
   layers.backbone = L.layerGroup();
-  const cabosVistos = {}; // deduplicar
-  for (const b of backbone) {
-    const nome = b.properties.nome;
-    const coords = b.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
-    
-    // Deduplicar: chave = nome + primeiro ponto
-    const key = nome + '|' + coords[0][0].toFixed(6) + ',' + coords[0][1].toFixed(6);
-    if (cabosVistos[key]) continue;
-    cabosVistos[key] = true;
-    
-    // Extrair metadados do nome: (XXX M - XX F) ou XXXM - XXF
-    var lengthM = '', fibers = '';
-    var m = nome.match(/(\d+)\s*M\s*-\s*(\d+)\s*F/i);
-    if (m) { lengthM = m[1] + 'm'; fibers = m[2] + ' fibras'; }
-    
-    // Categorizar
-    var isBackbone = nome.toUpperCase().indexOf('BACKBONE') >= 0;
-    var isRamal = nome.match(/^F\d/) || nome.indexOf('AREA') >= 0 || nome.indexOf('ÁREA') >= 0;
-    
-    // Estilo por categoria
-    var cor, weight, opacity, dashArray;
-    if (isBackbone) {
-      // Backbone principal: laranja grosso
-      cor = '#f59e0b'; weight = 4; opacity = 0.8; dashArray = null;
-    } else if (isRamal) {
-      // Ramal F1-F10: ciano fino
-      cor = '#06b6d4'; weight = 2; opacity = 0.5; dashArray = '5,3';
-    } else {
-      // Cabo secundário: laranja claro médio
-      cor = '#fbbf24'; weight = 3; opacity = 0.6; dashArray = null;
-    }
-    
-    // Fiber color se for ramal F1-F12
-    var fMatch = nome.match(/^F(\d+)/);
-    var fiberColor = null;
-    if (fMatch) {
-      fiberColor = fiberColors[fMatch[1]] || fiberColors['F'+fMatch[1]];
-      if (fiberColor) { cor = fiberColor; }
-    }
-    
-    var lineOpts = { color: cor, weight: weight, opacity: opacity };
-    if (dashArray) lineOpts.dashArray = dashArray;
-    
-    var popup = '<div class="popup-title">🟠 ' + (isBackbone ? 'Backbone' : isRamal ? 'Ramal' : 'Cabo') + ': ' + nome + '</div>';
-    popup += '<div class="popup-info">';
-    if (lengthM) popup += 'Comprimento: <strong>' + lengthM + '</strong><br>';
-    if (fibers) popup += 'Capacidade: <strong>' + fibers + '</strong><br>';
-    popup += 'Pontos: <strong>' + coords.length + '</strong>';
-    popup += '</div>';
-    
-    var poly = L.polyline(coords, lineOpts).bindPopup(popup);
-    poly.on('click', function() {
-      if (simMode) {
-        var isBB = isBackbone;
-        simularRompimento(nome, coords, isBB ? 'backbone' : (isRamal ? 'ramal' : 'cabo_secundario'), lengthM.replace('m',''), fibers.replace(' fibras',''));
-      }
-    });
-    poly.addTo(layers.backbone);
+  var bbVisto = {};
+  for(var b of backbone){
+    var nome = b.properties.nome;
+    var coords = b.geometry.coordinates.map(c=>[c[1],c[0]]);
+    var key = coords[0][0].toFixed(5)+','+coords[0][1].toFixed(5);
+    if(bbVisto[key]) continue; bbVisto[key]=true;
+    var isBB = nome.toUpperCase().indexOf('BACKBONE')>=0 && nome.toUpperCase().indexOf('ÁREA')<0;
+    var cor = corFibra(nome);
+    var w = isBB ? 3.5 : 2;
+    L.polyline(coords,{color:cor,weight:w,opacity:0.75})
+      .bindPopup('<div class="pop-title">'+nome+'</div><div class="pop-info">Tipo: <strong>'+(isBB?'Backbone principal':'Ramal')+'</strong></div>')
+      .addTo(layers.backbone);
   }
   layers.backbone.addTo(map);
-  
-  // Aberturas de área (pontos amarelos grandes) — CAIXAS FTTH
-  layers.abertura = L.layerGroup();
-  for (const a of aberturas) {
-    const lon = a.geometry.coordinates[0];
-    const lat = a.geometry.coordinates[1];
-    const areaName = a.properties.nome;
-    
-    // Ícone de caixa FTTH (quadrado amarelo)
-    const icon = L.divIcon({
-      className: '',
-      html: '<div style="background:#fbbf24;border:2px solid #92400e;border-radius:3px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
-      iconSize: [16, 16],
-      iconAnchor: [8, 8]
-    });
-    
-    const m = L.marker([lat, lon], { icon: icon });
-    m.bindPopup('<div class="popup-title">🟡 ' + areaName + '</div>' +
-      '<div class="popup-info">Abertura de Área FTTH<br>Ponto de distribuição do backbone</div>' +
-      '<br><div class="popup-btn" onclick="analyzeArea(\'' + areaName + '\', ' + lat + ', ' + lon + ')">🔦 Analisar Área</div>');
-    m.addTo(layers.abertura);
-    
-    // Indexar área com suas fusões
-    const areaFusoes = fusoes.filter(f => f.properties.area === areaName);
-    areaMap[areaName] = {
-      lat: lat, lon: lon,
-      fusoes: areaFusoes,
-      ctos: []
-    };
-    
-    // Pré-computar endpoints das fusões para matching rápido
-    fusaoEndpoints[areaName] = [];
-    for (const f of areaFusoes) {
-      const fc = f.geometry.coordinates;
-      const end = fc[fc.length-1];
-      fusaoEndpoints[areaName].push({ nome: f.properties.nome, lat: end[1], lon: end[0] });
-    }
+
+  // --- Ramais FTTH (KML) ---
+  layers.ramais = L.layerGroup();
+  for(var c of cabosData.features){
+    var nome = c.properties.nome;
+    var cat  = c.properties.categoria;
+    var coords = c.geometry.coordinates.map(p=>[p[1],p[0]]);
+    var cor,w,dash;
+    if(cat==='backbone_area'){cor='#f97316';w=2.5;dash=null;}
+    else if(cat==='ramal_area'){cor='#0ea5e9';w=1.5;dash=null;}
+    else if(cat==='ramal_mini'){cor='#22c55e';w=1;dash='4,2';}
+    else{cor='#475569';w=1;dash='2,3';}
+    var opts={color:cor,weight:w,opacity:0.5};
+    if(dash) opts.dashArray=dash;
+    var lm = c.properties.comprimento;
+    var lf = c.properties.fibras;
+    var popup='<div class="pop-title">'+nome+'</div><div class="pop-info">';
+    if(lm) popup+='Comprimento: <strong>'+lm+'m</strong><br>';
+    if(lf) popup+='Fibras: <strong>'+lf+'</strong><br>';
+    popup+='Categoria: <strong>'+cat+'</strong></div>';
+    L.polyline(coords,opts).bindPopup(popup).addTo(layers.ramais);
   }
-  layers.abertura.addTo(map);
-  
-  // Caixas de emenda (CEO) — quadrados vermelhos numerados
-  layers.emenda = L.layerGroup();
-  caixas.forEach(function(c, idx) {
-    const lon = c.geometry.coordinates[0];
-    const lat = c.geometry.coordinates[1];
-    const icon = L.divIcon({
-      className: '',
-      html: '<div style="background:#ef4444;border:2px solid #7f1d1d;border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)">' + (idx+1) + '</div>',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11]
-    });
-    L.marker([lat, lon], { icon: icon })
-      .bindPopup('<div class="popup-title">🔴 CEO ' + (idx+1) + '</div><div class="popup-info">Caixa de Emenda / CEO<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6) + '</div>')
-      .addTo(layers.emenda);
-  });
-  layers.emenda.addTo(map);
-  
-  // Polígonos (oculto por padrão)
-  layers.poligono = L.layerGroup();
-  for (const p of poligonos) {
-    const coords = p.geometry.coordinates[0].map(c => [c[1], c[0]]);
-    L.polygon(coords, { color: '#a855f7', weight: 1, opacity: 0.3, fillColor: '#a855f7', fillOpacity: 0.05 })
-      .bindPopup('<div class="popup-title">🟣 ' + p.properties.nome + '</div>')
-      .addTo(layers.poligono);
+  layers.ramais.addTo(map);
+
+  // --- CEOs (caixas de emenda) ---
+  layers.ceos = L.layerGroup();
+  for(var e of emendas){
+    var lat=e.geometry.coordinates[1], lon=e.geometry.coordinates[0];
+    var nome=e.properties.nome||'CEO';
+    var icon=L.divIcon({html:'<div style="background:#f97316;width:10px;height:10px;border-radius:2px;border:1.5px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.5)"></div>',className:'',iconSize:[10,10],iconAnchor:[5,5]});
+    L.marker([lat,lon],{icon}).bindPopup('<div class="pop-title">📦 '+nome+'</div><div class="pop-info">Caixa de emenda (CEO)</div>').addTo(layers.ceos);
   }
-  
-  // Postes (oculto por padrão)
-  layers.postes = L.layerGroup();
-  for (const p of postes) {
-    const lon = p.geometry.coordinates[0];
-    const lat = p.geometry.coordinates[1];
-    L.circleMarker([lat, lon], { radius: 1.5, fillColor: '#64748b', fillOpacity: 0.5, color: '#64748b', weight: 0.5 })
-      .addTo(layers.postes);
+  layers.ceos.addTo(map);
+
+  // --- Aberturas de área ---
+  layers.aberturas = L.layerGroup();
+  for(var a of aberturas){
+    var lat=a.geometry.coordinates[1], lon=a.geometry.coordinates[0];
+    var nome=a.properties.nome;
+    var icon=L.divIcon({html:'<div style="background:#a855f7;width:13px;height:13px;border-radius:3px;border:2px solid #fff;box-shadow:0 0 6px rgba(168,85,247,.6)"></div>',className:'',iconSize:[13,13],iconAnchor:[6,6]});
+    L.marker([lat,lon],{icon}).bindPopup('<div class="pop-title">📡 '+nome+'</div><div class="pop-info">Abertura de área — ponto de entrada PON</div>').addTo(layers.aberturas);
   }
-  
-  // Preencher lista de áreas
-  const areaList = document.getElementById('areaList');
-  for (const [name, data] of Object.entries(areaMap).sort()) {
-    const div = document.createElement('div');
-    div.className = 'area-item';
-    div.innerHTML = '<span>' + name + '</span><span style="color:#64748b">' + data.fusoes.length + ' fusões</span>';
-    div.onclick = function() {
-      map.setView([data.lat, data.lon], 17);
-      analyzeArea(name, data.lat, data.lon);
-    };
-    areaList.appendChild(div);
-  }
+  layers.aberturas.addTo(map);
 }
 
-// ===== Carregar CTOs ao vivo do IXC =====
-async function loadCTOs() {
-  document.getElementById('loadingText').textContent = 'Carregando CTOs do IXC...';
-  
-  // Fetch com timeout de 30s
-  const controller = new AbortController();
-  const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
-  
-  let data;
-  try {
-    const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede', { signal: controller.signal });
-    clearTimeout(timeoutId);
-    data = await res.json();
-  } catch(e) {
-    clearTimeout(timeoutId);
-    console.warn('Erro ao carregar CTOs:', e);
-    document.getElementById('stat-ctos').textContent = 'ERRO';
+// =========================================================
+// CARREGAR CTOs + ANALISAR OCORRÊNCIAS
+// =========================================================
+var todoCTOs = [];
+
+async function loadCTOs(){
+  setLoad('Carregando CTOs ao vivo (IXC)...');
+  try{
+    const r = await fetch('/api/rede');
+    const data = await r.json();
+    todoCTOs = (data.ctos||[]).filter(c=>c.lat&&c.lon);
+  }catch(e){
+    // fallback manutencao
+    const r2 = await fetch('https://manutencao-de-rede.vercel.app/api/rede');
+    const d2 = await r2.json();
+    todoCTOs = (d2.ctos||[]).filter(c=>c.lat&&c.lon);
+  }
+
+  renderCTOs();
+  analisarOcorrencias();
+}
+
+function renderCTOs(){
+  layers.ctos = L.layerGroup();
+  var totalCTOs=0,totalOff=0,totalOn=0,totalCliOff=0;
+  for(var c of todoCTOs){
+    totalCTOs++;
+    var hasOff = (c.offline||0)>0;
+    if(hasOff) totalOff++;
+    totalOn += (c.online||0);
+    totalCliOff += (c.offline||0);
+    var cor = hasOff ? '#ef4444' : '#22c55e';
+    var r = hasOff ? 6 : 4;
+    var marker = L.circleMarker([c.lat,c.lon],{radius:r,color:cor,fillColor:cor,fillOpacity:0.85,weight:1.5});
+    var pop='<div class="pop-title">'+(hasOff?'🔴':'🟢')+' CTO '+c.id+'</div>';
+    pop+='<div class="pop-info">Online: <strong>'+((c.online||0))+'</strong> | Offline: <strong>'+((c.offline||0))+'</strong>';
+    if(c.oltId) pop+='<br>OLT: <strong>'+c.oltId+'</strong>';
+    pop+='</div>';
+    if(hasOff) pop+='<div class="pop-alerta">⚠️ Clientes sem sinal</div>';
+    marker.bindPopup(pop).addTo(layers.ctos);
+  }
+  layers.ctos.addTo(map);
+  document.getElementById('kpi-ctos').textContent=totalCTOs;
+  document.getElementById('kpi-off').textContent=totalOff;
+  document.getElementById('kpi-cli-on').textContent=totalOn;
+  document.getElementById('kpi-cli-off').textContent=totalCliOff;
+}
+
+// =========================================================
+// ANÁLISE AUTOMÁTICA DE ROMPIMENTO
+// =========================================================
+// Lógica:
+// 1. Agrupa CTOs por abertura de área (mais próxima, raio 600m)
+// 2. Se >= 60% de uma área offline → rompimento no BACKBONE dessa área
+// 3. Se < 60% → falha de RAMAL ou CEO
+// 4. Ponto estimado = baricentro entre a última CTO online e a 1ª CTO offline
+//    projetado sobre o cabo backbone mais próximo
+
+layers.ruptura = L.layerGroup();
+
+function analisarOcorrencias(){
+  var aberturas = topoData.features.filter(f=>f.properties.tipo==='abertura_area');
+  var emendas   = topoData.features.filter(f=>f.properties.tipo==='caixa_emenda');
+  var backbone  = topoData.features.filter(f=>f.properties.tipo==='backbone');
+
+  // OLT (ponto de origem)
+  var oltLat=-21.7797, oltLon=-41.3272;
+
+  // Montar mapa de áreas
+  var areaMap = {};
+  for(var a of aberturas){
+    areaMap[a.properties.nome]={
+      lat: a.geometry.coordinates[1],
+      lon: a.geometry.coordinates[0],
+      online:[],offline:[],
+      ceos:[],backbone:null
+    };
+  }
+
+  // Associar backbone a cada área (endpoint < 50m)
+  for(var b of backbone){
+    var bn = b.properties.nome;
+    var coords = b.geometry.coordinates;
+    for(var ep of [coords[0],coords[coords.length-1]]){
+      for(var a of aberturas){
+        var d=distM(ep[1],ep[0],a.geometry.coordinates[1],a.geometry.coordinates[0]);
+        if(d<60 && !areaMap[a.properties.nome].backbone){
+          areaMap[a.properties.nome].backbone = {nome:bn, coords:coords};
+        }
+      }
+    }
+  }
+
+  // Associar CEOs a cada área
+  for(var e of emendas){
+    var elat=e.geometry.coordinates[1],elon=e.geometry.coordinates[0];
+    var minD=9999,minA=null;
+    for(var a of aberturas){
+      var d=distM(elat,elon,a.geometry.coordinates[1],a.geometry.coordinates[0]);
+      if(d<minD){minD=d;minA=a.properties.nome;}
+    }
+    if(minD<400 && minA) areaMap[minA].ceos.push({nome:e.properties.nome,lat:elat,lon:elon});
+  }
+
+  // Associar cada CTO à abertura mais próxima
+  for(var c of todoCTOs){
+    var minD=9999,minA=null;
+    for(var a of aberturas){
+      var d=distM(c.lat,c.lon,a.geometry.coordinates[1],a.geometry.coordinates[0]);
+      if(d<minD){minD=d;minA=a.properties.nome;}
+    }
+    if(minD<600 && minA){
+      if((c.offline||0)>0) areaMap[minA].offline.push(c);
+      else areaMap[minA].online.push(c);
+    }
+  }
+
+  // Detectar ocorrências
+  var ocorrencias = [];
+  for(var [nome,data] of Object.entries(areaMap)){
+    var tot = data.online.length + data.offline.length;
+    if(tot===0 || data.offline.length===0) continue;
+    var pct = data.offline.length/tot;
+
+    // Tipo de falha
+    var tipo, gravidade;
+    if(pct>=0.6){ tipo='backbone'; gravidade='CRÍTICO'; }
+    else if(pct>=0.3){ tipo='ramal'; gravidade='ALTO'; }
+    else{ tipo='local'; gravidade='MÉDIO'; }
+
+    // --- Ponto estimado de rompimento ---
+    var ruptLat, ruptLon, ruptDesc;
+
+    if(tipo==='backbone' && data.backbone){
+      // Rompimento está no cabo backbone desta área
+      // Estimativa: no ponto médio entre a abertura e a última CTO online mais próxima
+      var bbCoords = data.backbone.coords;
+      // Ponto mais próximo da OLT no backbone = upstream
+      var p0 = bbCoords[0], pN = bbCoords[bbCoords.length-1];
+      var d0 = distM(oltLat,oltLon,p0[1],p0[0]);
+      var dN = distM(oltLat,oltLon,pN[1],pN[0]);
+      var upstream   = d0<dN ? p0 : pN;  // mais perto da OLT
+      var downstream = d0<dN ? pN : p0;  // mais longe da OLT
+
+      // Verificar se há CTOs online próximas ao backbone para afinar a estimativa
+      var maxOnDist = 0, frontierPoint = upstream;
+      for(var co of data.online){
+        // Projetar CTO online sobre o backbone e achar ponto mais downstream
+        var dCoord = distM(co.lat,co.lon,downstream[1],downstream[0]);
+        var dUpstream = distM(co.lat,co.lon,upstream[1],upstream[0]);
+        var total_bb = distM(upstream[1],upstream[0],downstream[1],downstream[0]);
+        var onBB = (total_bb - dCoord); // distância desta CTO ao longo do backbone desde upstream
+        if(onBB>maxOnDist){ maxOnDist=onBB; frontierPoint=[co.lon,co.lat]; }
+      }
+
+      // Ponto de ruptura = entre frontierPoint e a primeira CTO offline
+      var offSorted = data.offline.slice().sort((a,b)=>
+        distM(a.lat,a.lon,upstream[1],upstream[0])-distM(b.lat,b.lon,upstream[1],upstream[0])
+      );
+      var firstOff = offSorted[0];
+      ruptLat = (frontierPoint[1]+firstOff.lat)/2;
+      ruptLon = (frontierPoint[0]+firstOff.lon)/2;
+      ruptDesc = 'Backbone '+data.backbone.nome.replace(/ \(.*\)/,'');
+
+    } else {
+      // Rompimento em ramal ou CEO
+      // Ponto = baricentro das CTOs offline
+      var sumLat=0,sumLon=0;
+      for(var co of data.offline){sumLat+=co.lat;sumLon+=co.lon;}
+      ruptLat = sumLat/data.offline.length;
+      ruptLon = sumLon/data.offline.length;
+      // Se há CEO próxima, marcar ela como provável ponto
+      for(var ceo of data.ceos){
+        var dCEO=distM(ruptLat,ruptLon,ceo.lat,ceo.lon);
+        if(dCEO<200){ruptLat=ceo.lat;ruptLon=ceo.lon;ruptDesc='CEO '+ceo.nome;break;}
+      }
+      if(!ruptDesc) ruptDesc='Ramal área '+nome;
+    }
+
+    var cliOff = data.offline.reduce((s,c)=>s+(c.offline||0),0);
+    var cliOn  = data.online.reduce((s,c)=>s+(c.online||0),0);
+
+    // Distância estimada da OLT até o ponto de ruptura
+    var distOLT = Math.round(distM(oltLat,oltLon,ruptLat,ruptLon));
+
+    ocorrencias.push({
+      area: nome,
+      tipo, gravidade,
+      ctosOff: data.offline.length,
+      ctosOn:  data.online.length,
+      ctosTotal: tot,
+      pct: Math.round(pct*100),
+      cliOff, cliOn,
+      ruptLat, ruptLon, ruptDesc, distOLT,
+      ceos: data.ceos,
+      backbone: data.backbone ? data.backbone.nome : null,
+      areaLat: data.lat, areaLon: data.lon
+    });
+  }
+
+  // Ordenar por gravidade
+  var ordem = {backbone:0,ramal:1,local:2};
+  ocorrencias.sort((a,b)=>ordem[a.tipo]-ordem[b.tipo]||(b.cliOff-a.cliOff));
+
+  renderOcorrencias(ocorrencias);
+}
+
+function renderOcorrencias(ocorrencias){
+  layers.ruptura.clearLayers();
+
+  var list = document.getElementById('ocorrencias-list');
+  if(ocorrencias.length===0){
+    list.innerHTML='<div class="empty">✅ Nenhuma ocorrência detectada</div>';
     return;
   }
-  
-  const ctos = data.ctos || [];
-  
-  layers.ctos = L.layerGroup();
-  layers.otdr = L.layerGroup();
-  layers.otdr.addTo(map);
-  
-  let ctosCount = 0, offCount = 0;
-  
-  // Filtrar CTOs próximas do Parque Aurora (2km)
-  const paCtos = ctos.filter(function(c) {
-    return c.lat && c.lon && distM(-21.784, -41.331, c.lat, c.lon) < 4000;
-  });
-  
-  // Para cada CTO, encontrar área mais próxima e cor de fibra
-  // Otimização: só checar áreas dentro de 500m
-  for (const cto of paCtos) {
-    ctosCount++;
-    const someOff = cto.offline > 0;
-    const allOff = cto.offline > 0 && cto.online === 0;
-    
-    // Identificar área mais próxima (só checar áreas a menos de 500m)
-    let minDist = Infinity, nearestArea = null;
-    let nearestFiber = null, nearestFiberColor = null, nearestFiberName = null;
-    
-    for (const [areaName, areaData] of Object.entries(areaMap)) {
-      const d = distM(cto.lat, cto.lon, areaData.lat, areaData.lon);
-      if (d < minDist) { minDist = d; nearestArea = areaName; }
-      
-      // Só checar fusões se a área estiver a menos de 500m
-      if (d < 500 && fusaoEndpoints[areaName]) {
-        for (const ep of fusaoEndpoints[areaName]) {
-          const fd = distM(cto.lat, cto.lon, ep.lat, ep.lon);
-          if (fd < 50) {
-            nearestFiber = ep.nome;
-            nearestFiberColor = fiberColors[ep.nome] || '#666';
-            nearestFiberName = fiberNames[ep.nome] || ep.nome;
-          }
-        }
-      }
-    }
-    
-    if (nearestArea && minDist < 300) {
-      areaMap[nearestArea].ctos.push(cto);
-    }
-    
-    // Criar marker
-    let cor, radius;
-    if (allOff) { cor = '#f87171'; radius = 5; offCount++; }
-    else if (someOff) { cor = '#fbbf24'; radius = 4; }
-    else { cor = '#34d399'; radius = 3; }
-    
-    const fiberBorder = nearestFiberColor ? nearestFiberColor : cor;
-    const fiberWeight = nearestFiberColor ? 2.5 : 1;
-    
-    const m = L.circleMarker([cto.lat, cto.lon], {
-      radius: radius, fillColor: cor, fillOpacity: 0.7,
-      color: fiberBorder, weight: fiberWeight
-    });
-    
-    let popup = '<div class="popup-title">CTO ' + cto.id + '</div>';
-    popup += '<div class="popup-info">OLT: <strong>' + (cto.oltNome || '?') + '</strong><br>';
-    popup += 'Clientes: <strong>' + cto.total + '</strong> (' + cto.online + ' on / ' + cto.offline + ' off)';
-    if (nearestFiberName) {
-      popup += '<br>Fibra: <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + nearestFiberColor + ';border:1px solid #555;vertical-align:middle;margin:0 4px"></span><strong style="color:' + nearestFiberColor + '">' + nearestFiberName + ' (' + nearestFiber + ')</strong>';
-    }
-    popup += '</div>';
-    if (someOff) {
-      popup += '<br><div class="popup-btn" onclick="runOtdrFromCTO(' + cto.id + ', ' + cto.lat + ', ' + cto.lon + ')">🔦 Analisar OTDR</div>';
-    }
-    m.bindPopup(popup);
-    m.addTo(layers.ctos);
-  }
-  
-  layers.ctos.addTo(map);
-  
-  document.getElementById('stat-ctos').textContent = ctosCount;
-  document.getElementById('stat-ctos-off').textContent = offCount;
-}
 
-// ===== Carregar cabos FTTH do KML completo =====
-async function loadCabosFTTH() {
-  document.getElementById('loadingText').textContent = 'Carregando cabos FTTH...';
-  const res = await fetch('/cabos-pa-aurora.geojson');
-  const data = await res.json();
-  
-  layers.cabosftth = L.layerGroup();
-  let count = 0;
-  
-  for (const c of data.features) {
-    const nome = c.properties.nome;
-    const cat = c.properties.categoria;
-    const coords = c.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
-    
-    // Estilo por categoria
-    var cor, weight, opacity, dashArray;
-    if (cat === 'backbone_area') {
-      // Backbone de área (12F+): laranja grosso
-      cor = '#f97316'; weight = 3; opacity = 0.7; dashArray = null;
-    } else if (cat === 'ramal_area') {
-      // Ramal de área (6F): ciano médio
-      cor = '#0ea5e9'; weight = 2; opacity = 0.5; dashArray = null;
-    } else if (cat === 'ramal_mini') {
-      // Ramal mini: verde fino
-      cor = '#22c55e'; weight = 1.5; opacity = 0.4; dashArray = '4,2';
-    } else if (cat === 'ramal_6f') {
-      // Ramal 6F numerado: azul fino
-      cor = '#3b82f6'; weight = 2; opacity = 0.4; dashArray = '3,3';
-    } else if (cat === 'drop') {
-      // Drop: cinza tracejado fino
-      cor = '#64748b'; weight = 1; opacity = 0.3; dashArray = '2,4';
+  list.innerHTML='';
+
+  for(var i=0;i<ocorrencias.length;i++){
+    var o = ocorrencias[i];
+    // Marcador de ruptura no mapa
+    addRupturaMarker(o);
+
+    // Card no painel
+    var badgeClass = o.tipo==='backbone'?'badge-backbone':o.tipo==='ramal'?'badge-ramal':'badge-local';
+    var badgeLabel = o.tipo==='backbone'?'BACKBONE':o.tipo==='ramal'?'RAMAL':'LOCAL';
+    var acoClass   = o.tipo==='backbone'?'':''+o.tipo;
+
+    var ceoHtml='';
+    if(o.ceos.length>0){
+      ceoHtml='<div class="info-row"><span class="lbl">CEOs na área</span><span class="val">';
+      o.ceos.forEach(function(c){ceoHtml+='<span class="ceo-tag">'+c.nome+'</span>';});
+      ceoHtml+='</span></div>';
+    }
+
+    var acao='';
+    if(o.tipo==='backbone'){
+      acao='1. Acionar equipe de campo imediatamente<br>2. Verificar alarmes OLT (PON LOS)<br>3. Inspecionar backbone a ~'+o.distOLT+'m da OLT<br>4. SLA: <strong>2h</strong>';
+    } else if(o.tipo==='ramal'){
+      acao='1. Verificar CEO mais próxima da área<br>2. Testar continuidade do ramal afetado<br>3. Inspecionar fusões no trecho<br>4. SLA: <strong>4h</strong>';
     } else {
-      // Outro: amarelo fino
-      cor = '#eab308'; weight = 1.5; opacity = 0.4; dashArray = null;
+      acao='1. Verificar CTO individualmente<br>2. Confirmar se é energia ou fibra<br>3. Abrir OS para técnico local<br>4. SLA: <strong>8h</strong>';
     }
-    
-    var opts = { color: cor, weight: weight, opacity: opacity };
-    if (dashArray) opts.dashArray = dashArray;
-    
-    // Metadados do nome
-    var lengthM = c.properties.comprimento || '';
-    var fibers = c.properties.fibras || '';
-    
-    var popup = '<div class="popup-title">🔵 ' + nome + '</div>';
-    popup += '<div class="popup-info">';
-    popup += 'Categoria: <strong>' + cat + '</strong><br>';
-    if (lengthM) popup += 'Comprimento: <strong>' + lengthM + 'm</strong><br>';
-    if (fibers) popup += 'Fibras: <strong>' + fibers + '</strong><br>';
-    popup += 'Pontos: <strong>' + coords.length + '</strong>';
-    popup += '</div>';
-    
-    var polyFTTH = L.polyline(coords, opts).bindPopup(popup);
-    polyFTTH.on('click', function() {
-      if (simMode) {
-        simularRompimento(nome, coords, cat, lengthM, fibers);
-      }
-    });
-    polyFTTH.addTo(layers.cabosftth);
-    count++;
-  }
-  
-  layers.cabosftth.addTo(map);
-  document.getElementById('stat-cabos-ftth').textContent = count;
-}
 
-// ===== SIMULAÇÃO DE ROMPIMENTO =====
-let simMode = false;
-let simLayer = null;
+    var card = document.createElement('div');
+    card.className='ocorrencia-card';
+    card.innerHTML=
+      '<div class="ocorrencia-header" onclick="toggleCard(this)">'
+        +'<div class="ocorrencia-titulo">'+o.area+'</div>'
+        +'<span class="ocorrencia-badge '+badgeClass+'">'+badgeLabel+'</span>'
+      +'</div>'
+      +'<div class="ocorrencia-body">'
+        +'<div class="info-row"><span class="lbl">CTOs offline</span><span class="val" style="color:#ef4444">'+o.ctosOff+'/'+o.ctosTotal+' ('+o.pct+'%)</span></div>'
+        +'<div class="info-row"><span class="lbl">Clientes afetados</span><span class="val" style="color:#ef4444">'+o.cliOff+'</span></div>'
+        +'<div class="info-row"><span class="lbl">Ponto estimado</span><span class="val">'+o.ruptDesc+'</span></div>'
+        +'<div class="info-row"><span class="lbl">Dist. da OLT</span><span class="val" style="color:#67e8f9">~'+o.distOLT+'m</span></div>'
+        +ceoHtml
+        +'<div class="acao-box '+acoClass+'">📋 <strong>Ação:</strong><br>'+acao+'</div>'
+        +'<button class="btn-localizar" onclick="localizarRuptura('+o.ruptLat+','+o.ruptLon+',\''+o.area+'\')">📍 Centralizar no mapa</button>'
+      +'</div>';
 
-const oltPoint = [-21.7797, -41.3272]; // OLT aproximada (BACKBONE 3)
+    // Abrir o primeiro card automaticamente
+    if(i===0) card.querySelector('.ocorrencia-body').classList.add('open');
 
-document.getElementById('btnSimular').addEventListener('click', function() {
-  simMode = !simMode;
-  if (simMode) {
-    this.textContent = '🟢 DESATIVAR SIMULAÇÃO';
-    this.style.background = '#14532d';
-    this.style.borderColor = '#166534';
-    this.style.color = '#86efac';
-    document.getElementById('simInfo').innerHTML = '<span style="color:#fca5a5;font-weight:600">MODO ATIVO:</span> Clique em qualquer cabo (backbone ou FTTH) para simular o rompimento.';
-    document.body.style.cursor = 'crosshair';
-  } else {
-    this.textContent = '🔴 ATIVAR MODO SIMULAÇÃO';
-    this.style.background = '#7f1d1d';
-    this.style.borderColor = '#991b1b';
-    this.style.color = '#fca5a5';
-    document.getElementById('simInfo').innerHTML = 'Clique no botão acima e depois clique em qualquer cabo para simular um rompimento.';
-    document.body.style.cursor = '';
-    document.getElementById('simResult').style.display = 'none';
-    if (simLayer) { map.removeLayer(simLayer); simLayer = null; }
-  }
-});
-
-function simularRompimento(caboNome, caboCoords, caboCategoria, caboComprimento, caboFibras) {
-  if (simLayer) map.removeLayer(simLayer);
-  simLayer = L.layerGroup();
-  
-  // Determinar qual extremidade é upstream (mais perto da OLT) e qual é downstream
-  var startDist = distM(oltPoint[0], oltPoint[1], caboCoords[0][0], caboCoords[0][1]);
-  var endDist = distM(oltPoint[0], oltPoint[1], caboCoords[caboCoords.length-1][0], caboCoords[caboCoords.length-1][1]);
-  var upstream = startDist < endDist ? caboCoords[0] : caboCoords[caboCoords.length-1];
-  var downstream = startDist < endDist ? caboCoords[caboCoords.length-1] : caboCoords[0];
-  var distFromOLT = Math.min(startDist, endDist);
-  
-  // Ponto de ruptura = meio do cabo
-  var midIdx = Math.floor(caboCoords.length / 2);
-  var breakPoint = caboCoords[midIdx];
-  
-  // Raio de busca de CTOs afetadas (depende do tipo de cabo)
-  var raioBusca = caboCategoria === 'backbone' || caboCategoria === 'backbone_area' ? 800 : 400;
-  
-  // Encontrar CTOs afetadas (downstream do rompimento)
-  var ctosAfetadas = [];
-  var ctosOnline = [];
-  
-  if (window.allCTOs) {
-    for (var i = 0; i < window.allCTOs.length; i++) {
-      var c = window.allCTOs[i];
-      if (!c.lat || !c.lon) continue;
-      
-      var dToBreak = distM(breakPoint[0], breakPoint[1], c.lat, c.lon);
-      var dToUpstream = distM(upstream[0], upstream[1], c.lat, c.lon);
-      var dToDownstream = distM(downstream[0], downstream[1], c.lat, c.lon);
-      
-      // CTO é afetada se está mais perto do downstream que do upstream E dentro do raio
-      if (dToDownstream < dToUpstream && dToBreak < raioBusca + (caboComprimento ? parseInt(caboComprimento) : 500)) {
-        var totalClients = (c.online || 0) + (c.offline || 0);
-        if (totalClients > 0) {
-          ctosAfetadas.push({ id: c.id, lat: c.lat, lon: c.lon, online: c.online || 0, offline: c.offline || 0, total: totalClients, oltId: c.oltId });
-        }
-      } else if (dToBreak < raioBusca * 2 && totalClients > 0) {
-        ctosOnline.push(c);
-      }
-    }
-  }
-  
-  // Também buscar por áreas afetadas
-  var areasAfetadas = [];
-  if (topoData) {
-    var aberturas = topoData.features.filter(function(f) { return f.properties.tipo === 'abertura_area'; });
-    for (var a of aberturas) {
-      var aLat = a.geometry.coordinates[1];
-      var aLon = a.geometry.coordinates[0];
-      var dToDown = distM(downstream[0], downstream[1], aLat, aLon);
-      if (dToDown < raioBusca) {
-        areasAfetadas.push(a.properties.nome);
-      }
-    }
-  }
-  
-  // Calcular impactos
-  var totalCTOs = ctosAfetadas.length;
-  var totalClientes = ctosAfetadas.reduce(function(s, c) { return s + c.total; }, 0);
-  var totalOnline = ctosAfetadas.reduce(function(s, c) { return s + c.online; }, 0);
-  var totalOffline = ctosAfetadas.reduce(function(s, c) { return s + c.offline; }, 0);
-  
-  // Determinar criticidade
-  var criticidade, corCrit;
-  if (totalClientes > 200) { criticidade = 'CRÍTICA'; corCrit = '#ef4444'; }
-  else if (totalClientes > 50) { criticidade = 'ALTA'; corCrit = '#f97316'; }
-  else if (totalClientes > 10) { criticidade = 'MÉDIA'; corCrit = '#eab308'; }
-  else { criticidade = 'BAIXA'; corCrit = '#22c55e'; }
-  
-  // Desenhar no mapa:
-  // 1. Cabo rompido em vermelho
-  L.polyline(caboCoords, { color: '#ef4444', weight: 6, opacity: 0.9 }).addTo(simLayer);
-  
-  // 2. Marcador no ponto de ruptura
-  var breakIcon = L.divIcon({ html: '<div style="background:#ef4444;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 10px #ef4444;animation:pulse 1s infinite"></div>', className: '', iconSize: [20,20], iconAnchor: [10,10] });
-  L.marker(breakPoint, { icon: breakIcon }).bindPopup('<div class="popup-title">🔴 Ponto de Ruptura Simulado</div><div class="popup-info">Cabo: <strong>' + caboNome + '</strong><br>Distância da OLT: <strong>' + Math.round(distFromOLT) + 'm</strong></div>').addTo(simLayer);
-  
-  // 3. CTOs afetadas em vermelho
-  for (var c of ctosAfetadas) {
-    L.circleMarker([c.lat, c.lon], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8, weight: 2 })
-      .bindPopup('<div class="popup-title">🔴 CTO ' + c.id + ' (SIMULADA OFFLINE)</div><div class="popup-info">Clientes: <strong>' + c.total + '</strong><br>OLT: <strong>' + (c.oltId || '?') + '</strong></div>')
-      .addTo(simLayer);
-  }
-  
-  // 4. Círculo de impacto
-  L.circle(breakPoint, { radius: raioBusca, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.08, weight: 1, dashArray: '5,5' }).addTo(simLayer);
-  
-  simLayer.addTo(map);
-  map.fitBounds(simLayer.getBounds(), { padding: [50, 50] });
-  
-  // Gerar relatório
-  var html = '<div style="color:#f1f5f9">';
-  html += '<div style="font-size:13px;font-weight:700;color:#fca5a5;margin-bottom:8px;border-bottom:1px solid #334155;padding-bottom:6px">🔴 ROMPIMENTO SIMULADO</div>';
-  html += '<div style="margin-bottom:4px"><span style="color:#64748b">Cabo:</span> <strong style="color:#f1f5f9">' + caboNome + '</strong></div>';
-  html += '<div style="margin-bottom:4px"><span style="color:#64748b">Categoria:</span> <strong>' + caboCategoria + '</strong></div>';
-  if (caboComprimento) html += '<div style="margin-bottom:4px"><span style="color:#64748b">Comprimento:</span> <strong>' + caboComprimento + 'm</strong></div>';
-  if (caboFibras) html += '<div style="margin-bottom:4px"><span style="color:#64748b">Fibras:</span> <strong>' + caboFibras + 'F</strong></div>';
-  html += '<div style="margin-bottom:4px"><span style="color:#64748b">Dist. da OLT:</span> <strong style="color:#67e8f9">' + Math.round(distFromOLT) + 'm</strong></div>';
-  html += '<div style="margin:8px 0;padding:8px;background:#1e293b;border-radius:6px">';
-  html += '<div style="font-size:12px;font-weight:700;color:' + corCrit + ';margin-bottom:4px">⚠️ CRITICIDADE: ' + criticidade + '</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">';
-  html += '<div><span style="color:#64748b">CTOs afetadas:</span><br><strong style="color:#ef4444;font-size:16px">' + totalCTOs + '</strong></div>';
-  html += '<div><span style="color:#64748b">Clientes impactados:</span><br><strong style="color:#ef4444;font-size:16px">' + totalClientes + '</strong></div>';
-  html += '<div><span style="color:#64748b">Antes online:</span><br><strong style="color:#34d399">' + totalOnline + '</strong></div>';
-  html += '<div><span style="color:#64748b">Já offline:</span><br><strong style="color:#f87171">' + totalOffline + '</strong></div>';
-  html += '</div></div>';
-  
-  if (areasAfetadas.length > 0) {
-    html += '<div style="margin-bottom:4px"><span style="color:#64748b">Áreas afetadas:</span></div>';
-    html += '<div style="margin-left:8px;margin-bottom:6px">';
-    for (var a of areasAfetadas.slice(0, 8)) {
-      html += '<div style="color:#fbbf24;font-size:11px">• ' + a + '</div>';
-    }
-    if (areasAfetadas.length > 8) html += '<div style="color:#64748b">... e mais ' + (areasAfetadas.length - 8) + '</div>';
-    html += '</div>';
-  }
-  
-  // Ação recomendada
-  html += '<div style="margin-top:8px;padding:8px;background:#1e293b;border-radius:6px;border-left:3px solid ' + corCrit + '">';
-  html += '<div style="color:#93c5fd;font-size:11px;font-weight:600;margin-bottom:4px">📋 AÇÃO IMEDIATA</div>';
-  if (totalClientes > 200) {
-    html += '<div style="color:#f1f5f9;font-size:11px;line-height:1.5">1. Acionar equipe de campo IMEDIATAMENTE<br>2. Notificar clientes via URA/massa<br>3. Isolar trecho e preparar emenda<br>4. SLA crítico: 2h para normalização</div>';
-  } else if (totalClientes > 50) {
-    html += '<div style="color:#f1f5f9;font-size:11px;line-height:1.5">1. Acionar técnica responsável<br>2. Verificar alarmes OLT (PON)<br>3. Deslocar equipe para inspeção<br>4. SLA alto: 4h para normalização</div>';
-  } else {
-    html += '<div style="color:#f1f5f9;font-size:11px;line-height:1.5">1. Verificar status PON na OLT<br>2. Confirmar com técnico local<br>3. Programar reparo<br>4. SLA padrão: 8h</div>';
-  }
-  html += '</div>';
-  
-  html += '<div style="margin-top:6px;color:#64748b;font-size:10px">Simulação baseada em topologia física + CTOs ao vivo (IXC). Distâncias estimadas.</div>';
-  html += '</div>';
-  
-  document.getElementById('simResult').style.display = 'block';
-  document.getElementById('simResult').innerHTML = html;
-}
-
-// ===== OTDR: Análise por ÁREA =====
-function analyzeArea(areaName, lat, lon) {
-  map.setView([lat, lon], 17);
-  const area = areaMap[areaName];
-  if (!area) return;
-  
-  const ctos = area.ctos;
-  const total = ctos.length;
-  const offline = ctos.filter(function(c) { return c.offline > 0 && c.online === 0; });
-  const parcial = ctos.filter(function(c) { return c.offline > 0 && c.online > 0; });
-  const online = ctos.filter(function(c) { return c.offline === 0 && c.online > 0; });
-  
-  layers.otdr.clearLayers();
-  
-  L.circleMarker([lat, lon], { radius: 12, fillColor: '#fbbf24', fillOpacity: 0.3, color: '#fbbf24', weight: 3 })
-    .addTo(layers.otdr);
-  
-  for (const f of area.fusoes) {
-    const coords = f.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
-    L.polyline(coords, { color: '#3b82f6', weight: 2, opacity: 0.7 }).addTo(layers.otdr);
-  }
-  
-  for (const cto of ctos) {
-    const allOff = cto.offline > 0 && cto.online === 0;
-    const cor = allOff ? '#ef4444' : cto.offline > 0 ? '#fbbf24' : '#34d399';
-    L.circleMarker([cto.lat, cto.lon], { radius: 6, fillColor: cor, fillOpacity: 0.9, color: '#fff', weight: 2 })
-      .bindPopup('CTO ' + cto.id + ': ' + cto.online + 'on/' + cto.offline + 'off')
-      .addTo(layers.otdr);
-  }
-  
-  const panel = document.getElementById('otdrPanel');
-  let html = '<div class="otdr-result">';
-  html += '<div class="label">AREA ANALISADA</div><div class="val">' + areaName + '</div>';
-  html += '<div class="label">Abertura</div><div class="val">' + lat.toFixed(6) + ', ' + lon.toFixed(6) + '</div>';
-  html += '<div class="label">Fusões</div><div class="val">' + area.fusoes.length + ' ramais</div>';
-  html += '<div class="label">CTOs na área</div><div class="val">' + total + ' (' + online.length + ' online, ' + parcial.length + ' parcial, ' + offline.length + ' offline)</div>';
-  
-  if (total === 0) {
-    html += '<div class="warn" style="margin-top:8px">Nenhuma CTO do IXC associada (raio 300m)</div>';
-  } else if (offline.length === total && total > 0) {
-    html += '<div class="alert" style="margin-top:8px">BAIRRO INTEIRO PARADO — ' + offline.length + ' CTOs offline</div>';
-    html += '<div class="label">Diagnóstico</div><div class="alert">ROMPIMENTO DE BACKBONE</div>';
-    html += '<div class="label">Local provável</div><div class="val">Trecho do backbone antes da abertura</div>';
-    html += '<div class="label">Ação</div><div class="val">Verificar cabo backbone -> esta abertura</div>';
-  } else if (offline.length > 0 || parcial.length > 0) {
-    html += '<div class="warn" style="margin-top:8px">FALHA PARCIAL — ' + offline.length + ' CTOs offline, ' + parcial.length + ' com perda</div>';
-    html += '<div class="label">Diagnóstico</div><div class="warn">ROMPIMENTO DE RAMAL (após abertura)</div>';
-    html += '<div class="label">CTOs offline</div>';
-    for (const c of offline) {
-      html += '<div style="color:#f87171">CTO ' + c.id + ' (' + c.offline + ' off)</div>';
-    }
-    for (const c of parcial) {
-      html += '<div style="color:#fbbf24">CTO ' + c.id + ' (' + c.online + 'on/' + c.offline + 'off)</div>';
-    }
-    html += '<div class="label" style="margin-top:6px">Ação</div>';
-    html += '<div class="val">Traçar da abertura -> CTO offline via fusão</div>';
-  } else {
-    html += '<div class="ok" style="margin-top:8px">AREA NORMAL — todas CTOs online</div>';
-  }
-  html += '</div>';
-  panel.innerHTML = html;
-}
-
-// ===== OTDR: Análise a partir de CTO offline =====
-function runOtdrFromCTO(ctoId, lat, lon) {
-  map.closePopup();
-  let minDist = Infinity, nearestArea = null, nearestData = null;
-  for (const [name, data] of Object.entries(areaMap)) {
-    const d = distM(lat, lon, data.lat, data.lon);
-    if (d < minDist) { minDist = d; nearestArea = name; nearestData = data; }
-  }
-  if (nearestArea) {
-    analyzeArea(nearestArea, nearestData.lat, nearestData.lon);
+    list.appendChild(card);
   }
 }
 
-// ===== Toggles =====
-function setupToggles() {
-  const ids = ['backbone','cabosftth','abertura','emenda','poligono','postes','ctos','otdr'];
-  for (const id of ids) {
-    const layer = layers[id];
-    if (layer) {
-      document.getElementById('layer-' + id).addEventListener('change', function(e) {
-        if (e.target.checked) { layer.addTo(map); } else { map.removeLayer(layer); }
-      });
-    }
-  }
-  
-  document.getElementById('searchBox').addEventListener('input', function(e) {
-    const q = e.target.value.toLowerCase().trim();
-    if (q.length < 2) return;
-    for (const [name, data] of Object.entries(areaMap)) {
-      if (name.toLowerCase().indexOf(q) >= 0) {
-        map.setView([data.lat, data.lon], 17);
-        return;
-      }
-    }
+function toggleCard(header){
+  var body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+function localizarRuptura(lat,lon,area){
+  map.setView([lat,lon],16);
+}
+
+function addRupturaMarker(o){
+  // Anel pulsante vermelho para backbone, laranja para ramal, amarelo para local
+  var cor = o.tipo==='backbone'?'#ef4444':o.tipo==='ramal'?'#f97316':'#eab308';
+  var tam = o.tipo==='backbone'?18:o.tipo==='ramal'?14:10;
+
+  var icon = L.divIcon({
+    html: '<div style="position:relative;width:'+tam+'px;height:'+tam+'px">'
+        + '<div style="position:absolute;inset:0;border-radius:50%;background:'+cor+';opacity:.7;animation:pulse-ring 1.5s ease-out infinite"></div>'
+        + '<div style="position:absolute;inset:'+(tam/4)+'px;border-radius:50%;background:'+cor+';border:2px solid #fff"></div>'
+        + '</div>',
+    className:'',
+    iconSize:[tam,tam],
+    iconAnchor:[tam/2,tam/2]
   });
+
+  // Linha da OLT até o ponto de ruptura (backbone)
+  if(o.tipo==='backbone'){
+    var oltLat=-21.7797,oltLon=-41.3272;
+    L.polyline([[oltLat,oltLon],[o.ruptLat,o.ruptLon]],{
+      color:'#ef4444',weight:2,dashArray:'6,4',opacity:0.6
+    }).addTo(layers.ruptura);
+  }
+
+  var popup='<div class="pop-title" style="color:#ef4444">🔴 Rompimento estimado</div>'
+    +'<div class="pop-info">Área: <strong>'+o.area+'</strong><br>'
+    +'Tipo: <strong>'+o.ruptDesc+'</strong><br>'
+    +'CTOs offline: <strong>'+o.ctosOff+'/'+o.ctosTotal+'</strong><br>'
+    +'Clientes afetados: <strong>'+o.cliOff+'</strong><br>'
+    +'Dist. OLT: <strong>~'+o.distOLT+'m</strong></div>';
+
+  L.marker([o.ruptLat,o.ruptLon],{icon,zIndexOffset:1000})
+    .bindPopup(popup).addTo(layers.ruptura);
+
+  // Círculo de incerteza
+  var raio = o.tipo==='backbone'?120:o.tipo==='ramal'?60:30;
+  L.circle([o.ruptLat,o.ruptLon],{
+    radius:raio,color:'#ef4444',fillColor:'#ef4444',fillOpacity:0.08,weight:1,dashArray:'4,4'
+  }).addTo(layers.ruptura);
 }
 
-// ===== Init =====
-(async function() {
-  try {
+// =========================================================
+// TOGGLES DE CAMADA
+// =========================================================
+function setupToggles(){
+  var map_ = {
+    'lyr-backbone':layers.backbone,
+    'lyr-ramais':layers.ramais,
+    'lyr-ceos':layers.ceos,
+    'lyr-aberturas':layers.aberturas,
+    'lyr-ctos':layers.ctos,
+    'lyr-ruptura':layers.ruptura
+  };
+  for(var [id,lyr] of Object.entries(map_)){
+    (function(lid,l){
+      var el=document.getElementById(lid);
+      if(el) el.addEventListener('change',function(){
+        if(this.checked) map.addLayer(l);
+        else map.removeLayer(l);
+      });
+    })(id,lyr);
+  }
+  layers.ruptura.addTo(map);
+}
+
+// =========================================================
+// BOOT
+// =========================================================
+(async function(){
+  try{
     await loadTopologia();
-    document.getElementById('loadingText').textContent = 'Topologia OK. Carregando cabos FTTH...';
-    // Carregar cabos FTTH do KML completo
-    await loadCabosFTTH();
-    document.getElementById('loadingText').textContent = 'Cabos OK. Carregando CTOs...';
-    // Não bloquear: carregar CTOs em paralelo
-    loadCTOs().then(function() {
-      setupToggles();
-      document.getElementById('loading').style.display = 'none';
-    }).catch(function(e) {
-      console.error('Erro CTOs:', e);
-      setupToggles();
-      document.getElementById('loading').style.display = 'none';
-    });
-  } catch(e) {
-    document.getElementById('loadingText').innerHTML = '<div style="color:#f87171">Erro: ' + e.message + '</div>';
-    console.error(e);
+    renderTopologia();
+    await loadCTOs();
+    setupToggles();
+    hideLoad();
+  }catch(err){
+    document.getElementById('loadingText').textContent='Erro: '+err.message;
+    console.error(err);
   }
 })();
 </script>
