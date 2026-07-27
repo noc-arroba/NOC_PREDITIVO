@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Rede FTTH — Arroba Banda Larga</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:14px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;color:#f8fafc}
+.header .sub{font-size:12px;color:#64748b;margin-top:2px}
+.nav-tabs{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;margin-top:10px;flex-wrap:wrap}
+.nav-tabs a{padding:5px 12px;border-radius:6px;font-size:12px;color:#94a3b8;text-decoration:none}
+.nav-tabs a:hover{color:#cbd5e1}
+.nav-tabs a.active{background:#7f1d1d;color:#fca5a5;font-weight:600}
+#map{height:calc(100vh - 100px);width:100%;background:#1a1a2e}
+.sidebar{position:absolute;top:100px;right:10px;width:280px;max-height:calc(100vh - 120px);background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px;z-index:1000;overflow-y:auto}
+.sidebar h3{font-size:14px;color:#93c5fd;margin-bottom:10px}
+.layer-toggle{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#cbd5e1}
+.layer-toggle input{accent-color:#3b82f6}
+.stats-box{margin-top:12px;padding-top:12px;border-top:1px solid #1e293b}
+.stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:#94a3b8}
+.stat-row strong{color:#67e8f9}
+.legend-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:#94a3b8}
+.legend-color{width:16px;height:3px;border-radius:2px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.legend-area{width:16px;height:10px;border-radius:2px;opacity:.3}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111827;border:1px solid #1e293b;padding:20px;border-radius:10px;text-align:center;z-index:2000}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:32px;height:32px;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.search-box{margin-top:10px;width:100%;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px}
+.search-box:focus{outline:none;border-color:#3b82f6}
+.popup-title{font-weight:600;color:#f1f5f9;font-size:14px;margin-bottom:4px}
+.popup-info{font-size:12px;color:#94a3b8;line-height:1.4}
+.popup-info strong{color:#67e8f9}
+@media(max-width:768px){.sidebar{width:200px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🗺️ Mapa de Rede FTTH — InMap + CTOs ao vivo</h1>
+    <div class="sub">Cabos | Caixas de Emenda | Regiões de Cobertura | CTOs (IXC) | Rompimentos ativos</div>
+  </div>
+  <div class="nav-tabs">
+    <a href="index.html">📊 BGP</a>
+    <a href="security.html">🛡️ Segurança</a>
+    <a href="config.html">⚙️ Config</a>
+    <a href="mapa-rede.html" class="active">🗺️ Mapa Rede</a>
+  </div>
+</div>
+
+<div id="map">
+  <div class="sidebar">
+    <h3>📍 Camadas do Mapa</h3>
+    <label class="layer-toggle"><input type="checkbox" id="layer-cabos" checked> 🔴 Cabos (1.525)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-emendas" checked> 🟡 Caixas de Emenda (43)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-regioes" checked> 🔵 Regiões de Cobertura (565)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-ctos" checked> 🟢 CTOs ao vivo (IXC)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-romp" checked> 🚨 Rompimentos Ativos</label>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar CTO, área, bairro...">
+    
+    <div class="stats-box" id="statsBox">
+      <div class="stat-row">Cabos: <strong id="stat-cabos">0</strong></div>
+      <div class="stat-row">Emendas: <strong id="stat-emendas">0</strong></div>
+      <div class="stat-row">Regiões: <strong id="stat-regioes">0</strong></div>
+      <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
+      <div class="stat-row">Rompimentos: <strong id="stat-romp" style="color:#fca5a5">0</strong></div>
+    </div>
+    
+    <div class="stats-box">
+      <h3 style="font-size:12px;color:#64748b;margin-bottom:6px">LEGENDA</h3>
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div> Cabo de fibra</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Caixa de emenda</div>
+      <div class="legend-item"><div class="legend-area" style="background:#3b82f6"></div> Região de cobertura</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div> CTO online</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> CTO offline</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444;animation:pulse 2s infinite"></div> Rompimento</div>
+    </div>
+  </div>
+  
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Carregando dados do InMap e IXC...</div>
+  </div>
+</div>
+
+<script>
+const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-21.75, -41.32], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap', maxZoom: 19
+}).addTo(map);
+
+let layerCabos, layerEmendas, layerRegioes, layerCTOs, layerRomp;
+let allCabos = [], allEmendas = [], allRegioes = [], allCTOs = [], allRomp = [];
+
+// Cores por tipo de cabo
+function cableColor(nome) {
+  if (nome.includes('12F') || nome.includes('24F')) return '#ef4444';
+  if (nome.includes('6F') || nome.includes('4F')) return '#f59e0b';
+  if (nome.includes('2F') || nome.includes('1F')) return '#3b82f6';
+  return '#ef4444';
+}
+
+function cableWeight(nome) {
+  if (nome.includes('48F') || nome.includes('72F') || nome.includes('96F')) return 4;
+  if (nome.includes('12F') || nome.includes('24F')) return 3;
+  return 2;
+}
+
+async function loadInMap() {
+  try {
+    const res = await fetch('/inmap.geojson');
+    const data = await res.json();
+    
+    // Cabos
+    const cabos = data.features.filter(f => f.properties.tipo === 'cabo');
+    const emendas = data.features.filter(f => f.properties.tipo === 'caixa_emenda');
+    const regioes = data.features.filter(f => f.properties.tipo === 'regiao_cobertura');
+    
+    // Layer cabos
+    layerCabos = L.layerGroup();
+    let totalKm = 0;
+    for (const c of cabos) {
+      const nome = c.properties.nome || '';
+      const cor = cableColor(nome);
+      const weight = cableWeight(nome);
+      const line = L.geoJSON(c, {
+        style: { color: cor, weight: weight, opacity: 0.7 }
+      });
+      line.bindPopup(`<div class="popup-title">🔴 ${nome}</div><div class="popup-info">Comprimento: <strong>${c.properties.comprimento || nome.split(' ')[0]}</strong><br>Descrição: ${c.properties.descricao || '-'}</div>`);
+      line.addTo(layerCabos);
+      
+      // Calcular comprimento aproximado
+      if (c.geometry.coordinates.length > 1) {
+        let dist = 0;
+        for (let i = 1; i < c.geometry.coordinates.length; i++) {
+          dist += L.latLng(c.geometry.coordinates[i-1][1], c.geometry.coordinates[i-1][0])
+                      .distanceTo(L.latLng(c.geometry.coordinates[i][1], c.geometry.coordinates[i][0]));
+        }
+        totalKm += dist;
+      }
+    }
+    
+    // Layer emendas
+    layerEmendas = L.layerGroup();
+    for (const e of emendas) {
+      const [lon, lat] = e.geometry.coordinates;
+      const m = L.circleMarker([lat, lon], {
+        radius: 6, fillColor: '#fbbf24', fillOpacity: 0.8, color: '#78350f', weight: 1
+      });
+      m.bindPopup(`<div class="popup-title">🟡 ${e.properties.nome}</div><div class="popup-info">Endereço: <strong>${e.properties.endereco || '-'}</strong><br>Descrição: ${e.properties.descricao || '-'}</div>`);
+      m.addTo(layerEmendas);
+    }
+    
+    // Layer regiões
+    layerRegioes = L.layerGroup();
+    for (const r of regioes) {
+      const poly = L.geoJSON(r, {
+        style: { color: '#3b82f6', weight: 1, opacity: 0.4, fillColor: '#3b82f6', fillOpacity: 0.1 }
+      });
+      poly.bindPopup(`<div class="popup-title">🔵 ${r.properties.nome}</div>`);
+      poly.addTo(layerRegioes);
+    }
+    
+    layerCabos.addTo(map);
+    layerEmendas.addTo(map);
+    layerRegioes.addTo(map);
+    
+    document.getElementById('stat-cabos').textContent = cabos.length;
+    document.getElementById('stat-emendas').textContent = emendas.length;
+    document.getElementById('stat-regioes').textContent = regioes.length;
+    
+    return { totalKm: (totalKm/1000).toFixed(1) };
+  } catch (e) {
+    console.error('Erro InMap:', e);
+    return { totalKm: 0 };
+  }
+}
+
+async function loadIXC() {
+  try {
+    const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede');
+    const data = await res.json();
+    
+    layerCTOs = L.layerGroup();
+    layerRomp = L.layerGroup();
+    
+    const ctos = data.ctos || [];
+    let ctosCount = 0, rompCount = 0;
+    
+    for (const cto of ctos) {
+      if (!cto.lat || !cto.lon) continue;
+      ctosCount++;
+      const hasRomp = cto.rompimento;
+      const cor = hasRomp ? '#ef4444' : cto.offline > cto.online ? '#f87171' : '#34d399';
+      const m = L.circleMarker([cto.lat, cto.lon], {
+        radius: hasRomp ? 7 : 4, fillColor: cor, fillOpacity: 0.7, color: cor, weight: 1
+      });
+      
+      let popup = `<div class="popup-title">CTO ${cto.id}</div>`;
+      popup += `<div class="popup-info">OLT: <strong>${cto.oltNome}</strong><br>`;
+      popup += `Clientes: <strong>${cto.total}</strong> (${cto.online} on / ${cto.offline} off)<br>`;
+      if (cto.bairro) popup += `Bairro: ${cto.bairro}<br>`;
+      if (hasRomp) {
+        rompCount++;
+        popup += `<br>🚨 <strong style="color:#ef4444">ROMPIMENTO DETECTADO</strong><br>`;
+        popup += `PON: ${cto.rompimento.pon}<br>`;
+        popup += `Início: ${cto.rompimento.inicio}<br>`;
+        popup += `Clientes afetados: ${cto.rompimento.n_clientes}<br>`;
+        popup += `Tipo: ${cto.rompimento.causa_classificada || 'desconhecido'}`;
+      }
+      popup += '</div>';
+      m.bindPopup(popup);
+      m.addTo(layerCTOs);
+      
+      if (hasRomp) {
+        const pulse = L.circleMarker([cto.lat, cto.lon], {
+          radius: 15, fillColor: '#ef4444', fillOpacity: 0.2, color: '#ef4444', weight: 2
+        });
+        pulse.bindPopup(popup);
+        pulse.addTo(layerRomp);
+      }
+    }
+    
+    layerCTOs.addTo(map);
+    layerRomp.addTo(map);
+    
+    document.getElementById('stat-ctos').textContent = ctosCount;
+    document.getElementById('stat-romp').textContent = rompCount;
+    
+    // Centralizar no primeiro rompimento
+    const romps = data.rompimentos || [];
+    if (romps.length > 0 && ctos.length > 0) {
+      const firstRompCto = ctos.find(c => c.rompimento);
+      if (firstRompCto) {
+        map.setView([firstRompCto.lat, firstRompCto.lon], 16);
+      }
+    }
+    
+    return data.stats;
+  } catch (e) {
+    console.error('Erro IXC:', e);
+    return null;
+  }
+}
+
+// Toggles
+function setupToggles() {
+  document.getElementById('layer-cabos').addEventListener('change', e => {
+    e.target.checked ? layerCabos.addTo(map) : map.removeLayer(layerCabos);
+  });
+  document.getElementById('layer-emendas').addEventListener('change', e => {
+    e.target.checked ? layerEmendas.addTo(map) : map.removeLayer(layerEmendas);
+  });
+  document.getElementById('layer-regioes').addEventListener('change', e => {
+    e.target.checked ? layerRegioes.addTo(map) : map.removeLayer(layerRegioes);
+  });
+  document.getElementById('layer-ctos').addEventListener('change', e => {
+    e.target.checked ? layerCTOs.addTo(map) : map.removeLayer(layerCTOs);
+  });
+  document.getElementById('layer-romp').addEventListener('change', e => {
+    e.target.checked ? layerRomp.addTo(map) : map.removeLayer(layerRomp);
+  });
+  
+  // Busca
+  document.getElementById('searchBox').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) return;
+    // Buscar CTOs
+    if (layerCTOs) {
+      layerCTOs.eachLayer(l => {
+        if (l.getPopup && l.getPopup().getContent().toLowerCase().includes(q)) {
+          const ll = l.getLatLng();
+          map.setView(ll, 17);
+          l.openPopup();
+        }
+      });
+    }
+  });
+}
+
+// Init
+(async () => {
+  const [inmapStats, ixcStats] = await Promise.all([loadInMap(), loadIXC()]);
+  setupToggles();
+  document.getElementById('loading').style.display = 'none';
+  
+  if (inmapStats && inmapStats.totalKm) {
+    const statsBox = document.getElementById('statsBox');
+    statsBox.innerHTML += `<div class="stat-row">Total cabos: <strong>${inmapStats.totalKm} km</strong></div>`;
+  }
+  if (ixcStats) {
+    const statsBox = document.getElementById('statsBox');
+    statsBox.innerHTML += `<div class="stat-row">Clientes: <strong>${ixcStats.totalClientes}</strong></div>`;
+    statsBox.innerHTML += `<div class="stat-row">Online: <strong style="color:#34d399">${ixcStats.online}</strong></div>`;
+    statsBox.innerHTML += `<div class="stat-row">Offline: <strong style="color:#f87171">${ixcStats.offline}</strong></div>`;
+  }
+})();
+</script>
+</body>
+</html>
