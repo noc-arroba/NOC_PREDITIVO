@@ -93,7 +93,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
   
   <div class="loading" id="loading">
     <div class="spinner"></div>
-    <div>Carregando topologia InMap + CTOs IXC...</div>
+    <div id="loadingText">Carregando topologia InMap...</div>
   </div>
 </div>
 
@@ -143,13 +143,16 @@ const fiberNames = {
   '10':'Roxo','F10':'Roxo',
   '11':'Rosa','F11':'Rosa',
   '12':'Turquesa','F12':'Turquesa',
-  '13':'Índigo','F13':'Índigo',
+  '13':'Indigo','F13':'Indigo',
   '14':'Laranja Esc','F14':'Laranja Esc',
   '15':'Verde Esc','F15':'Verde Esc',
   '16':'Roxo Esc','F16':'Roxo Esc',
   '17':'Oliva','F17':'Oliva',
   '19':'Teal','F19':'Teal'
 };
+
+// Cache de endpoints de fusão por área (pré-computado)
+let fusaoEndpoints = {}; // areaName -> [{nome, lat, lon}]
 
 function distM(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -160,6 +163,7 @@ function distM(lat1, lon1, lat2, lon2) {
 
 // ===== Carregar topologia InMap =====
 async function loadTopologia() {
+  document.getElementById('loadingText').textContent = 'Carregando topologia InMap...';
   const res = await fetch('/parque-aurora.geojson');
   topoData = await res.json();
   
@@ -170,51 +174,65 @@ async function loadTopologia() {
   const poligonos = topoData.features.filter(f => f.properties.tipo === 'area_cobertura');
   const postes = topoData.features.filter(f => f.properties.tipo === 'poste');
   
-  // Backbone (linhas laranja)
+  // Backbone (linhas laranja) — CABOS
   layers.backbone = L.layerGroup();
   for (const b of backbone) {
     const coords = b.geometry.coordinates.map(c => [c[1], c[0]]);
-    L.polyline(coords, { color: '#f59e0b', weight: 3, opacity: 0.6 })
-      .bindPopup('<div class="popup-title">🟠 Backbone: ' + b.properties.nome + '</div>')
+    L.polyline(coords, { color: '#f59e0b', weight: 3, opacity: 0.7 })
+      .bindPopup('<div class="popup-title">🟠 Cabo Backbone: ' + b.properties.nome + '</div>')
       .addTo(layers.backbone);
   }
   layers.backbone.addTo(map);
   
-  // Aberturas de área (pontos amarelos grandes)
+  // Aberturas de área (pontos amarelos grandes) — CAIXAS FTTH
   layers.abertura = L.layerGroup();
   for (const a of aberturas) {
     const lon = a.geometry.coordinates[0];
     const lat = a.geometry.coordinates[1];
     const areaName = a.properties.nome;
     
-    const m = L.circleMarker([lat, lon], {
-      radius: 8, fillColor: '#fbbf24', fillOpacity: 0.9, color: '#92400e', weight: 2
+    // Ícone de caixa FTTH (quadrado amarelo)
+    const icon = L.divIcon({
+      className: '',
+      html: '<div style="background:#fbbf24;border:2px solid #92400e;border-radius:3px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
     });
+    
+    const m = L.marker([lat, lon], { icon: icon });
     m.bindPopup('<div class="popup-title">🟡 ' + areaName + '</div>' +
       '<div class="popup-info">Abertura de Área FTTH<br>Ponto de distribuição do backbone</div>' +
       '<br><div class="popup-btn" onclick="analyzeArea(\'' + areaName + '\', ' + lat + ', ' + lon + ')">🔦 Analisar Área</div>');
     m.addTo(layers.abertura);
     
     // Indexar área com suas fusões
+    const areaFusoes = fusoes.filter(f => f.properties.area === areaName);
     areaMap[areaName] = {
       lat: lat, lon: lon,
-      fusoes: fusoes.filter(f => f.properties.area === areaName),
+      fusoes: areaFusoes,
       ctos: []
     };
+    
+    // Pré-computar endpoints das fusões para matching rápido
+    fusaoEndpoints[areaName] = [];
+    for (const f of areaFusoes) {
+      const fc = f.geometry.coordinates;
+      const end = fc[fc.length-1];
+      fusaoEndpoints[areaName].push({ nome: f.properties.nome, lat: end[1], lon: end[0] });
+    }
   }
   layers.abertura.addTo(map);
   
-  // Caixas de emenda (CEO) — numeradas e visíveis
+  // Caixas de emenda (CEO) — quadrados vermelhos numerados
   layers.emenda = L.layerGroup();
   caixas.forEach(function(c, idx) {
     const lon = c.geometry.coordinates[0];
     const lat = c.geometry.coordinates[1];
-    // Ícone em formato de quadrado laranja com número
     const icon = L.divIcon({
       className: '',
-      html: '<div style="background:#ef4444;border:2px solid #7f1d1d;border-radius:4px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)">' + (idx+1) + '</div>',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
+      html: '<div style="background:#ef4444;border:2px solid #7f1d1d;border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)">' + (idx+1) + '</div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
     });
     L.marker([lat, lon], { icon: icon })
       .bindPopup('<div class="popup-title">🔴 CEO ' + (idx+1) + '</div><div class="popup-info">Caixa de Emenda / CEO<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6) + '</div>')
@@ -256,8 +274,24 @@ async function loadTopologia() {
 
 // ===== Carregar CTOs ao vivo do IXC =====
 async function loadCTOs() {
-  const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede');
-  const data = await res.json();
+  document.getElementById('loadingText').textContent = 'Carregando CTOs do IXC...';
+  
+  // Fetch com timeout de 30s
+  const controller = new AbortController();
+  const timeoutId = setTimeout(function() { controller.abort(); }, 30000);
+  
+  let data;
+  try {
+    const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede', { signal: controller.signal });
+    clearTimeout(timeoutId);
+    data = await res.json();
+  } catch(e) {
+    clearTimeout(timeoutId);
+    console.warn('Erro ao carregar CTOs:', e);
+    document.getElementById('stat-ctos').textContent = 'ERRO';
+    return;
+  }
+  
   const ctos = data.ctos || [];
   
   layers.ctos = L.layerGroup();
@@ -267,30 +301,34 @@ async function loadCTOs() {
   let ctosCount = 0, offCount = 0;
   
   // Filtrar CTOs próximas do Parque Aurora (2km)
-  const paCtos = ctos.filter(c => c.lat && c.lon && distM(-21.78, -41.33, c.lat, c.lon) < 2000);
+  const paCtos = ctos.filter(function(c) {
+    return c.lat && c.lon && distM(-21.78, -41.33, c.lat, c.lon) < 2000;
+  });
   
+  // Para cada CTO, encontrar área mais próxima e cor de fibra
+  // Otimização: só checar áreas dentro de 500m
   for (const cto of paCtos) {
     ctosCount++;
     const someOff = cto.offline > 0;
     const allOff = cto.offline > 0 && cto.online === 0;
     
-    // === PRIMEIRO: identificar área mais próxima e cor de fibra ===
+    // Identificar área mais próxima (só checar áreas a menos de 500m)
     let minDist = Infinity, nearestArea = null;
     let nearestFiber = null, nearestFiberColor = null, nearestFiberName = null;
     
     for (const [areaName, areaData] of Object.entries(areaMap)) {
       const d = distM(cto.lat, cto.lon, areaData.lat, areaData.lon);
       if (d < minDist) { minDist = d; nearestArea = areaName; }
-      // Buscar fusão desta área que termina perto da CTO
-      for (const f of areaData.fusoes) {
-        const fCoords = f.geometry.coordinates;
-        const end = [fCoords[fCoords.length-1][1], fCoords[fCoords.length-1][0]];
-        const fd = distM(cto.lat, cto.lon, end[0], end[1]);
-        if (fd < 50) {
-          const fName = f.properties.nome;
-          nearestFiber = fName;
-          nearestFiberColor = fiberColors[fName] || '#666';
-          nearestFiberName = fiberNames[fName] || fName;
+      
+      // Só checar fusões se a área estiver a menos de 500m
+      if (d < 500 && fusaoEndpoints[areaName]) {
+        for (const ep of fusaoEndpoints[areaName]) {
+          const fd = distM(cto.lat, cto.lon, ep.lat, ep.lon);
+          if (fd < 50) {
+            nearestFiber = ep.nome;
+            nearestFiberColor = fiberColors[ep.nome] || '#666';
+            nearestFiberName = fiberNames[ep.nome] || ep.nome;
+          }
         }
       }
     }
@@ -299,7 +337,7 @@ async function loadCTOs() {
       areaMap[nearestArea].ctos.push(cto);
     }
     
-    // === DEPOIS: criar o marker com a cor de fibra ===
+    // Criar marker
     let cor, radius;
     if (allOff) { cor = '#f87171'; radius = 5; offCount++; }
     else if (someOff) { cor = '#fbbf24'; radius = 4; }
@@ -313,9 +351,8 @@ async function loadCTOs() {
       color: fiberBorder, weight: fiberWeight
     });
     
-    // Popup
     let popup = '<div class="popup-title">CTO ' + cto.id + '</div>';
-    popup += '<div class="popup-info">OLT: <strong>' + cto.oltNome + '</strong><br>';
+    popup += '<div class="popup-info">OLT: <strong>' + (cto.oltNome || '?') + '</strong><br>';
     popup += 'Clientes: <strong>' + cto.total + '</strong> (' + cto.online + ' on / ' + cto.offline + ' off)';
     if (nearestFiberName) {
       popup += '<br>Fibra: <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + nearestFiberColor + ';border:1px solid #555;vertical-align:middle;margin:0 4px"></span><strong style="color:' + nearestFiberColor + '">' + nearestFiberName + ' (' + nearestFiber + ')</strong>';
@@ -342,24 +379,20 @@ function analyzeArea(areaName, lat, lon) {
   
   const ctos = area.ctos;
   const total = ctos.length;
-  const offline = ctos.filter(c => c.offline > 0 && c.online === 0);
-  const parcial = ctos.filter(c => c.offline > 0 && c.online > 0);
-  const online = ctos.filter(c => c.offline === 0 && c.online > 0);
+  const offline = ctos.filter(function(c) { return c.offline > 0 && c.online === 0; });
+  const parcial = ctos.filter(function(c) { return c.offline > 0 && c.online > 0; });
+  const online = ctos.filter(function(c) { return c.offline === 0 && c.online > 0; });
   
   layers.otdr.clearLayers();
   
-  // Destacar abertura
   L.circleMarker([lat, lon], { radius: 12, fillColor: '#fbbf24', fillOpacity: 0.3, color: '#fbbf24', weight: 3 })
     .addTo(layers.otdr);
   
-  // Destacar fusões da área (só na camada OTDR, temporário)
   for (const f of area.fusoes) {
-    const coords = f.geometry.coordinates.map(c => [c[1], c[0]]);
-    L.polyline(coords, { color: '#3b82f6', weight: 2, opacity: 0.7 })
-      .addTo(layers.otdr);
+    const coords = f.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+    L.polyline(coords, { color: '#3b82f6', weight: 2, opacity: 0.7 }).addTo(layers.otdr);
   }
   
-  // Destacar CTOs da área
   for (const cto of ctos) {
     const allOff = cto.offline > 0 && cto.online === 0;
     const cor = allOff ? '#ef4444' : cto.offline > 0 ? '#fbbf24' : '#34d399';
@@ -368,35 +401,34 @@ function analyzeArea(areaName, lat, lon) {
       .addTo(layers.otdr);
   }
   
-  // Diagnóstico
   const panel = document.getElementById('otdrPanel');
   let html = '<div class="otdr-result">';
-  html += '<div class="label">ÁREA ANALISADA</div><div class="val">' + areaName + '</div>';
+  html += '<div class="label">AREA ANALISADA</div><div class="val">' + areaName + '</div>';
   html += '<div class="label">Abertura</div><div class="val">' + lat.toFixed(6) + ', ' + lon.toFixed(6) + '</div>';
   html += '<div class="label">Fusões</div><div class="val">' + area.fusoes.length + ' ramais</div>';
   html += '<div class="label">CTOs na área</div><div class="val">' + total + ' (' + online.length + ' online, ' + parcial.length + ' parcial, ' + offline.length + ' offline)</div>';
   
   if (total === 0) {
-    html += '<div class="warn" style="margin-top:8px">⚠️ Nenhuma CTO do IXC associada a esta área (raio 300m)</div>';
+    html += '<div class="warn" style="margin-top:8px">Nenhuma CTO do IXC associada (raio 300m)</div>';
   } else if (offline.length === total && total > 0) {
-    html += '<div class="alert" style="margin-top:8px">🚨 BAIRRO INTEIRO PARADO — ' + offline.length + ' CTOs offline</div>';
+    html += '<div class="alert" style="margin-top:8px">BAIRRO INTEIRO PARADO — ' + offline.length + ' CTOs offline</div>';
     html += '<div class="label">Diagnóstico</div><div class="alert">ROMPIMENTO DE BACKBONE</div>';
-    html += '<div class="label">Local provável</div><div class="val">Trecho do backbone antes da abertura de área</div>';
-    html += '<div class="label">Ação</div><div class="val">Verificar cabo backbone → esta abertura</div>';
+    html += '<div class="label">Local provável</div><div class="val">Trecho do backbone antes da abertura</div>';
+    html += '<div class="label">Ação</div><div class="val">Verificar cabo backbone -> esta abertura</div>';
   } else if (offline.length > 0 || parcial.length > 0) {
-    html += '<div class="warn" style="margin-top:8px">⚠️ FALHA PARCIAL — ' + offline.length + ' CTOs offline, ' + parcial.length + ' com perda</div>';
+    html += '<div class="warn" style="margin-top:8px">FALHA PARCIAL — ' + offline.length + ' CTOs offline, ' + parcial.length + ' com perda</div>';
     html += '<div class="label">Diagnóstico</div><div class="warn">ROMPIMENTO DE RAMAL (após abertura)</div>';
     html += '<div class="label">CTOs offline</div>';
     for (const c of offline) {
-      html += '<div style="color:#f87171">🔴 CTO ' + c.id + ' (' + c.offline + ' off)</div>';
+      html += '<div style="color:#f87171">CTO ' + c.id + ' (' + c.offline + ' off)</div>';
     }
     for (const c of parcial) {
-      html += '<div style="color:#fbbf24">🟡 CTO ' + c.id + ' (' + c.online + 'on/' + c.offline + 'off)</div>';
+      html += '<div style="color:#fbbf24">CTO ' + c.id + ' (' + c.online + 'on/' + c.offline + 'off)</div>';
     }
     html += '<div class="label" style="margin-top:6px">Ação</div>';
-    html += '<div class="val">Traçar da abertura → CTO offline via fusão</div>';
+    html += '<div class="val">Traçar da abertura -> CTO offline via fusão</div>';
   } else {
-    html += '<div class="ok" style="margin-top:8px">✅ ÁREA NORMAL — todas as CTOs online</div>';
+    html += '<div class="ok" style="margin-top:8px">AREA NORMAL — todas CTOs online</div>';
   }
   html += '</div>';
   panel.innerHTML = html;
@@ -431,18 +463,10 @@ function setupToggles() {
     const q = e.target.value.toLowerCase().trim();
     if (q.length < 2) return;
     for (const [name, data] of Object.entries(areaMap)) {
-      if (name.toLowerCase().includes(q)) {
+      if (name.toLowerCase().indexOf(q) >= 0) {
         map.setView([data.lat, data.lon], 17);
         return;
       }
-    }
-    if (layers.ctos) {
-      layers.ctos.eachLayer(function(l) {
-        if (l.getPopup && l.getPopup().getContent().toLowerCase().includes(q)) {
-          map.setView(l.getLatLng(), 17);
-          l.openPopup();
-        }
-      });
     }
   });
 }
@@ -451,11 +475,18 @@ function setupToggles() {
 (async function() {
   try {
     await loadTopologia();
-    await loadCTOs();
-    setupToggles();
-    document.getElementById('loading').style.display = 'none';
+    document.getElementById('loadingText').textContent = 'Topologia OK. Carregando CTOs...';
+    // Não bloquear: carregar CTOs em paralelo
+    loadCTOs().then(function() {
+      setupToggles();
+      document.getElementById('loading').style.display = 'none';
+    }).catch(function(e) {
+      console.error('Erro CTOs:', e);
+      setupToggles();
+      document.getElementById('loading').style.display = 'none';
+    });
   } catch(e) {
-    document.getElementById('loading').innerHTML = '<div style="color:#f87171">Erro: ' + e.message + '</div>';
+    document.getElementById('loadingText').innerHTML = '<div style="color:#f87171">Erro: ' + e.message + '</div>';
     console.error(e);
   }
 })();
