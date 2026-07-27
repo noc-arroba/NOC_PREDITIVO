@@ -8,8 +8,8 @@ function genBlock(prefix, octets) {
 }
 
 const TODOS_IPS = [
-  ...genBlock('143.137.32', [32, 33, 34, 35]),
-  ...genBlock('168.197.56', [56, 57, 58, 59]),
+  ...genBlock('143.137', [32, 33, 34, 35]),
+  ...genBlock('168.197', [56, 57, 58, 59]),
 ];
 
 const PORTAS_DISCOVERY = [80, 443, 22, 3389, 161];
