@@ -1,27 +1,83 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/*.js", "use": "@vercel/node" },
-    { "src": "public/**", "use": "@vercel/static" }
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
   ],
   "routes": [
-    { "src": "/api/bgp", "dest": "/api/bgp.js" },
-    { "src": "/api/olts-ixc", "dest": "/api/olts-ixc.js" },
-    { "src": "/api/test-vpn", "dest": "/api/test-vpn.js" },
-    { "src": "/api/test-snmp", "dest": "/api/test-snmp.js" },
-    { "src": "/api/security", "dest": "/api/security.js" },
-    { "src": "/api/scan-network", "dest": "/api/scan-network.js" },
-    { "src": "/mtr.json", "dest": "/public/mtr.json" },
-    { "src": "/config.html", "dest": "/public/config.html" },
-    { "src": "/security.html", "dest": "/public/security.html" },
-    { "src": "/index.html", "dest": "/public/index.html" },
-    { "src": "/mapa-rede.html", "dest": "/public/mapa_rede.html" },
-    { "src": "/otdr-rede.html", "dest": "/public/otdr_rede.html" },
-    { "src": "/otdr-aurora.html", "dest": "/public/otdr_aurora.html" },
-    { "src": "/inmap.geojson", "dest": "/public/inmap_filtrado.geojson" },
-    { "src": "/parque-aurora.geojson", "dest": "/public/parque_aurora.geojson" },
-    { "src": "/cabos-pa-aurora.geojson", "dest": "/public/cabos-pa-aurora.geojson" },
-    { "src": "/", "dest": "/public/index.html" }
+    {
+      "src": "/api/bgp",
+      "dest": "/api/bgp.js"
+    },
+    {
+      "src": "/api/olts-ixc",
+      "dest": "/api/olts-ixc.js"
+    },
+    {
+      "src": "/api/test-vpn",
+      "dest": "/api/test-vpn.js"
+    },
+    {
+      "src": "/api/test-snmp",
+      "dest": "/api/test-snmp.js"
+    },
+    {
+      "src": "/api/security",
+      "dest": "/api/security.js"
+    },
+    {
+      "src": "/api/scan-network",
+      "dest": "/api/scan-network.js"
+    },
+    {
+      "src": "/mtr.json",
+      "dest": "/public/mtr.json"
+    },
+    {
+      "src": "/config.html",
+      "dest": "/public/config.html"
+    },
+    {
+      "src": "/security.html",
+      "dest": "/public/security.html"
+    },
+    {
+      "src": "/index.html",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/mapa-rede.html",
+      "dest": "/public/mapa_rede.html"
+    },
+    {
+      "src": "/otdr-rede.html",
+      "dest": "/public/otdr_rede.html"
+    },
+    {
+      "src": "/otdr-aurora.html",
+      "dest": "/public/otdr_aurora.html"
+    },
+    {
+      "src": "/inmap.geojson",
+      "dest": "/public/inmap_filtrado.geojson"
+    },
+    {
+      "src": "/parque-aurora.geojson",
+      "dest": "/public/parque_aurora.geojson"
+    },
+    {
+      "src": "/cabos-pa-aurora.geojson",
+      "dest": "/public/cabos-pa-aurora.geojson"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    }
   ]
 }
- 
