@@ -65,7 +65,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 <div id="map">
   <div class="sidebar">
     <h3>📍 Camadas — Topologia</h3>
-    <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Backbone (88)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Cabos (Backbone + Ramais)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-abertura" checked> 🟡 Aberturas de Área (52)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-emenda" checked> 🔴 Caixas de Emenda (19)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-poligono"> 🟣 Áreas de Cobertura (52)</label>
@@ -174,13 +174,59 @@ async function loadTopologia() {
   const poligonos = topoData.features.filter(f => f.properties.tipo === 'area_cobertura');
   const postes = topoData.features.filter(f => f.properties.tipo === 'poste');
   
-  // Backbone (linhas laranja) — CABOS
+  // Cabos — separar backbone de ramais
   layers.backbone = L.layerGroup();
+  const cabosVistos = {}; // deduplicar
   for (const b of backbone) {
-    const coords = b.geometry.coordinates.map(c => [c[1], c[0]]);
-    L.polyline(coords, { color: '#f59e0b', weight: 3, opacity: 0.7 })
-      .bindPopup('<div class="popup-title">🟠 Cabo Backbone: ' + b.properties.nome + '</div>')
-      .addTo(layers.backbone);
+    const nome = b.properties.nome;
+    const coords = b.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+    
+    // Deduplicar: chave = nome + primeiro ponto
+    const key = nome + '|' + coords[0][0].toFixed(6) + ',' + coords[0][1].toFixed(6);
+    if (cabosVistos[key]) continue;
+    cabosVistos[key] = true;
+    
+    // Extrair metadados do nome: (XXX M - XX F) ou XXXM - XXF
+    var lengthM = '', fibers = '';
+    var m = nome.match(/(\d+)\s*M\s*-\s*(\d+)\s*F/i);
+    if (m) { lengthM = m[1] + 'm'; fibers = m[2] + ' fibras'; }
+    
+    // Categorizar
+    var isBackbone = nome.toUpperCase().indexOf('BACKBONE') >= 0;
+    var isRamal = nome.match(/^F\d/) || nome.indexOf('AREA') >= 0 || nome.indexOf('ÁREA') >= 0;
+    
+    // Estilo por categoria
+    var cor, weight, opacity, dashArray;
+    if (isBackbone) {
+      // Backbone principal: laranja grosso
+      cor = '#f59e0b'; weight = 4; opacity = 0.8; dashArray = null;
+    } else if (isRamal) {
+      // Ramal F1-F10: ciano fino
+      cor = '#06b6d4'; weight = 2; opacity = 0.5; dashArray = '5,3';
+    } else {
+      // Cabo secundário: laranja claro médio
+      cor = '#fbbf24'; weight = 3; opacity = 0.6; dashArray = null;
+    }
+    
+    // Fiber color se for ramal F1-F12
+    var fMatch = nome.match(/^F(\d+)/);
+    var fiberColor = null;
+    if (fMatch) {
+      fiberColor = fiberColors[fMatch[1]] || fiberColors['F'+fMatch[1]];
+      if (fiberColor) { cor = fiberColor; }
+    }
+    
+    var lineOpts = { color: cor, weight: weight, opacity: opacity };
+    if (dashArray) lineOpts.dashArray = dashArray;
+    
+    var popup = '<div class="popup-title">🟠 ' + (isBackbone ? 'Backbone' : isRamal ? 'Ramal' : 'Cabo') + ': ' + nome + '</div>';
+    popup += '<div class="popup-info">';
+    if (lengthM) popup += 'Comprimento: <strong>' + lengthM + '</strong><br>';
+    if (fibers) popup += 'Capacidade: <strong>' + fibers + '</strong><br>';
+    popup += 'Pontos: <strong>' + coords.length + '</strong>';
+    popup += '</div>';
+    
+    L.polyline(coords, lineOpts).bindPopup(popup).addTo(layers.backbone);
   }
   layers.backbone.addTo(map);
   
