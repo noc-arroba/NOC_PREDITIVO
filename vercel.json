@@ -10,6 +10,7 @@
     { "src": "/api/test-vpn", "dest": "/api/test-vpn.js" },
     { "src": "/api/test-snmp", "dest": "/api/test-snmp.js" },
     { "src": "/api/security", "dest": "/api/security.js" },
+    { "src": "/api/scan-network", "dest": "/api/scan-network.js" },
     { "src": "/mtr.json", "dest": "/public/mtr.json" },
     { "src": "/config.html", "dest": "/public/config.html" },
     { "src": "/security.html", "dest": "/public/security.html" },
