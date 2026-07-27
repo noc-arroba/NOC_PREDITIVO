@@ -20,8 +20,6 @@
     { "src": "/otdr-aurora.html", "dest": "/public/otdr_aurora.html" },
     { "src": "/inmap.geojson", "dest": "/public/inmap_filtrado.geojson" },
     { "src": "/parque-aurora.geojson", "dest": "/public/parque_aurora.geojson" },
-    { "src": "/otdr-aurora.html", "dest": "/public/otdr_aurora.html" },
-    { "src": "/parque-aurora.geojson", "dest": "/public/parque_aurora_topologia.geojson" },
     { "src": "/cabos-pa-aurora.geojson", "dest": "/public/cabos-pa-aurora.geojson" },
     { "src": "/", "dest": "/public/index.html" }
   ]
