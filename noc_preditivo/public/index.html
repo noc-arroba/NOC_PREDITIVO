@@ -71,8 +71,17 @@ tr:hover { background: #0f172a; }
 </head>
 <body>
 <div class="header">
-  <h1>🛰️ NOC Preditivo <span class="fase">Fase 1</span></h1>
-  <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1>🛰️ NOC Preditivo <span class="fase">Fase 1</span></h1>
+      <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
+    </div>
+    <div style="display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;">
+      <a href="https://manutencao-de-rede.vercel.app" class="btn" style="background:transparent;border:none;color:#94a3b8;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 Rede FTTH</a>
+      <a href="https://manutencao-de-rede.vercel.app/mapa.html" class="btn" style="background:transparent;border:none;color:#94a3b8;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🗺️ Mapa CTOs</a>
+      <a href="https://noc-preditivo.vercel.app" class="btn" style="background:#1e40af;border:none;color:#dbeafe;text-decoration:none;font-weight:600;padding:6px 14px;border-radius:6px;font-size:13px;">🛰️ BGP NOC</a>
+    </div>
+  </div>
 </div>
 
 <div class="container">
