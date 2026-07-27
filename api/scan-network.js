@@ -1,41 +1,32 @@
-// ============================================================
-// NOC PREDITIVO — Scanner COMPLETO dos 2 blocos /22 (2048 IPs)
-// Discovery em batches para respeitar limites da Vercel
-// ============================================================
-
+// NOC PREDITIVO — Scanner COMPLETO com debug de erros
 function genBlock(prefix, octets) {
   const ips = [];
   for (const oct of octets) {
-    for (let j = 0; j < 256; j++) {
-      ips.push(`${prefix}.${oct}.${j}`);
-    }
+    for (let j = 0; j < 256; j++) ips.push(`${prefix}.${oct}.${j}`);
   }
   return ips;
 }
 
-// Todos os 2048 IPs
 const TODOS_IPS = [
-  ...genBlock('143.137.32', [32, 33, 34, 35]),  // 1024 IPs
-  ...genBlock('168.197.56', [56, 57, 58, 59]),  // 1024 IPs
+  ...genBlock('143.137.32', [32, 33, 34, 35]),
+  ...genBlock('168.197.56', [56, 57, 58, 59]),
 ];
 
-// Portas para discovery (rápido)
 const PORTAS_DISCOVERY = [80, 443, 22, 3389, 161];
 
-// Portas para scan detalhado
 const PORTAS_DETALHADO = [
-  { porta: 21, servico: 'FTP', risco: 'alto', descricao: 'FTP — texto puro' },
+  { porta: 21, servico: 'FTP', risco: 'alto', descricao: 'FTP texto puro' },
   { porta: 22, servico: 'SSH', risco: 'alto', descricao: 'SSH' },
-  { porta: 23, servico: 'Telnet', risco: 'critico', descricao: 'Telnet — VULNERÁVEL' },
-  { porta: 25, servico: 'SMTP', risco: 'medio', descricao: 'E-mail envio' },
+  { porta: 23, servico: 'Telnet', risco: 'critico', descricao: 'Telnet VULNERAVEL' },
+  { porta: 25, servico: 'SMTP', risco: 'medio', descricao: 'Email envio' },
   { porta: 53, servico: 'DNS', risco: 'baixo', descricao: 'DNS' },
   { porta: 80, servico: 'HTTP', risco: 'medio', descricao: 'Web sem HTTPS' },
-  { porta: 110, servico: 'POP3', risco: 'medio', descricao: 'E-mail sem crypto' },
-  { porta: 143, servico: 'IMAP', risco: 'medio', descricao: 'E-mail sem crypto' },
-  { porta: 161, servico: 'SNMP', risco: 'alto', descricao: 'Gerência de rede' },
-  { porta: 389, servico: 'LDAP', risco: 'alto', descricao: 'Diretório sem crypto' },
+  { porta: 110, servico: 'POP3', risco: 'medio', descricao: 'Email sem crypto' },
+  { porta: 143, servico: 'IMAP', risco: 'medio', descricao: 'Email sem crypto' },
+  { porta: 161, servico: 'SNMP', risco: 'alto', descricao: 'Gerencia rede' },
+  { porta: 389, servico: 'LDAP', risco: 'alto', descricao: 'Diretorio sem crypto' },
   { porta: 443, servico: 'HTTPS', risco: 'baixo', descricao: 'Web criptografada' },
-  { porta: 445, servico: 'SMB/CIFS', risco: 'critico', descricao: 'Windows — ransomware' },
+  { porta: 445, servico: 'SMB', risco: 'critico', descricao: 'Windows ransomware' },
   { porta: 465, servico: 'SMTPS', risco: 'baixo', descricao: 'SMTP criptografado' },
   { porta: 587, servico: 'SMTP Auth', risco: 'baixo', descricao: 'SMTP autenticado' },
   { porta: 636, servico: 'LDAPS', risco: 'baixo', descricao: 'LDAP criptografado' },
@@ -54,44 +45,23 @@ const PORTAS_DETALHADO = [
   { porta: 8443, servico: 'HTTPS Alt', risco: 'medio', descricao: 'HTTPS alternativo' },
   { porta: 9000, servico: 'PHP-FPM', risco: 'alto', descricao: 'PHP FastCGI' },
   { porta: 9090, servico: 'Prometheus', risco: 'medio', descricao: 'Monitoramento' },
-  { porta: 9200, servico: 'Elasticsearch', risco: 'critico', descricao: 'Elasticsearch sem auth' },
+  { porta: 9200, servico: 'Elasticsearch', risco: 'critico', descricao: 'Elasticsearch' },
   { porta: 27017, servico: 'MongoDB', risco: 'critico', descricao: 'MongoDB' },
   { porta: 5555, servico: 'ADB', risco: 'alto', descricao: 'Android Debug' },
 ];
 
-function checkPort(ip, porta, timeout = 2500) {
+function checkPort(ip, porta, timeout = 3000) {
   return new Promise((resolve) => {
     const net = require('net');
     const socket = new net.Socket();
     socket.setTimeout(timeout);
     let resolved = false;
-
-    const done = (result) => {
-      if (resolved) return;
-      resolved = true;
-      try { socket.destroy(); } catch {}
-      resolve(result);
-    };
-
+    const done = (r) => { if (!resolved) { resolved = true; try { socket.destroy(); } catch {} resolve(r); } };
     socket.on('connect', () => done({ open: true }));
     socket.on('timeout', () => done({ open: false, error: 'timeout' }));
     socket.on('error', (err) => done({ open: false, error: err.code || err.message }));
-
-    try {
-      socket.connect(porta, ip);
-    } catch (e) {
-      done({ open: false, error: e.message });
-    }
+    try { socket.connect(porta, ip); } catch (e) { done({ open: false, error: e.message }); }
   });
-}
-
-// Discovery: scan 1 porta por vez por IP, parando no primeiro sucesso
-async function discoverHost(ip, timeout = 2500) {
-  for (const porta of PORTAS_DISCOVERY) {
-    const result = await checkPort(ip, porta, timeout);
-    if (result.open) return { ip, alive: true, porta };
-  }
-  return { ip, alive: false };
 }
 
 module.exports = async (req, res) => {
@@ -99,105 +69,86 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const startTime = Date.now();
+  const debug = req.query.debug === '1';
+  const limit = parseInt(req.query.limit) || 0; // 0 = all
 
   try {
-    // === Phase 1: Discovery — todos os 2048 IPs ===
-    // Processar em batches de 80 IPs concorrentes
-    const hostMap = {};
-    let processed = 0;
-    const BATCH_SIZE = 80;
+    // IPs para escanear (com limite opcional para debug)
+    const ipsToScan = limit > 0 ? TODOS_IPS.slice(0, limit) : TODOS_IPS;
 
-    for (let i = 0; i < TODOS_IPS.length; i += BATCH_SIZE) {
-      const batch = TODOS_IPS.slice(i, i + BATCH_SIZE);
-      const results = await Promise.all(
+    // DEBUG: Testar IP conhecido primeiro
+    if (debug) {
+      const testResult = await checkPort('143.137.32.7', 443, 3000);
+      const testResult2 = await checkPort('143.137.32.8', 80, 3000);
+      const testResult3 = await checkPort('143.137.32.14', 23, 3000);
+      console.log('Debug tests:', JSON.stringify({ test1: testResult, test2: testResult2, test3: testResult3 }));
+    }
+
+    // === Discovery: 1 porta por vez por IP, parar no primeiro sucesso ===
+    // Batches de 40 IPs, 1 porta por vez = 40 conexões concorrentes
+    const hostMap = {};
+    const errorLog = [];
+    const BATCH = 40;
+
+    for (let i = 0; i < ipsToScan.length; i += BATCH) {
+      const batch = ipsToScan.slice(i, i + BATCH);
+
+      const batchResults = await Promise.all(
         batch.map(async ip => {
-          // Tentar portas em paralelo (todas de uma vez, parar na primeira aberta)
-          const portResults = await Promise.all(
-            PORTAS_DISCOVERY.map(async p => ({ porta: p, ...(await checkPort(ip, p, 2500)) }))
-          );
-          const openPort = portResults.find(r => r.open);
-          processed++;
-          return { ip, alive: !!openPort, openPort: openPort?.porta };
+          // Tentar portas sequencialmente, parar no primeiro sucesso
+          for (const porta of PORTAS_DISCOVERY) {
+            const result = await checkPort(ip, porta, 3000);
+            if (result.open) {
+              return { ip, alive: true, porta };
+            }
+            // Log de erros para os primeiros IPs (debug)
+            if (debug && errorLog.length < 20 && i < 200) {
+              errorLog.push({ ip, porta, error: result.error });
+            }
+          }
+          return { ip, alive: false };
         })
       );
-      for (const r of results) {
-        if (r.alive) hostMap[r.ip] = [r.openPort];
+
+      for (const r of batchResults) {
+        if (r.alive) hostMap[r.ip] = [r.porta];
       }
     }
 
     const hostsAtivos = Object.keys(hostMap).sort((a, b) => {
-      const aParts = a.split('.').map(Number);
-      const bParts = b.split('.').map(Number);
-      for (let i = 0; i < 4; i++) {
-        if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i];
-      }
+      const aP = a.split('.').map(Number), bP = b.split('.').map(Number);
+      for (let i = 0; i < 4; i++) if (aP[i] !== bP[i]) return aP[i] - bP[i];
       return 0;
     });
 
-    // === Phase 2: Scan detalhado nos hosts ativos ===
+    // === Scan detalhado ===
     const detalheScan = [];
-
     for (const ip of hostsAtivos) {
       const portasResults = await Promise.all(
-        PORTAS_DETALHADO.map(async p => ({
-          ...p,
-          aberta: (await checkPort(ip, p.porta, 2500)).open
-        }))
+        PORTAS_DETALHADO.map(async p => ({ ...p, aberta: (await checkPort(ip, p.porta, 3000)).open }))
       );
-
       const abertas = portasResults.filter(p => p.aberta);
-      const critica = abertas.filter(p => p.risco === 'critico');
-      const alta = abertas.filter(p => p.risco === 'alto');
-
       detalheScan.push({
         ip,
         bloco: ip.startsWith('143.137') ? '143.137.32.0/22' : '168.197.56.0/22',
         portas_abertas: abertas.length,
-        portas_criticas: critica.length,
-        portas_altas: alta.length,
+        portas_criticas: abertas.filter(p => p.risco === 'critico').length,
+        portas_altas: abertas.filter(p => p.risco === 'alto').length,
         detalhe_abertas: abertas,
-        portas: portasResults,
       });
     }
 
-    // Score
     let score = 100;
-    for (const host of detalheScan) {
-      score -= host.portas_criticas * 15;
-      score -= host.portas_altas * 8;
-      score -= host.portas_abertas * 2;
-    }
+    for (const h of detalheScan) { score -= h.portas_criticas * 15; score -= h.portas_altas * 8; score -= h.portas_abertas * 2; }
     score = Math.max(0, Math.min(100, score));
 
-    // Recomendações
     const recomendacoes = [];
-    for (const host of detalheScan) {
-      for (const p of host.detalhe_abertas) {
-        if (p.risco === 'critico') {
-          recomendacoes.push({
-            severity: 'critico',
-            ip: host.ip,
-            bloco: host.bloco,
-            porta: `${p.porta}/${p.servico}`,
-            acao: `FECHAR IMEDIATAMENTE: ${p.descricao}. ${p.servico} em ${host.ip} (${host.bloco}) está acessível pela internet. Bloquear via firewall, permitir apenas VPN/rede interna.`
-          });
-        } else if (p.risco === 'alto') {
-          recomendacoes.push({
-            severity: 'alto',
-            ip: host.ip,
-            bloco: host.bloco,
-            porta: `${p.porta}/${p.servico}`,
-            acao: `${p.servico} em ${host.ip} (${host.bloco}) exposto. ${p.descricao}. Restringir via ACL/VPN.`
-          });
-        } else if (p.risco === 'medio') {
-          recomendacoes.push({
-            severity: 'medio',
-            ip: host.ip,
-            bloco: host.bloco,
-            porta: `${p.porta}/${p.servico}`,
-            acao: `${p.servico} em ${host.ip}. ${p.descricao}. Avaliar se precisa estar aberto.`
-          });
-        }
+    for (const h of detalheScan) {
+      for (const p of h.detalhe_abertas) {
+        recomendacoes.push({
+          severity: p.risco, ip: h.ip, bloco: h.bloco, porta: `${p.porta}/${p.servico}`,
+          acao: p.risco === 'critico' ? `FECHAR: ${p.descricao} em ${h.ip}` : `${p.servico} em ${h.ip} exposto`
+        });
       }
     }
 
@@ -206,10 +157,9 @@ module.exports = async (req, res) => {
     res.json({
       timestamp: new Date().toISOString(),
       duration_seconds: parseFloat(elapsed),
-      blocos: ['143.137.32.0/22 (1024 IPs)', '168.197.56.0/22 (1024 IPs)'],
-      total_ips_escaneados: TODOS_IPS.length,
+      total_ips_escaneados: ipsToScan.length,
       hosts_ativos: hostsAtivos.length,
-      hosts_inativos: TODOS_IPS.length - hostsAtivos.length,
+      hosts_inativos: ipsToScan.length - hostsAtivos.length,
       hosts_ativos_lista: hostsAtivos,
       score_seguranca: score,
       portas_abertas_total: detalheScan.reduce((s, h) => s + h.portas_abertas, 0),
@@ -217,9 +167,14 @@ module.exports = async (req, res) => {
       portas_altas_total: detalheScan.reduce((s, h) => s + h.portas_altas, 0),
       hosts: detalheScan,
       recomendacoes: recomendacoes.sort((a, b) => {
-        const order = { critico: 0, alto: 1, medio: 2 };
-        return (order[a.severity] || 9) - (order[b.severity] || 9);
+        const o = { critico: 0, alto: 1, medio: 2, baixo: 3 };
+        return (o[a.severity] || 9) - (o[b.severity] || 9);
       }),
+      debug: debug ? {
+        error_sample: errorLog.slice(0, 10),
+        ips_tested: ipsToScan.length,
+        note: `Scanned ${ipsToScan.length} IPs in ${elapsed}s`
+      } : undefined,
     });
   } catch (e) {
     res.status(500).json({ erro: e.message, stack: e.stack?.split('\n').slice(0, 5) });
