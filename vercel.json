@@ -79,5 +79,6 @@
       "src": "/",
       "dest": "/public/index.html"
     }
-  ]
+  ],
+  "_rebuild": "1785181863"
 }
