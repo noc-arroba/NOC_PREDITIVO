@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — Configuração VPN & SNMP</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a0e1a; color: #e0e0e0; }
+.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 1px solid #1e293b; }
+.header h1 { font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+.header .fase { background: #7c2d12; color: #fed7aa; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.header .sub { font-size: 14px; color: #64748b; margin-top: 4px; }
+.nav-tabs { display: flex; gap: 4px; background: #0f172a; border-radius: 8px; padding: 4px; border: 1px solid #1e293b; margin-top: 12px; }
+.nav-tabs a { padding: 6px 14px; border-radius: 6px; font-size: 13px; color: #94a3b8; text-decoration: none; transition: all .15s; }
+.nav-tabs a:hover { color: #cbd5e1; }
+.nav-tabs a.active { background: #7c2d12; color: #fed7aa; font-weight: 600; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.section { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.section-title { font-size: 16px; color: #f1f5f9; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.section-desc { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group input, .form-group select, .form-group textarea {
+  background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 12px;
+  color: #e2e8f0; font-size: 14px; transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: #3b82f6;
+}
+.form-group input::placeholder { color: #334155; }
+.form-group small { font-size: 11px; color: #475569; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-primary { background: #1e40af; color: #dbeafe; }
+.btn-primary:hover { background: #1e3a8a; }
+.btn-green { background: #065f46; color: #6ee7b7; }
+.btn-green:hover { background: #064e3b; }
+.btn-red { background: #7f1d1d; color: #fca5a5; }
+.btn-red:hover { background: #660f0f; }
+.btn-gray { background: #1e293b; color: #94a3b8; }
+.btn-gray:hover { background: #334155; }
+.btn-row { display: flex; gap: 12px; margin-top: 20px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+th { text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #cbd5e1; }
+tr:hover { background: #0f172a; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-olt { background: #1e3a5f; color: #93c5fd; }
+.badge-router { background: #312e81; color: #a5b4fc; }
+.badge-onu { background: #064e3b; color: #6ee7b7; }
+.badge-switch { background: #78350f; color: #fcd34d; }
+.badge-active { background: #064e3b; color: #6ee7b7; }
+.badge-inactive { background: #1e293b; color: #64748b; }
+.badge-vpn-on { background: #064e3b; color: #6ee7b7; animation: pulse 2s infinite; }
+.badge-vpn-off { background: #1e293b; color: #64748b; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.empty-state { text-align: center; padding: 40px; color: #475569; }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.device-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.device-info { flex: 1; }
+.device-name { font-size: 15px; color: #f1f5f9; font-weight: 600; }
+.device-meta { font-size: 12px; color: #64748b; margin-top: 4px; }
+.device-actions { display: flex; gap: 8px; }
+.toast { position: fixed; bottom: 24px; right: 24px; background: #065f46; color: #6ee7b7; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transform: translateY(100px); opacity: 0; transition: all .3s; z-index: 100; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { background: #7f1d1d; color: #fca5a5; }
+.oid-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.oid-tag { background: #1e293b; padding: 4px 10px; border-radius: 6px; font-size: 11px; color: #67e8f9; font-family: monospace; }
+.footer { text-align: center; padding: 30px; color: #334155; font-size: 12px; }
+.divider { height: 1px; background: #1e293b; margin: 24px 0; }
+.stats-row { display: flex; gap: 16px; margin-bottom: 20px; }
+.stat-mini { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px 16px; flex: 1; }
+.stat-mini .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-mini .value { font-size: 24px; font-weight: 700; color: #f1f5f9; margin-top: 4px; }
+.test-result { margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 13px; display: none; }
+.test-result.ok { background: #064e3b; color: #6ee7b7; display: block; }
+.test-result.err { background: #7f1d1d; color: #fca5a5; display: block; }
+.test-result.pending { background: #1e3a5f; color: #93c5fd; display: block; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛰️ NOC Preditivo <span class="fase">Fase 2 — Configuração</span></h1>
+  <div class="sub">Cadastro de VPN e dispositivos SNMP para coleta de telemetria</div>
+  <div class="nav-tabs">
+    <a href="index.html">📊 Dashboard BGP</a>
+    <a href="config.html" class="active">⚙️ Configuração VPN/SNMP</a>
+    <a href="https://manutencao-de-rede.vercel.app">📡 Rede FTTH</a>
+    <a href="https://manutencao-de-rede.vercel.app/mapa.html">🗺️ Mapa CTOs</a>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-mini">
+      <div class="label">Dispositivos Cadastrados</div>
+      <div class="value" id="statDevices">0</div>
+    </div>
+    <div class="stat-mini">
+      <div class="label">OLTs</div>
+      <div class="value" id="statOLTs">0</div>
+    </div>
+    <div class="stat-mini">
+      <div class="label">Roteadores</div>
+      <div class="value" id="statRouters">0</div>
+    </div>
+    <div class="stat-mini">
+      <div class="label">Status VPN</div>
+      <div class="value" id="statVPN"><span class="badge badge-vpn-off">Não configurada</span></div>
+    </div>
+  </div>
+
+  <!-- VPN Configuration -->
+  <div class="section">
+    <div class="section-title">🔒 Configuração VPN</div>
+    <div class="section-desc">Dados de conexão da VPN para acessar a rede interna dos roteadores e OLTs</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Servidor VPN</label>
+        <input type="text" id="vpnServer" placeholder="10.0.0.1 ou vpn.arroba.com.br">
+      </div>
+      <div class="form-group">
+        <label>Porta</label>
+        <input type="number" id="vpnPort" placeholder="1194" value="1194">
+      </div>
+      <div class="form-group">
+        <label>Protocolo</label>
+        <select id="vpnProtocol">
+          <option value="udp">UDP</option>
+          <option value="tcp">TCP</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo VPN</label>
+        <select id="vpnType">
+          <option value="openvpn">OpenVPN</option>
+          <option value="wireguard">WireGuard</option>
+          <option value="ipsec">IPSec/L2TP</option>
+          <option value="pptp">PPTP</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Usuário</label>
+        <input type="text" id="vpnUser" placeholder="noc_arroba">
+      </div>
+      <div class="form-group">
+        <label>Senha / Chave</label>
+        <input type="password" id="vpnPass" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>Sub-rede Interna (CIDR)</label>
+        <input type="text" id="vpnSubnet" placeholder="10.0.0.0/24">
+        <small>Sub-rede onde os dispositivos SNMP estão acessíveis</small>
+      </div>
+      <div class="form-group">
+        <label>Porta SNMP (Coletor)</label>
+        <input type="number" id="snmpPort" placeholder="161" value="161">
+        <small>Porta do servidor SNMP que o NOC Preditivo vai escutar</small>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="salvarVPN()">💾 Salvar VPN</button>
+      <button class="btn btn-gray" onclick="testarVPN()">🔌 Testar Conexão</button>
+      <button class="btn btn-red" onclick="limparVPN()">🗑️ Limpar</button>
+    </div>
+    <div id="vpnTestResult" class="test-result"></div>
+  </div>
+
+  <!-- SNMP Device Registration -->
+  <div class="section">
+    <div class="section-title">📡 Cadastro de Dispositivos SNMP</div>
+    <div class="section-desc">Roteadores, OLTs e switches para coleta de telemetria BGP, tráfego e LOS</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome do Dispositivo</label>
+        <input type="text" id="devName" placeholder="OLT-1 Santa Rosa">
+      </div>
+      <div class="form-group">
+        <label>IP / Hostname</label>
+        <input type="text" id="devIP" placeholder="10.0.0.73">
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="devType">
+          <option value="olt">OLT (FiberHome/ZTE/Nokia)</option>
+          <option value="router">Roteador (BGP Edge)</option>
+          <option value="switch">Switch Core</option>
+          <option value="onu">ONU (Bridge)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Marca / Modelo</label>
+        <input type="text" id="devModel" placeholder="FiberHome AN5516-04">
+      </div>
+      <div class="form-group">
+        <label>SNMP Community</label>
+        <input type="text" id="devCommunity" placeholder="public" value="public">
+      </div>
+      <div class="form-group">
+        <label>Porta SNMP</label>
+        <input type="number" id="devPort" placeholder="161" value="161">
+      </div>
+      <div class="form-group">
+        <label>SNMP Versão</label>
+        <select id="devSnmpVer">
+          <option value="v2c">SNMPv2c</option>
+          <option value="v3">SNMPv3 (AuthPriv)</option>
+          <option value="v1">SNMPv1</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Localização</label>
+        <input type="text" id="devLocation" placeholder="POP Santa Rosa">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top: 12px;">
+      <label>OIDs para Coleta (separados por vírgula)</label>
+      <textarea id="devOIDs" rows="2" placeholder="1.3.6.1.2.1.1.3.0 (sysUpTime), 1.3.6.1.2.1.2.2.1.10 (ifInOctets), 1.3.6.1.2.1.2.2.1.16 (ifOutOctets)">1.3.6.1.2.1.1.3.0, 1.3.6.1.2.1.2.2.1.10, 1.3.6.1.2.1.2.2.1.16, 1.3.6.1.2.1.15 (bgp), 1.3.6.1.4.1.5875 (fiberhome)</textarea>
+      <small>OIDs padrão já preenchidos. Adicione específicos conforme necessário.</small>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="adicionarDispositivo()">➕ Cadastrar Dispositivo</button>
+      <button class="btn btn-gray" onclick="limparForm()">🧹 Limpar Form</button>
+    </div>
+  </div>
+
+  <!-- Device List -->
+  <div class="section">
+    <div class="section-title">📋 Dispositivos Cadastrados</div>
+    <div class="section-desc">Lista de dispositivos SNMP prontos para coleta</div>
+    <div id="deviceList"></div>
+  </div>
+
+  <!-- Export/Import -->
+  <div class="section">
+    <div class="section-title">💾 Backup & Restauração</div>
+    <div class="section-desc">Exportar ou importar configuração completa (VPN + dispositivos)</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="exportarConfig()">📥 Exportar JSON</button>
+      <button class="btn btn-gray" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarConfig(event)">
+    </div>
+  </div>
+
+  <div class="footer">
+    NOC Preditivo — Fase 2 | Configuração VPN & SNMP | Dados salvos localmente no navegador
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ===== Storage =====
+const STORAGE_KEY = 'noc_preditivo_config';
+
+function loadConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { vpn: null, devices: [] };
+  } catch {
+    return { vpn: null, devices: [] };
+  }
+}
+
+function saveConfig(config) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+}
+
+// ===== Toast =====
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ===== VPN =====
+function salvarVPN() {
+  const config = loadConfig();
+  config.vpn = {
+    server: document.getElementById('vpnServer').value,
+    port: document.getElementById('vpnPort').value,
+    protocol: document.getElementById('vpnProtocol').value,
+    type: document.getElementById('vpnType').value,
+    user: document.getElementById('vpnUser').value,
+    pass: document.getElementById('vpnPass').value,
+    subnet: document.getElementById('vpnSubnet').value,
+    snmp_port: document.getElementById('snmpPort').value,
+    saved_at: new Date().toISOString()
+  };
+  saveConfig(config);
+  toast('✅ Configuração VPN salva!');
+  atualizarStats();
+}
+
+function carregarVPN() {
+  const config = loadConfig();
+  if (config.vpn) {
+    document.getElementById('vpnServer').value = config.vpn.server || '';
+    document.getElementById('vpnPort').value = config.vpn.port || '1194';
+    document.getElementById('vpnProtocol').value = config.vpn.protocol || 'udp';
+    document.getElementById('vpnType').value = config.vpn.type || 'openvpn';
+    document.getElementById('vpnUser').value = config.vpn.user || '';
+    document.getElementById('vpnPass').value = config.vpn.pass || '';
+    document.getElementById('vpnSubnet').value = config.vpn.subnet || '';
+    document.getElementById('snmpPort').value = config.vpn.snmp_port || '161';
+  }
+}
+
+function limparVPN() {
+  if (!confirm('Limpar configuração VPN?')) return;
+  const config = loadConfig();
+  config.vpn = null;
+  saveConfig(config);
+  ['vpnServer', 'vpnUser', 'vpnPass', 'vpnSubnet'].forEach(id => document.getElementById(id).value = '');
+  toast('Configuração VPN removida');
+  atualizarStats();
+}
+
+async function testarVPN() {
+  const config = loadConfig();
+  if (!config.vpn || !config.vpn.server) {
+    toast('⚠️ Configure a VPN primeiro', true);
+    return;
+  }
+
+  const result = document.getElementById('vpnTestResult');
+  result.className = 'test-result pending';
+  result.textContent = '🔌 Testando conexão com ' + config.vpn.server + ':' + config.vpn.port + '...';
+
+  try {
+    // Testar reachability do servidor VPN
+    const start = Date.now();
+    const res = await fetch(`/api/test-vpn?host=${encodeURIComponent(config.vpn.server)}&port=${config.vpn.port}`, { method: 'GET' });
+    const data = await res.json();
+    const elapsed = Date.now() - start;
+
+    if (data.reachable) {
+      result.className = 'test-result ok';
+      result.textContent = `✅ Servidor ${config.vpn.server}:${config.vpn.port} alcançável em ${elapsed}ms — VPN pronta para conexão`;
+    } else {
+      result.className = 'test-result err';
+      result.textContent = `❌ Servidor ${config.vpn.server}:${config.vpn.port} não respondeu — verifique IP, porta e firewall`;
+    }
+  } catch (e) {
+    result.className = 'test-result pending';
+    result.textContent = 'ℹ️ Teste de reachabilidade indisponível no ambiente atual. Configure a VPN no servidor coletor (VM no POP) e valide manualmente.';
+  }
+}
+
+// ===== Devices =====
+function adicionarDispositivo() {
+  const name = document.getElementById('devName').value.trim();
+  const ip = document.getElementById('devIP').value.trim();
+
+  if (!name || !ip) {
+    toast('⚠️ Preencha nome e IP', true);
+    return;
+  }
+
+  const config = loadConfig();
+  const device = {
+    id: Date.now(),
+    name,
+    ip,
+    type: document.getElementById('devType').value,
+    model: document.getElementById('devModel').value.trim(),
+    community: document.getElementById('devCommunity').value.trim(),
+    port: document.getElementById('devPort').value || '161',
+    snmp_version: document.getElementById('devSnmpVer').value,
+    location: document.getElementById('devLocation').value.trim(),
+    oids: document.getElementById('devOIDs').value.trim(),
+    status: 'inactive',
+    created_at: new Date().toISOString()
+  };
+
+  config.devices.push(device);
+  saveConfig(config);
+  toast('✅ Dispositivo "' + name + '" cadastrado!');
+  limparForm();
+  renderDevices();
+  atualizarStats();
+}
+
+function removerDispositivo(id) {
+  const config = loadConfig();
+  config.devices = config.devices.filter(d => d.id !== id);
+  saveConfig(config);
+  toast('Dispositivo removido');
+  renderDevices();
+  atualizarStats();
+}
+
+function toggleStatus(id) {
+  const config = loadConfig();
+  const dev = config.devices.find(d => d.id === id);
+  if (dev) {
+    dev.status = dev.status === 'active' ? 'inactive' : 'active';
+    saveConfig(config);
+    renderDevices();
+  }
+}
+
+function limparForm() {
+  ['devName', 'devIP', 'devModel', 'devLocation'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('devCommunity').value = 'public';
+  document.getElementById('devPort').value = '161';
+}
+
+function renderDevices() {
+  const config = loadConfig();
+  const list = document.getElementById('deviceList');
+
+  if (config.devices.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📡</div><p>Nenhum dispositivo cadastrado.<br>Cadastre OLTs, roteadores e switches acima.</p></div>';
+    return;
+  }
+
+  list.innerHTML = config.devices.map(d => {
+    const typeBadges = { olt: ['badge-olt', 'OLT'], router: ['badge-router', 'Roteador'], switch: ['badge-switch', 'Switch'], onu: ['badge-onu', 'ONU'] };
+    const [badgeClass, badgeText] = typeBadges[d.type] || ['badge-inactive', d.type];
+    const oids = (d.oids || '').split(',').filter(o => o.trim()).map(o => `<span class="oid-tag">${o.trim()}</span>`).join('');
+
+    return `<div class="device-card">
+      <div class="device-info">
+        <div class="device-name">${d.name} <span class="badge ${badgeClass}">${badgeText}</span> <span class="badge ${d.status === 'active' ? 'badge-active' : 'badge-inactive'}">${d.status === 'active' ? 'Ativo' : 'Inativo'}</span></div>
+        <div class="device-meta">
+          📍 ${d.ip}:${d.port} | ${d.model || '—'} | ${d.snmp_version} | ${d.location || '—'}
+        </div>
+        ${oids ? `<div class="oid-list">${oids}</div>` : ''}
+      </div>
+      <div class="device-actions">
+        <button class="btn btn-gray" style="padding:6px 12px;font-size:12px" onclick="testarSNMP(${d.id})">🔌 Testar</button>
+        <button class="btn btn-green" style="padding:6px 12px;font-size:12px" onclick="toggleStatus(${d.id})">${d.status === 'active' ? '⏸️' : '▶️'}</button>
+        <button class="btn btn-red" style="padding:6px 12px;font-size:12px" onclick="removerDispositivo(${d.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function testarSNMP(id) {
+  const config = loadConfig();
+  const dev = config.devices.find(d => d.id === id);
+  if (!dev) return;
+
+  toast('🔌 Testando SNMP em ' + dev.ip + '...');
+
+  try {
+    const res = await fetch(`/api/test-snmp?host=${encodeURIComponent(dev.ip)}&community=${encodeURIComponent(dev.community)}&port=${dev.port}`);
+    const data = await res.json();
+    if (data.ok) {
+      toast('✅ ' + dev.name + ' respondeu SNMP! sysDescr: ' + (data.sysDescr || 'ok'));
+      dev.status = 'active';
+      saveConfig(config);
+      renderDevices();
+      atualizarStats();
+    } else {
+      toast('❌ ' + dev.name + ' não respondeu SNMP', true);
+    }
+  } catch (e) {
+    toast('ℹ️ Teste SNMP requer VPN ativa no servidor coletor', true);
+  }
+}
+
+// ===== Stats =====
+function atualizarStats() {
+  const config = loadConfig();
+  document.getElementById('statDevices').textContent = config.devices.length;
+  document.getElementById('statOLTs').textContent = config.devices.filter(d => d.type === 'olt').length;
+  document.getElementById('statRouters').textContent = config.devices.filter(d => d.type === 'router').length;
+
+  const vpnEl = document.getElementById('statVPN');
+  if (config.vpn && config.vpn.server) {
+    vpnEl.innerHTML = '<span class="badge badge-vpn-on">Configurada</span>';
+  } else {
+    vpnEl.innerHTML = '<span class="badge badge-vpn-off">Não configurada</span>';
+  }
+}
+
+// ===== Export/Import =====
+function exportarConfig() {
+  const config = loadConfig();
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'noc_preditivo_config.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Configuração exportada');
+}
+
+function importarConfig(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const config = JSON.parse(e.target.result);
+      if (!config.devices || !Array.isArray(config.devices)) throw new Error('Formato inválido');
+      saveConfig(config);
+      carregarVPN();
+      renderDevices();
+      atualizarStats();
+      toast('✅ Configuração importada!');
+    } catch (err) {
+      toast('❌ Arquivo inválido', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ===== Pre-fill known OLTs =====
+function preencherOLTs() {
+  const config = loadConfig();
+  if (config.devices.length > 0) return; // Não sobrescrever se já tem dados
+
+  const oltsConhecidas = [
+    { name: 'OLT-1 Santa Rosa', ip: '', model: 'FiberHome AN5516-04', location: 'POP Santa Rosa' },
+    { name: 'OLT-2 Santa Rosa', ip: '', model: 'FiberHome AN5516-04', location: 'POP Santa Rosa' },
+    { name: 'OLT-3 Santa Rosa', ip: '', model: 'FiberHome AN5516-04', location: 'POP Santa Rosa' },
+    { name: 'OLT-1 Coqueiros', ip: '', model: 'FiberHome AN5516-04', location: 'POP Coqueiros' },
+    { name: 'OLT-1 Farol', ip: '', model: 'FiberHome AN5516-04', location: 'POP Farol' },
+    { name: 'OLT-1 Ururaí', ip: '', model: 'FiberHome AN5516-04', location: 'POP Ururaí' },
+    { name: 'OLT-Nokia Teste', ip: '', model: 'Nokia (Teste)', location: 'Laboratório' },
+  ];
+
+  // Não preencher automaticamente, apenas sugerir
+}
+
+// ===== Init =====
+carregarVPN();
+renderDevices();
+atualizarStats();
+</script>
+</body>
+</html>
