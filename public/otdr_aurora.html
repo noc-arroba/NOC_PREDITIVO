@@ -99,7 +99,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 
 <script>
 // ===== Globais =====
-const map = L.map('map', { zoomControl: true }).setView([-21.78, -41.33], 14);
+const map = L.map('map', { zoomControl: true }).setView([-21.784, -41.331], 14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap', maxZoom: 20
 }).addTo(map);
@@ -302,7 +302,7 @@ async function loadCTOs() {
   
   // Filtrar CTOs próximas do Parque Aurora (2km)
   const paCtos = ctos.filter(function(c) {
-    return c.lat && c.lon && distM(-21.78, -41.33, c.lat, c.lon) < 2000;
+    return c.lat && c.lon && distM(-21.784, -41.331, c.lat, c.lon) < 4000;
   });
   
   // Para cada CTO, encontrar área mais próxima e cor de fibra
