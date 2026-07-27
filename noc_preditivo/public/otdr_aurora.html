@@ -52,7 +52,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
 <div class="header">
   <div>
     <h1>🔦 OTDR Virtual — Parque Aurora (Topologia InMap)</h1>
-    <div class="sub">OLT → Backbone → Abertura de Área → Fusão → CTO | Click numa CTO offline para analisar</div>
+    <div class="sub">OLT → Backbone → Abertura de Área → CTO | Click numa CTO offline ou abertura para analisar</div>
   </div>
   <div class="nav-tabs">
     <a href="index.html">📊 BGP</a>
@@ -68,7 +68,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:
     <h3>📍 Camadas — Topologia</h3>
     <label class="layer-toggle"><input type="checkbox" id="layer-backbone" checked> 🟠 Backbone (88)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-abertura" checked> 🟡 Aberturas de Área (52)</label>
-    <label class="layer-toggle"><input type="checkbox" id="layer-fusao" checked> 🔵 Fusões (916)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-fusao"> 🔵 Fusões (916) — oculto 🔵 Fusões (916)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-emenda" checked> 🔴 Caixas de Emenda (19)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-poligono"> 🟣 Áreas de Cobertura (52)</label>
     <label class="layer-toggle"><input type="checkbox" id="layer-postes"> ⚡ Postes (4136)</label>
@@ -169,7 +169,8 @@ async function loadTopologia() {
         <div class="popup-info">Área: <strong>${f.properties.area}</strong></div>`)
       .addTo(layers.fusao);
   }
-  layers.fusao.addTo(map);
+  // Fusões NÃO visíveis por padrão (apenas dados para OTDR)
+  // layers.fusao.addTo(map);
   
   // Caixas de emenda
   layers.emenda = L.layerGroup();
