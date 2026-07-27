@@ -1,4 +1,4 @@
-// API: Listar OLTs do IXC com IP para cadastro SNMP
+// API: Listar todas as OLTs do IXC com IP para cadastro SNMP
 const IXC_URL = 'https://central.arrobabandalarga.com.br/webservice/v1';
 const IXC_TOKEN = Buffer.from('514:d80878e07a48bd5b338b9c815cf914f8e9cc0a2c1becf36a7f7bf2d82e77da81').toString('base64');
 
@@ -7,6 +7,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
+    // Buscar todas as OLTs
     const resp = await fetch(`${IXC_URL}/radtransmissor`, {
       method: 'POST',
       headers: {
@@ -16,9 +17,9 @@ module.exports = async (req, res) => {
       },
       body: JSON.stringify({
         qtype: 'radtransmissor.id',
-        oper: 'IN',
-        query: '73,74,76,79,69,70,72',
-        rp: 50,
+        oper: '>=',
+        query: '0',
+        rp: 100,
         sortname: 'radtransmissor.id',
         sortorder: 'asc'
       })
@@ -27,16 +28,27 @@ module.exports = async (req, res) => {
     const data = await resp.json();
     const registros = data.registros || [];
 
-    const olts = registros.map(r => ({
-      id: r.id,
-      nome: r.descricao || r.nome || `OLT ${r.id}`,
-      ip: r.ip || r.host || r.endereco_ip || r.ip_transmissor || '',
-      modelo: r.modelo || r.tipo || '',
-      marca: r.marca || r.fabricante || '',
-      raw: r
-    }));
+    // Retornar todos os campos para descobrir qual tem o IP
+    const olts = registros.map(r => {
+      const fields = {};
+      for (const [k, v] of Object.entries(r)) {
+        fields[k] = v;
+      }
+      return fields;
+    });
 
-    res.json({ olts, total: olts.length });
+    res.json({ 
+      total: olts.length,
+      primeiro: olts[0] || null,
+      olts: olts.map(o => ({
+        id: o.id,
+        descricao: o.descricao || o.nome || '',
+        ip: o.ip || o.host || o.endereco_ip || o.ip_transmissor || o.ip_estacao || o.ip_olt || '',
+        modelo: o.modelo || o.tipo || '',
+        marca: o.marca || o.fabricante || '',
+        todos_campos: Object.keys(o)
+      }))
+    });
   } catch (e) {
     res.status(500).json({ erro: e.message });
   }
