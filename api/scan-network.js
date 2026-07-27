@@ -90,7 +90,7 @@ function checkPort(ip, porta, timeout = 800) {
 }
 
 // Processar em batches com concorrência controlada
-async function scanBatch(ips, portas, concurrency = 150, timeout = 800) {
+async function scanBatch(ips, portas, concurrency = 100, timeout = 2500) {
   const results = [];
   const tasks = [];
   for (const ip of ips) {
@@ -122,7 +122,7 @@ module.exports = async (req, res) => {
 
   try {
     // Phase 1: Discovery — scan all 2048 IPs with a few common ports
-    const discoveryResults = await scanBatch(TODOS_IPS, PORTAS_DISCOVERY, 200, 600);
+    const discoveryResults = await scanBatch(TODOS_IPS, PORTAS_DISCOVERY, 100, 2000);
 
     // Encontrar hosts ativos (pelo menos 1 porta aberta)
     const hostMap = {};
@@ -145,7 +145,7 @@ module.exports = async (req, res) => {
     // Phase 2: Full port scan on alive hosts
     const detalheScan = [];
     if (hostsAtivos.length > 0 && phase !== 'discover') {
-      const fullResults = await scanBatch(hostsAtivos, PORTAS_DETALHADO.map(p => p.porta), 100, 1500);
+      const fullResults = await scanBatch(hostsAtivos, PORTAS_DETALHADO.map(p => p.porta), 50, 2500);
 
       // Agrupar por IP
       const fullMap = {};
@@ -208,6 +208,7 @@ module.exports = async (req, res) => {
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`Discovery: ${hostsAtivos.length} hosts ativos de ${TODOS_IPS.length} IPs`);
 
     res.json({
       timestamp: new Date().toISOString(),
