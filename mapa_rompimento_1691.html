@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f172a; font-family: 'Segoe UI', Arial, sans-serif; }
+#map { width: 800px; height: 600px; }
+.info-panel {
+  position: absolute; top: 10px; left: 10px; z-index: 1000;
+  background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
+  border-radius: 8px; padding: 12px; font-size: 11px; color: #e2e8f0;
+  max-width: 260px;
+}
+.info-panel h2 { font-size: 13px; color: #fbbf24; margin-bottom: 8px; }
+.info-panel .row { margin: 3px 0; }
+.info-panel .label { color: #94a3b8; }
+.info-panel .val { color: #e2e8f0; font-weight: bold; }
+.info-panel .alert { color: #ef4444; font-weight: bold; }
+.info-panel .break { color: #fbbf24; font-weight: bold; }
+.legend-panel {
+  position: absolute; bottom: 10px; right: 10px; z-index: 1000;
+  background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
+  border-radius: 8px; padding: 10px; font-size: 10px; color: #e2e8f0;
+}
+.legend-item { margin: 3px 0; display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.cto-label { font-size: 9px; font-weight: bold; background: rgba(15,23,42,0.85); padding: 1px 4px; border-radius: 3px; color: white; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="info-panel">
+  <h2>ROMPIMENTO - AREA 1691</h2>
+  <div class="row"><span class="label">PON:</span> <span class="val">ae0.1691</span></div>
+  <div class="row"><span class="label">Inicio:</span> <span class="val">27/07 20:20</span></div>
+  <div class="row"><span class="alert">25 clientes offline</span></div>
+  <div class="row" style="margin-top:8px;border-top:1px solid #334155;padding-top:6px;">
+    <span class="break">TRECHO A TROCAR</span>
+  </div>
+  <div class="row"><span class="label">Cabo:</span> <span class="val">151M-6F</span></div>
+  <div class="row"><span class="alert">De:</span> <span class="val">Abertura 7346</span></div>
+  <div class="row"><span class="alert">Ate:</span> <span class="val">CTO 7345</span></div>
+  <div class="row"><span class="label">Trecho:</span> <span class="val">~40m + 152m</span></div>
+  <div class="row"><span class="label">Material:</span> <span class="val">192m cabo 6F</span></div>
+  <div class="row" style="margin-top:6px;">
+    <span class="label">GPS Abertura:</span><br>
+    <span class="val" style="font-size:9px;font-family:monospace;">-21.812407 / -41.396282</span>
+  </div>
+  <div class="row">
+    <span class="label">GPS CTO 7345:</span><br>
+    <span class="val" style="font-size:9px;font-family:monospace;">-21.812044 / -41.396288</span>
+  </div>
+</div>
+<div class="legend-panel">
+  <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span> Online</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#ef4444;border:2px solid #fbbf24;"></span> Rompimento</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span> Offline parcial</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;border:2px solid #60a5fa;"></span> Abertura Area</div>
+  <div class="legend-item"><span style="width:20px;height:3px;background:#f97316;display:inline-block;"></span> Backbone</div>
+  <div class="legend-item"><span style="width:20px;height:3px;background:#3b82f6;display:inline-block;"></span> Distribuicao</div>
+  <div class="legend-item"><span style="width:20px;height:4px;background:#fbbf24;display:inline-block;"></span> Trecho a trocar</div>
+</div>
+<script>
+var map=L.map("map",{zoomControl:true}).setView([-21.8124, -41.3963], 18);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'OSM'}).addTo(map);
+L.polygon([[-21.810744, -41.395683], [-21.810767, -41.39618], [-21.811578, -41.396198], [-21.811512, -41.397013], [-21.814125, -41.396716], [-21.813948, -41.39525], [-21.813318, -41.39533], [-21.813414, -41.396212], [-21.812778, -41.396204], [-21.812655, -41.395765], [-21.811775, -41.395583], [-21.810744, -41.395683], [-21.810744, -41.395683]],{color:"#64748b",weight:2,dashArray:"5,5",fillColor:"#64748b",fillOpacity:0.05}).addTo(map);
+L.polyline([[-21.809548, -41.394665], [-21.810078, -41.394589], [-21.810033, -41.394468], [-21.810103, -41.395049]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 133M - 6F | distribuicao | 6F");
+L.polyline([[-21.809508, -41.395568], [-21.810083, -41.395473], [-21.810873, -41.395366], [-21.811455, -41.395305], [-21.811529, -41.395176], [-21.8115, -41.394996]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 252M - 6F | distribuicao | 6F");
+L.polyline([[-21.811641, -41.39469], [-21.812069, -41.394623], [-21.812104, -41.394674], [-21.812149, -41.395131], [-21.812258, -41.395194], [-21.812342, -41.395182]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 125M - 6F | distribuicao | 6F");
+L.polyline([[-21.81302, -41.396013], [-21.81296, -41.395444], [-21.812917, -41.395137], [-21.812947, -41.395111], [-21.813102, -41.395095], [-21.813094, -41.395078], [-21.812349, -41.395181]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 198M - 6F | distribuicao | 6F");
+L.polyline([[-21.812343, -41.395196], [-21.811583, -41.395306], [-21.811538, -41.395178], [-21.811513, -41.394993]],{color:"#f97316",weight:3,opacity:0.6}).addTo(map).bindPopup("CABO 118M - 12F | backbone | 12F");
+L.polyline([[-21.814332, -41.395105], [-21.814255, -41.394507], [-21.814139, -41.393474], [-21.814065, -41.39284], [-21.813962, -41.392832], [-21.813832, -41.392846]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 262M - 6F | distribuicao | 6F");
+L.polyline([[-21.814988, -41.394334], [-21.81491, -41.394934], [-21.814872, -41.39489], [-21.814733, -41.394881], [-21.814332, -41.394927], [-21.814322, -41.394959], [-21.814341, -41.395095]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 147M - 6F | distribuicao | 6F");
+L.polyline([[-21.814336, -41.395094], [-21.814416, -41.395748], [-21.814488, -41.396389], [-21.814488, -41.396483], [-21.814549, -41.396569], [-21.815052, -41.396638], [-21.81535, -41.396641]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 245M - 6F | distribuicao | 6F");
+L.polyline([[-21.809158, -41.397084], [-21.810502, -41.396943]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 149M - 6F | distribuicao | 6F");
+L.polyline([[-21.809324, -41.396195], [-21.809578, -41.396412], [-21.809705, -41.396399]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 50M - 6F | distribuicao | 6F");
+L.polyline([[-21.809696, -41.396403], [-21.809695, -41.396295], [-21.810064, -41.396189], [-21.81014, -41.39616], [-21.810461, -41.396046], [-21.810734, -41.395994], [-21.811027, -41.395978]],{color:"#ef4444",weight:3,opacity:0.8,dashArray:"8,4"}).addTo(map).bindPopup("CABO 163M - 6F distribuicao 6F - ROMPIDO");
+L.polyline([[-21.809709, -41.396401], [-21.810485, -41.396435], [-21.811191, -41.396483]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 164M - 6F | distribuicao | 6F");
+L.polyline([[-21.809156, -41.397078], [-21.809807, -41.397], [-21.809622, -41.396796], [-21.809593, -41.396438], [-21.809706, -41.396405]],{color:"#f97316",weight:3,opacity:0.6}).addTo(map).bindPopup("CABO 152M - 12F | backbone | 12F");
+L.polyline([[-21.81103, -41.395974], [-21.811611, -41.395938], [-21.811558, -41.396253], [-21.812045, -41.396285]],{color:"#ef4444",weight:3,opacity:0.8,dashArray:"8,4"}).addTo(map).bindPopup("CABO 151M - 6F distribuicao 6F - ROMPIDO");
+L.polyline([[-21.812118, -41.396813], [-21.812858, -41.39675], [-21.813473, -41.396701], [-21.813723, -41.396665], [-21.813794, -41.39638]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 209M - 6F | distribuicao | 6F");
+L.polyline([[-21.813695, -41.395584], [-21.813791, -41.396396]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 85M - 6F | distribuicao | 6F");
+L.polyline([[-21.812048, -41.396285], [-21.812429, -41.396291], [-21.81313, -41.396363], [-21.813791, -41.396396]],{color:"#f97316",weight:3,opacity:0.7}).addTo(map);
+L.polyline([[-21.812048, -41.396285],[-21.812429, -41.396291]],{color:"#fbbf24",weight:5,opacity:1,dashArray:"6,4"}).addTo(map);
+L.polyline([[-21.809515, -41.398379], [-21.809296, -41.398315], [-21.809318, -41.398291], [-21.809525, -41.397552], [-21.809631, -41.397456], [-21.809856, -41.3977], [-21.810068, -41.397901], [-21.81008, -41.39789], [-21.809865, -41.397689], [-21.809634, -41.397446], [-21.809503, -41.397254], [-21.810405, -41.39717]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 385M - 6F | distribuicao | 6F");
+L.polyline([[-21.812139, -41.397916], [-21.811944, -41.397933], [-21.811967, -41.397902], [-21.811906, -41.397081]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 111M - 6F | distribuicao | 6F");
+L.polyline([[-21.812141, -41.397926], [-21.812615, -41.397873], [-21.812633, -41.39783], [-21.812605, -41.397485]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 94M - 6F | distribuicao | 6F");
+L.polyline([[-21.812619, -41.397499], [-21.812646, -41.39784], [-21.812624, -41.397882], [-21.813006, -41.397837], [-21.813147, -41.397823], [-21.813306, -41.397799], [-21.813274, -41.397457], [-21.813292, -41.397452], [-21.813324, -41.397792], [-21.813543, -41.397818]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 214M - 6F | distribuicao | 6F");
+L.polyline([[-21.814273, -41.398498], [-21.814491, -41.398286], [-21.814478, -41.398192], [-21.814317, -41.397902], [-21.814036, -41.39745], [-21.814049, -41.397376]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 141M - 6F | distribuicao | 6F");
+L.polyline([[-21.813529, -41.397815], [-21.813785, -41.397599], [-21.814058, -41.397375]],{color:"#f97316",weight:3,opacity:0.6}).addTo(map).bindPopup("CABO 74M -12F | backbone | 12F");
+L.polyline([[-21.813092, -41.396886], [-21.813981, -41.3968], [-21.814515, -41.39678], [-21.814723, -41.396921], [-21.814653, -41.396935], [-21.814597, -41.396973]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 201M - 6F | distribuicao | 6F");
+L.polyline([[-21.814598, -41.396968], [-21.814358, -41.397127], [-21.814049, -41.397379]],{color:"#3b82f6",weight:2,opacity:0.6}).addTo(map).bindPopup("CABO 74M - 6F | distribuicao | 6F");
+L.circleMarker([-21.81100579,-41.39594978],{radius:8,color:"#fbbf24",fillColor:"#ef4444",fillOpacity:0.9,weight:3}).addTo(map).bindPopup("CTO 7343 OFFLINE 9/9 ROMPIMENTO PON ae0.1691");
+L.marker([-21.81100579,-41.39594978],{icon:L.divIcon({className:"cto-label",html:"7343 ROMP",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81161271,-41.39592899],{radius:8,color:"#fbbf24",fillColor:"#ef4444",fillOpacity:0.9,weight:3}).addTo(map).bindPopup("CTO 7344 OFFLINE 11/12 ROMPIMENTO PON ae0.1691");
+L.marker([-21.81161271,-41.39592899],{icon:L.divIcon({className:"cto-label",html:"7344 ROMP",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.8120444,-41.39628826],{radius:8,color:"#fbbf24",fillColor:"#ef4444",fillOpacity:0.9,weight:3}).addTo(map).bindPopup("CTO 7345 OFFLINE 5/5 ROMPIMENTO PON ae0.1691");
+L.marker([-21.8120444,-41.39628826],{icon:L.divIcon({className:"cto-label",html:"7345 ROMP",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81240749,-41.39628235],{radius:10,color:"#60a5fa",fillColor:"#3b82f6",fillOpacity:0.8,weight:3}).addTo(map).bindPopup("ABERTURA DE AREA 1691 CTO 7346 Split 1:16 5/7 offline");
+L.circleMarker([-21.81240749,-41.39628235],{radius:14,color:"#60a5fa",fillOpacity:0,weight:1,dashArray:"3,3"}).addTo(map);
+L.marker([-21.81240749,-41.39628235],{icon:L.divIcon({className:"cto-label",html:"ABERTURA 7346",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81312315,-41.39636152],{radius:7,color:"#16a34a",fillColor:"#22c55e",fillOpacity:0.8,weight:2}).addTo(map).bindPopup("CTO 7347 ONLINE 0/4");
+L.marker([-21.81312315,-41.39636152],{icon:L.divIcon({className:"cto-label",html:"7347 ON",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81378528,-41.39639123],{radius:7,color:"#16a34a",fillColor:"#22c55e",fillOpacity:0.8,weight:2}).addTo(map).bindPopup("CTO 7348 ONLINE 0/1");
+L.marker([-21.81378528,-41.39639123],{icon:L.divIcon({className:"cto-label",html:"7348 ON",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81370504,-41.39558634],{radius:7,color:"#16a34a",fillColor:"#22c55e",fillOpacity:0.8,weight:2}).addTo(map).bindPopup("CTO 7349 ONLINE 0/2");
+L.marker([-21.81370504,-41.39558634],{icon:L.divIcon({className:"cto-label",html:"7349 ON",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81347001,-41.39669761],{radius:7,color:"#16a34a",fillColor:"#22c55e",fillOpacity:0.8,weight:2}).addTo(map).bindPopup("CTO 7350 ONLINE 0/3");
+L.marker([-21.81347001,-41.39669761],{icon:L.divIcon({className:"cto-label",html:"7350 ON",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81285874,-41.3967572],{radius:7,color:"#16a34a",fillColor:"#22c55e",fillOpacity:0.8,weight:2}).addTo(map).bindPopup("CTO 7351 ONLINE 0/3");
+L.marker([-21.81285874,-41.3967572],{icon:L.divIcon({className:"cto-label",html:"7351 ON",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.circleMarker([-21.81212711,-41.39680032],{radius:7,color:"#dc2626",fillColor:"#ef4444",fillOpacity:0.7,weight:2}).addTo(map).bindPopup("CTO 7352 OFFLINE 2/7");
+L.marker([-21.81212711,-41.39680032],{icon:L.divIcon({className:"cto-label",html:"7352 2/7",iconSize:[60,12],iconAnchor:[30,-12]})}).addTo(map);
+L.marker([-21.812225945,-41.396285305],{icon:L.divIcon({className:"break-icon",html:"<div style='background:#ef4444;border:2px solid #fbbf24;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:white;font-size:14px;'>X</div>",iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);
+L.marker([-21.812225945,-41.396285305],{icon:L.divIcon({className:"break-label",html:"<div style='color:#fbbf24;font-weight:bold;font-size:9px;background:rgba(15,23,42,0.9);padding:2px 6px;border-radius:4px;border:1px solid #fbbf24;white-space:nowrap;'>RUPTURA ~40m</div>",iconSize:[80,16],iconAnchor:[40,-18]})}).addTo(map);
+</script>
+</body>
+</html>
