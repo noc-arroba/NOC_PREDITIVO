@@ -37,8 +37,54 @@ tr:hover { background: #0f172a; }
 .badge-peer { background: #064e3b; color: #6ee7b7; }
 .badge-alert { background: #7f1d1d; color: #fca5a5; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
+.stat-val{font-size:28px;font-weight:800}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
+.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
+.alert-ev-icon{font-size:18px;flex-shrink:0}
+.alert-ev-content{flex:1}
+.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
+.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
+
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media(max-width:768px) { .two-col { grid-template-columns: 1fr; } }
+@media(max-width:768px) { 
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
+.stat-val{font-size:28px;font-weight:800}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
+.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
+.alert-ev-icon{font-size:18px;flex-shrink:0}
+.alert-ev-content{flex:1}
+.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
+.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
+
+.two-col { grid-template-columns: 1fr; } }
 .loading { text-align: center; padding: 60px; color: #475569; }
 .spinner { border: 3px solid #1e293b; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -291,7 +337,43 @@ async function load() {
       `<span class="mtr-target">${t.nome} <code>${t.ip}</code></span>`
     ).join('');
 
-    document.getElementById('last-update').textContent =
+    
+// === HEALTH SCORE ===
+function calcHealthBGP(data) {
+  const score = data.stats.score || 0;
+  const alerts = (data.alertas || []).length;
+  const prefixosOk = data.stats.prefixos_ok || 0;
+  const prefixosTotal = data.stats.prefixos_total || 1;
+  const ratio = prefixosOk / prefixosTotal;
+  let health = score * 0.5 + ratio * 50 - alerts * 3;
+  return Math.max(0, Math.min(100, health));
+}
+
+function updateHealth(score, alertsCount) {
+  const hs = document.getElementById('healthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('healthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
+
+// === ALERTAS COM EVIDÊNCIA ===
+function renderAlertasComEvidencia(alertas) {
+  const container = document.getElementById('alertas');
+  if(!alertas || alertas.length === 0){
+    container.innerHTML = '<div class="alert-evidence ok"><div class="alert-ev-icon">✅</div><div class="alert-ev-content"><div class="alert-ev-title">Nenhum alerta BGP ativo</div><div class="alert-ev-desc">Todos os prefixos anunciados corretamente. Sem evidência de hijack ou problema de roteamento.</div></div></div>';
+    return;
+  }
+  container.innerHTML = alertas.map(a => {
+    const sev = a.tipo === 'HIJACK' ? 'critical' : 'warning';
+    const icon = sev === 'critical' ? '🔴' : '⚠️';
+    return '<div class="alert-evidence ' + sev + '"><div class="alert-ev-icon">' + icon + '</div><div class="alert-ev-content"><div class="alert-ev-title">' + a.prefixo + ' — ' + a.tipo + '</div><div class="alert-ev-desc">Origin AS: ' + a.origin_as + '. <b>Evidência:</b> ' + a.razao + '. <b>Ação NOC:</b> Verificar anúncio BGP e origem do prefixo.</div></div></div>';
+  }).join('');
+}
+
+document.getElementById('last-update').textContent =
       new Date(data.timestamp).toLocaleString('pt-BR');
 
   } catch (e) {
