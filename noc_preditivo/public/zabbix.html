@@ -96,6 +96,12 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 </div>
 
 <div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="zbxHealthScore" style="color:#fbbf24">--</div>
+    <div class="health-label" id="zbxHealthLabel">Health Score / 100 — Carregando...</div>
+  </div>
+  <div id="zbxAlerts"></div>
+  
   <div class="kpi-grid">
     <div class="kpi-card"><div class="label">Hosts Ativos</div><div class="value" id="kpiHosts">--</div><div class="sub" id="kpiHostsSub">--</div></div>
     <div class="kpi-card"><div class="label">Hosts Offline</div><div class="value" id="kpiDown" style="color:#ef4444">--</div><div class="sub">Indisponíveis</div></div>
@@ -164,65 +170,54 @@ async function carregarDados() {
 
   try {
     const data = await zabbixCall('overview');
-    allHosts = [];
     const triggers = data.triggers || [];
-    let hostsOk=0, hostsDown=0;
-    for (const h of hosts) {
-      const iface = h.interfaces && h.interfaces[0];
-      if (iface && iface.available === '1') hostsOk++;
-      else if (iface && iface.available === '2') hostsDown++;
-    }
+    const stats = data.stats || {};
 
-    document.getElementById('kpiHosts').textContent = hosts.length;
-    document.getElementById('kpiHostsSub').textContent = hostsOk + ' OK / ' + hostsDown + ' offline';
-    document.getElementById('kpiDown').textContent = hostsDown;
-    // Health Score
-    updateZbxHealth(calcHealthZabbix(hosts.length, hostsDown, triggers.length, bySev));
-    renderZbxAlerts(allTriggers);
+    // Stats direto do proxy
+    document.getElementById('kpiHosts').textContent = stats.totalHosts || 0;
+    document.getElementById('kpiHostsSub').textContent = (stats.hostsOk || 0) + ' OK / ' + (stats.hostsDown || 0) + ' offline';
+    document.getElementById('kpiDown').textContent = stats.hostsDown || 0;
 
-    const bySev = {};
-    const now = Date.now()/1000;
+    const bySev = stats.bySeverity || {};
+
+    // Mapear triggers do proxy (já vêm formatados)
     allTriggers = triggers.map(function(t) {
-      const sev = parseInt(t.priority || 0);
-      bySev[sev] = (bySev[sev]||0)+1;
-      const ageSec = now - parseInt(t.lastchange || 0);
-      let ageTxt;
-      if (ageSec < 60) ageTxt = Math.floor(ageSec)+'s';
-      else if (ageSec < 3600) ageTxt = Math.floor(ageSec/60)+'min';
-      else if (ageSec < 86400) ageTxt = (ageSec/3600).toFixed(1)+'h';
-      else ageTxt = (ageSec/86400).toFixed(1)+'d';
       return {
-        triggerid: t.triggerid,
-        host: (t.hosts && t.hosts[0] && t.hosts[0].name) || 'N/A',
-        hostid: (t.hosts && t.hosts[0] && t.hosts[0].hostid) || null,
-        description: t.description,
-        severity: sev,
-        severityName: SEV_MAP[sev] || '?',
-        severityColor: SEV_COLOR[sev] || '#64748b',
-        lastchange: parseInt(t.lastchange || 0),
-        ageTxt: ageTxt
+        triggerid: t.triggerid || '',
+        host: t.host || 'N/A',
+        hostid: t.hostid || null,
+        description: t.description || '',
+        severity: t.severity || 0,
+        severityName: SEV_MAP[t.severity] || '?',
+        severityColor: SEV_COLOR[t.severity] || '#64748b',
+        lastchange: t.lastchange || 0,
+        ageTxt: t.ageTxt || ''
       };
     });
 
-    document.getElementById('kpiDisaster').textContent = bySev[5] || 0;
-    document.getElementById('kpiHigh').textContent = bySev[4] || 0;
-    document.getElementById('kpiMedium').textContent = bySev[3] || 0;
-    document.getElementById('kpiWarn').textContent = bySev[2] || 0;
-    document.getElementById('kpiInfo').textContent = bySev[1] || 0;
-    document.getElementById('kpiTotalAlerts').textContent = allTriggers.length;
+    document.getElementById('kpiDisaster').textContent = bySev['5'] || 0;
+    document.getElementById('kpiHigh').textContent = bySev['4'] || 0;
+    document.getElementById('kpiMedium').textContent = bySev['3'] || 0;
+    document.getElementById('kpiWarn').textContent = bySev['2'] || 0;
+    document.getElementById('kpiInfo').textContent = bySev['1'] || 0;
+    document.getElementById('kpiTotalAlerts').textContent = stats.totalTriggers || allTriggers.length;
 
     const dc = document.getElementById('kpiDisasterCard');
     const hc = document.getElementById('kpiHighCard');
-    if ((bySev[5]||0) > 0) dc.classList.add('alert'); else dc.classList.remove('alert');
-    if ((bySev[4]||0) > 0) hc.classList.add('alert'); else hc.classList.remove('alert');
+    if ((bySev['5']||0) > 0) dc.classList.add('alert'); else dc.classList.remove('alert');
+    if ((bySev['4']||0) > 0) hc.classList.add('alert'); else hc.classList.remove('alert');
+
+    // Health Score
+    updateZbxHealth(calcHealthZabbix(stats.totalHosts || 0, stats.hostsDown || 0, stats.totalTriggers || 0, bySev));
+    renderZbxAlerts(allTriggers);
 
     renderTriggers();
-    if (hostsVisible) renderHosts();
+    if (hostsVisible) loadHosts();
 
     const agora = new Date().toLocaleString('pt-BR');
     document.getElementById('statusBar').innerHTML =
       '<span><span class="ok">✓</span> Atualizado em ' + agora + '</span>' +
-      '<span>' + allTriggers.length + ' alertas ativos | ' + hosts.length + ' hosts monitorados</span>';
+      '<span>' + allTriggers.length + ' alertas ativos | ' + (stats.totalHosts || 0) + ' hosts monitorados</span>';
 
   } catch (err) {
     document.getElementById('triggerBody').innerHTML =
