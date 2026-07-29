@@ -22,6 +22,20 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .dot-down{background:#ef4444;box-shadow:0 0 8px #ef444488}
 .dot-warn{background:#fbbf24;box-shadow:0 0 8px #fbbf2488}
 .container{max-width:1400px;margin:0 auto;padding:20px}
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.alert-ev{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-ev.crit{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-ev.warn{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-ev-icon{font-size:18px;flex-shrink:0}
+.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
 .kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px;transition:all .2s}
 .kpi-card:hover{border-color:#334155;transform:translateY(-2px)}
@@ -183,6 +197,9 @@ async function carregarDados() {
     document.getElementById('kpiHosts').textContent = hosts.length;
     document.getElementById('kpiHostsSub').textContent = hostsOk + ' OK / ' + hostsDown + ' offline';
     document.getElementById('kpiDown').textContent = hostsDown;
+    // Health Score
+    updateZbxHealth(calcHealthZabbix(hosts.length, hostsDown, triggers.length, bySev));
+    renderZbxAlerts(allTriggers);
 
     const bySev = {};
     const now = Date.now()/1000;
@@ -287,6 +304,43 @@ function renderHosts() {
       '<span class="status-dot ' + (down ? 'dot-down' : 'dot-ok') + '"></span>' +
       '</div>';
   }).join('');
+}
+
+
+// === HEALTH SCORE ZABBIX ===
+function calcHealthZabbix(totalHosts, hostsDown, totalTriggers, bySeverity) {
+  const crit = (bySeverity[5]||0) + (bySeverity[4]||0);
+  const warn = (bySeverity[3]||0) + (bySeverity[2]||0);
+  let score = 100 - (hostsDown * 5) - (crit * 3) - (warn * 1);
+  return Math.max(0, Math.min(100, score));
+}
+
+function updateZbxHealth(score) {
+  const hs = document.getElementById('zbxHealthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('zbxHealthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
+
+function renderZbxAlerts(triggers) {
+  const container = document.getElementById('zbxAlerts');
+  const crit = triggers.filter(t => t.severity >= 4);
+  const warn = triggers.filter(t => t.severity >= 2 && t.severity < 4);
+  if(crit.length === 0 && warn.length === 0){
+    container.innerHTML = '<div class="alert-ev" style="background:#064e3b22;border-left:3px solid #10b981"><div class="alert-ev-icon">✅</div><div><div class="alert-ev-title">Nenhum alerta ativo</div><div class="alert-ev-desc">Todos os triggers estão em estado normal. Sem evidência de problema.</div></div></div>';
+    return;
+  }
+  let html = '';
+  crit.slice(0, 5).forEach(t => {
+    html += '<div class="alert-ev crit"><div class="alert-ev-icon">🔴</div><div><div class="alert-ev-title">' + esc(t.host) + ' — ' + esc(t.description) + '</div><div class="alert-ev-desc">Severidade: ' + t.severityName + '. Há ' + t.ageTxt + '. <b>Ação NOC:</b> Acionamento imediato.</div></div></div>';
+  });
+  warn.slice(0, 3).forEach(t => {
+    html += '<div class="alert-ev warn"><div class="alert-ev-icon">⚠️</div><div><div class="alert-ev-title">' + esc(t.host) + ' — ' + esc(t.description) + '</div><div class="alert-ev-desc">Severidade: ' + t.severityName + '. Há ' + t.ageTxt + '. <b>Ação NOC:</b> Investigar.</div></div></div>';
+  });
+  container.innerHTML = html;
 }
 
 function esc(s) {
