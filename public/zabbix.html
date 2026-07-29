@@ -6,12 +6,12 @@
 <title>Zabbix Monitor — NOC Preditivo</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:0}
-.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
-.header-left h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
-.header-left .sub{font-size:12px;color:#64748b;margin-top:4px}
-.header-right{display:flex;gap:8px;align-items:center}
-.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:4px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;text-decoration:none}
 .btn-primary{background:#3b82f6;color:#fff}
 .btn-primary:hover{background:#2563eb}
 .btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
@@ -21,11 +21,8 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .dot-ok{background:#22c55e;box-shadow:0 0 8px #22c55e88}
 .dot-down{background:#ef4444;box-shadow:0 0 8px #ef444488}
 .dot-warn{background:#fbbf24;box-shadow:0 0 8px #fbbf2488}
-
 .container{max-width:1400px;margin:0 auto;padding:20px}
-
-/* KPI Grid */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
 .kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px;transition:all .2s}
 .kpi-card:hover{border-color:#334155;transform:translateY(-2px)}
 .kpi-card .label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600}
@@ -33,23 +30,19 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .kpi-card .sub{font-size:11px;color:#475569}
 .kpi-card.alert{border-color:#ef4444;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
-
-/* Filter bar */
 .filter-bar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
-.filter-bar select,.filter-bar input{background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:8px 12px;border-radius:8px;font-size:13px}
-.sev-filter{display:flex;gap:6px}
+.filter-bar input{background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:8px 12px;border-radius:8px;font-size:13px}
+.sev-filter{display:flex;gap:6px;flex-wrap:wrap}
 .sev-btn{padding:6px 12px;border-radius:6px;border:1px solid #334155;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;background:transparent;color:#64748b}
-.sev-btn.active{color:#fff;border-color:currentColor}
+.sev-btn.active{color:#fff}
 .sev-btn[data-sev="5"].active{background:#dc2626;border-color:#dc2626}
 .sev-btn[data-sev="4"].active{background:#ef4444;border-color:#ef4444}
 .sev-btn[data-sev="3"].active{background:#f97316;border-color:#f97316}
 .sev-btn[data-sev="2"].active{background:#fbbf24;border-color:#fbbf24;color:#0a0e17}
 .sev-btn[data-sev="1"].active{background:#3b82f6;border-color:#3b82f6}
-.sev-btn[data-sev="0"].active{background:#64748b;border-color:#64748b}
-
-/* Trigger table */
+.sev-btn[data-sev="all"].active{background:#475569;border-color:#475569}
 .trigger-table{width:100%;border-collapse:collapse}
-.trigger-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600;border-bottom:1px solid #1e293b;position:sticky;top:0;background:#0a0e17;z-index:10}
+.trigger-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600;border-bottom:1px solid #1e293b;position:sticky;top:60px;background:#0a0e17;z-index:10}
 .trigger-table td{padding:10px 12px;border-bottom:1px solid #111827;font-size:13px}
 .trigger-table tr:hover td{background:#111827}
 .sev-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase}
@@ -58,17 +51,11 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .age-recent{color:#ef4444;font-weight:600}
 .age-today{color:#fbbf24;font-weight:600}
 .age-old{color:#64748b}
-
-/* Loading */
 .loading{text-align:center;padding:40px;color:#64748b}
 .spinner{display:inline-block;width:40px;height:40px;border:3px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* Status bar */
-.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;align-items:center}
+.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .status-bar .ok{color:#22c55e}
-
-/* Hosts section */
 .hosts-section{margin-top:24px}
 .section-title{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .host-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
@@ -77,30 +64,25 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .host-card .ip{font-size:10px;color:#475569}
 .host-card.down{border-color:#ef4444}
 .host-card.down .name{color:#ef4444}
-
-/* Tabs */
-.tabs{display:flex;gap:4px;margin-bottom:16px}
-.tab{padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;border-bottom:2px solid transparent}
-.tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.host-card .groups{font-size:9px;color:#334155;margin-top:2px}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-left">
+  <div>
     <h1>📊 Zabbix Monitor</h1>
     <div class="sub">Arroba Banda Larga | AS264025 | Zabbix 7.0</div>
   </div>
   <div class="header-right">
     <a href="/"><button class="btn btn-ghost">← Dashboard</button></a>
-    <button class="btn btn-ghost" onclick="toggleHosts()">Hosts</button>
+    <button class="btn btn-ghost" id="btnHosts" onclick="toggleHosts()">Hosts</button>
     <button class="btn btn-primary" id="btnRefresh" onclick="carregarDados()">Atualizar</button>
   </div>
 </div>
 
 <div class="container">
-  <!-- KPI Cards -->
-  <div class="kpi-grid" id="kpiGrid">
+  <div class="kpi-grid">
     <div class="kpi-card"><div class="label">Hosts Ativos</div><div class="value" id="kpiHosts">--</div><div class="sub" id="kpiHostsSub">--</div></div>
     <div class="kpi-card"><div class="label">Hosts Offline</div><div class="value" id="kpiDown" style="color:#ef4444">--</div><div class="sub">Indisponíveis</div></div>
     <div class="kpi-card" id="kpiDisasterCard"><div class="label">Desastre</div><div class="value" id="kpiDisaster" style="color:#dc2626">--</div><div class="sub">Sev 5</div></div>
@@ -111,10 +93,9 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="kpi-card"><div class="label">Total Alertas</div><div class="value" id="kpiTotalAlerts">--</div><div class="sub">Triggers ativos</div></div>
   </div>
 
-  <!-- Filter bar -->
   <div class="filter-bar">
-    <input type="text" id="searchHost" placeholder="Buscar host..." oninput="filtrarTriggers()" style="width:200px">
-    <div class="sev-filter" id="sevFilter">
+    <input type="text" id="searchHost" placeholder="Buscar host ou descrição..." oninput="renderTriggers()" style="width:250px">
+    <div class="sev-filter">
       <button class="sev-btn active" data-sev="all" onclick="setSevFilter('all')">Todos</button>
       <button class="sev-btn" data-sev="5" onclick="setSevFilter('5')">Disastre</button>
       <button class="sev-btn" data-sev="4" onclick="setSevFilter('4')">Alto</button>
@@ -124,12 +105,11 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     </div>
   </div>
 
-  <!-- Triggers table -->
   <table class="trigger-table">
     <thead>
       <tr>
         <th style="width:60px">Sev</th>
-        <th style="width:200px">Host</th>
+        <th style="width:250px">Host</th>
         <th>Descrição</th>
         <th style="width:100px">Tempo</th>
       </tr>
@@ -139,68 +119,118 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     </tbody>
   </table>
 
-  <!-- Hosts section (hidden by default) -->
   <div class="hosts-section" id="hostsSection" style="display:none">
-    <div class="section-title">🖥️ Hosts Monitorados</div>
+    <div class="section-title">🖥️ Hosts Monitorados <span id="hostsCount" style="color:#64748b;font-size:13px"></span></div>
     <div class="host-grid" id="hostGrid"></div>
   </div>
 
-  <!-- Status bar -->
-  <div class="status-bar" id="statusBar">
-    Aguardando dados...
-  </div>
+  <div class="status-bar" id="statusBar">Aguardando dados...</div>
 </div>
 
 <script>
+const ZABBIX_URL = 'http://143.137.32.8:9090/zabbix/api_jsonrpc.php';
+const ZABBIX_TOKEN = 'b43086606cc8e30738c7fea7b2e4ffc2c7cc6c27d81c11832a13c96940d2bc71';
+const SEV_MAP = { 0:'NA', 1:'INFO', 2:'WARN', 3:'MED', 4:'HIGH', 5:'DISAS' };
+const SEV_COLOR = { 0:'#64748b', 1:'#3b82f6', 2:'#fbbf24', 3:'#f97316', 4:'#ef4444', 5:'#dc2626' };
+
+async function zabbixCall(method, params) {
+  const body = JSON.stringify({ jsonrpc:'2.0', method, params, id:1 });
+  const res = await fetch(ZABBIX_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json-rpc', 'Authorization':'Bearer '+ZABBIX_TOKEN },
+    body
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.data || data.error.message);
+  return data.result;
+}
+
 let allTriggers = [];
 let allHosts = [];
 let sevFilter = 'all';
 let hostsVisible = false;
+let autoRefreshTimer = null;
 
 async function carregarDados() {
   const btn = document.getElementById('btnRefresh');
   btn.disabled = true; btn.textContent = 'Carregando...';
 
   try {
-    const res = await fetch('/api/zabbix?action=overview&_t=' + Date.now());
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error('HTTP ' + res.status + ': ' + txt.substring(0, 120));
+    const [hosts, triggers] = await Promise.all([
+      zabbixCall('host.get', {
+        output: ['hostid','name','status'],
+        selectInterfaces: ['ip','available','error'],
+        filter: { status: 0 }
+      }),
+      zabbixCall('trigger.get', {
+        output: ['triggerid','description','priority','value','lastchange'],
+        selectHosts: ['name','hostid'],
+        filter: { value: 1 },
+        sortfield: 'lastchange',
+        sortorder: 'DESC',
+        limit: 100
+      })
+    ]);
+
+    allHosts = hosts;
+    let hostsOk=0, hostsDown=0;
+    for (const h of hosts) {
+      const iface = h.interfaces && h.interfaces[0];
+      if (iface && iface.available === '1') hostsOk++;
+      else if (iface && iface.available === '2') hostsDown++;
     }
-    const data = await res.json();
 
-    // KPIs
-    document.getElementById('kpiHosts').textContent = data.stats.totalHosts;
-    document.getElementById('kpiHostsSub').textContent = data.stats.hostsOk + ' OK / ' + data.stats.hostsDown + ' offline';
-    document.getElementById('kpiDown').textContent = data.stats.hostsDown;
+    document.getElementById('kpiHosts').textContent = hosts.length;
+    document.getElementById('kpiHostsSub').textContent = hostsOk + ' OK / ' + hostsDown + ' offline';
+    document.getElementById('kpiDown').textContent = hostsDown;
 
-    const byS = data.stats.bySeverity || {};
-    document.getElementById('kpiDisaster').textContent = byS[5] || 0;
-    document.getElementById('kpiHigh').textContent = byS[4] || 0;
-    document.getElementById('kpiMedium').textContent = byS[3] || 0;
-    document.getElementById('kpiWarn').textContent = byS[2] || 0;
-    document.getElementById('kpiInfo').textContent = byS[1] || 0;
-    document.getElementById('kpiTotalAlerts').textContent = data.stats.totalTriggers;
+    const bySev = {};
+    const now = Date.now()/1000;
+    allTriggers = triggers.map(function(t) {
+      const sev = parseInt(t.priority || 0);
+      bySev[sev] = (bySev[sev]||0)+1;
+      const ageSec = now - parseInt(t.lastchange || 0);
+      let ageTxt;
+      if (ageSec < 60) ageTxt = Math.floor(ageSec)+'s';
+      else if (ageSec < 3600) ageTxt = Math.floor(ageSec/60)+'min';
+      else if (ageSec < 86400) ageTxt = (ageSec/3600).toFixed(1)+'h';
+      else ageTxt = (ageSec/86400).toFixed(1)+'d';
+      return {
+        triggerid: t.triggerid,
+        host: (t.hosts && t.hosts[0] && t.hosts[0].name) || 'N/A',
+        hostid: (t.hosts && t.hosts[0] && t.hosts[0].hostid) || null,
+        description: t.description,
+        severity: sev,
+        severityName: SEV_MAP[sev] || '?',
+        severityColor: SEV_COLOR[sev] || '#64748b',
+        lastchange: parseInt(t.lastchange || 0),
+        ageTxt: ageTxt
+      };
+    });
 
-    // Alert cards
+    document.getElementById('kpiDisaster').textContent = bySev[5] || 0;
+    document.getElementById('kpiHigh').textContent = bySev[4] || 0;
+    document.getElementById('kpiMedium').textContent = bySev[3] || 0;
+    document.getElementById('kpiWarn').textContent = bySev[2] || 0;
+    document.getElementById('kpiInfo').textContent = bySev[1] || 0;
+    document.getElementById('kpiTotalAlerts').textContent = allTriggers.length;
+
     const dc = document.getElementById('kpiDisasterCard');
     const hc = document.getElementById('kpiHighCard');
-    if ((byS[5]||0) > 0) dc.classList.add('alert'); else dc.classList.remove('alert');
-    if ((byS[4]||0) > 0) hc.classList.add('alert'); else hc.classList.remove('alert');
+    if ((bySev[5]||0) > 0) dc.classList.add('alert'); else dc.classList.remove('alert');
+    if ((bySev[4]||0) > 0) hc.classList.add('alert'); else hc.classList.remove('alert');
 
-    // Triggers
-    allTriggers = data.triggers || [];
     renderTriggers();
+    if (hostsVisible) renderHosts();
 
-    // Status bar
     const agora = new Date().toLocaleString('pt-BR');
     document.getElementById('statusBar').innerHTML =
       '<span><span class="ok">✓</span> Atualizado em ' + agora + '</span>' +
-      '<span>' + allTriggers.length + ' alertas ativos | Zabbix ' + (data.zabbixVersion || '?') + '</span>';
+      '<span>' + allTriggers.length + ' alertas ativos | ' + hosts.length + ' hosts monitorados</span>';
 
   } catch (err) {
     document.getElementById('triggerBody').innerHTML =
-      '<tr><td colspan="4" style="color:#ef4444;padding:20px;">Erro: ' + err.message + '</td></tr>';
+      '<tr><td colspan="4" style="color:#ef4444;padding:20px;">Erro: ' + esc(err.message) + '</td></tr>';
     document.getElementById('statusBar').textContent = 'Erro: ' + err.message;
   } finally {
     btn.disabled = false; btn.textContent = 'Atualizar';
@@ -210,78 +240,50 @@ async function carregarDados() {
 function renderTriggers() {
   const body = document.getElementById('triggerBody');
   let filtered = allTriggers;
-
-  if (sevFilter !== 'all') {
-    filtered = filtered.filter(t => t.severity === parseInt(sevFilter));
-  }
-
+  if (sevFilter !== 'all') filtered = filtered.filter(t => t.severity === parseInt(sevFilter));
   const search = document.getElementById('searchHost').value.toLowerCase();
-  if (search) {
-    filtered = filtered.filter(t =>
-      t.host.toLowerCase().includes(search) ||
-      t.description.toLowerCase().includes(search)
-    );
-  }
+  if (search) filtered = filtered.filter(t => t.host.toLowerCase().includes(search) || t.description.toLowerCase().includes(search));
 
   if (!filtered.length) {
     body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#64748b;">Nenhum alerta encontrado</td></tr>';
     return;
   }
-
-  body.innerHTML = filtered.map(t => {
-    const sevColors = { 5:'#dc2626', 4:'#ef4444', 3:'#f97316', 2:'#fbbf24', 1:'#3b82f6', 0:'#64748b' };
-    const sevNames = { 5:'DISAS', 4:'HIGH', 3:'MED', 2:'WARN', 1:'INFO', 0:'NA' };
-    const c = sevColors[t.severity] || '#64748b';
+  body.innerHTML = filtered.map(function(t) {
+    const c = t.severityColor;
     const ageSec = (Date.now()/1000) - t.lastchange;
     let ageCls = 'age-old';
     if (ageSec < 3600) ageCls = 'age-recent';
     else if (ageSec < 86400) ageCls = 'age-today';
-
     return '<tr>' +
-      '<td><span class="sev-badge" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '66">' + (sevNames[t.severity]||'?') + '</span></td>' +
+      '<td><span class="sev-badge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'66">'+t.severityName+'</span></td>' +
       '<td><div class="host-name">' + esc(t.host) + '</div></td>' +
       '<td><div class="trigger-desc">' + esc(t.description) + '</div></td>' +
-      '<td><span class="' + ageCls + '">' + t.ageTxt + '</span></td>' +
+      '<td><span class="'+ageCls+'">' + t.ageTxt + '</span></td>' +
       '</tr>';
   }).join('');
 }
 
 function setSevFilter(sev) {
   sevFilter = sev;
-  document.querySelectorAll('.sev-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.sev === sev);
-  });
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.toggle('active', b.dataset.sev === sev));
   renderTriggers();
 }
 
-function filtrarTriggers() {
-  renderTriggers();
-}
-
-async function toggleHosts() {
+function toggleHosts() {
   hostsVisible = !hostsVisible;
-  const sec = document.getElementById('hostsSection');
-  sec.style.display = hostsVisible ? 'block' : 'none';
-
-  if (hostsVisible && allHosts.length === 0) {
-    try {
-      const res = await fetch('/api/zabbix?action=hosts&_t=' + Date.now());
-      const data = await res.json();
-      allHosts = data.hosts || [];
-      renderHosts();
-    } catch (e) {
-      document.getElementById('hostGrid').innerHTML = '<p style="color:#ef4444">Erro: ' + e.message + '</p>';
-    }
-  }
+  document.getElementById('hostsSection').style.display = hostsVisible ? 'block' : 'none';
+  if (hostsVisible) renderHosts();
 }
 
 function renderHosts() {
   const grid = document.getElementById('hostGrid');
-  grid.innerHTML = allHosts.map(h => {
-    const down = h.available === '2';
+  document.getElementById('hostsCount').textContent = '(' + allHosts.length + ' hosts)';
+  grid.innerHTML = allHosts.map(function(h) {
+    const iface = h.interfaces && h.interfaces[0];
+    const down = iface && iface.available === '2';
     return '<div class="host-card' + (down ? ' down' : '') + '">' +
       '<div><div class="name" title="' + esc(h.name) + '">' + esc(h.name) + '</div>' +
-      '<div class="ip">' + esc(h.ip) + '</div></div>' +
+      '<div class="ip">' + esc(iface ? iface.ip : '') + '</div></div>' +
       '<span class="status-dot ' + (down ? 'dot-down' : 'dot-ok') + '"></span>' +
       '</div>';
   }).join('');
@@ -292,10 +294,8 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Auto-refresh a cada 60s
 carregarDados();
-setInterval(carregarDados, 60000);
+autoRefreshTimer = setInterval(carregarDados, 60000);
 </script>
-
 </body>
 </html>
