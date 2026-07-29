@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — BGP AS264025</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a0e1a; color: #e0e0e0; }
+.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 1px solid #1e293b; }
+.header h1 { font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
+.header .asn { font-size: 14px; color: #64748b; margin-top: 4px; }
+.header .fase { background: #1e40af; color: #dbeafe; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
+.card-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.card-value { font-size: 32px; font-weight: 700; color: #f8fafc; }
+.card-sub { font-size: 12px; color: #475569; margin-top: 4px; }
+.score-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.section-title { font-size: 16px; color: #94a3b8; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; }
+td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #cbd5e1; }
+tr:hover { background: #0f172a; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: #064e3b; color: #6ee7b7; }
+.badge-hijack { background: #7f1d1d; color: #fca5a5; }
+.badge-nao { background: #78350f; color: #fcd34d; }
+.badge-erro { background: #1e1b4b; color: #c4b5fd; }
+.badge-parcial { background: #78350f; color: #fcd34d; }
+.badge-baixa { background: #7f1d1d; color: #fca5a5; }
+.badge-upstream { background: #1e3a5f; color: #93c5fd; }
+.badge-transit { background: #312e81; color: #a5b4fc; }
+.badge-ix { background: #164e63; color: #67e8f9; }
+.badge-peer { background: #064e3b; color: #6ee7b7; }
+.badge-alert { background: #7f1d1d; color: #fca5a5; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
+.stat-val{font-size:28px;font-weight:800}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
+.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
+.alert-ev-icon{font-size:18px;flex-shrink:0}
+.alert-ev-content{flex:1}
+.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
+.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:768px) { 
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
+.stat-val{font-size:28px;font-weight:800}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
+.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
+.alert-ev-icon{font-size:18px;flex-shrink:0}
+.alert-ev-content{flex:1}
+.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
+.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
+
+.two-col { grid-template-columns: 1fr; } }
+.loading { text-align: center; padding: 60px; color: #475569; }
+.spinner { border: 3px solid #1e293b; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.peer-power-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 100px; display: inline-block; vertical-align: middle; margin-left: 8px; }
+.peer-power-fill { height: 100%; background: #3b82f6; border-radius: 3px; }
+.mtr-target { display: inline-block; background: #1e293b; padding: 6px 14px; border-radius: 8px; margin: 4px; font-size: 12px; }
+.mtr-target code { color: #67e8f9; }
+.footer { text-align: center; padding: 30px; color: #334155; font-size: 12px; }
+#alertas { margin-bottom: 20px; }
+.alert-box { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.alert-box.atencao { background: #78350f; border-color: #92400e; }
+.alert-icon { font-size: 20px; }
+.expand-row { cursor: pointer; }
+.expand-row:hover { background: #0f172a; }
+.sub-row { display: none; }
+.sub-row.show { display: table-row; }
+.sub-row td { padding: 0; border: none; background: #0a0e1a; }
+.sub-detail { padding: 12px 20px 16px 48px !important; }
+.peer-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #111827; border: 1px solid #1e293b; border-radius: 8px; margin-bottom: 8px; }
+.peer-card .asn { font-family: monospace; color: #93c5fd; font-weight: 600; min-width: 100px; }
+.peer-card .holder { color: #cbd5e1; flex: 1; font-size: 12px; }
+.peer-card .ip { color: #64748b; font-family: monospace; font-size: 11px; }
+.peer-card .rrcs { color: #67e8f9; font-size: 11px; }
+.peer-card .pfx { color: #475569; font-size: 11px; }
+.expand-icon { color: #475569; font-size: 14px; transition: transform 0.2s; }
+.expand-icon.open { transform: rotate(90deg); }
+.vis-pct-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 80px; display: inline-block; vertical-align: middle; }
+.vis-pct-fill { height: 100%; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1>🛰️ NOC Preditivo <span class="fase">Fase 1</span></h1>
+      <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
+    </div>
+    <div style="display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;">
+      <a href="index.html" class="btn" style="background:#1e40af;border:none;color:#dbeafe;text-decoration:none;font-weight:600;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Dashboard BGP</a>
+      <a href="config.html" class="btn" style="background:transparent;border:none;color:#fdba74;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">⚙️ Config VPN/SNMP</a>
+      <a href="security.html" class="btn" style="background:transparent;border:none;color:#fca5a5;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🛡️ Segurança</a>
+      <a href="zabbix.html" class="btn" style="background:transparent;border:none;color:#67e8f9;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Zabbix</a>
+      <a href="network-monitor.html" class="btn" style="background:transparent;border:none;color:#34d399;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Net Monitor</a>
+      <a href="evidence-report.html" class="btn" style="background:transparent;border:none;color:#f87171;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🔍 Evidência</a>
+      <a href="flow.html" class="btn" style="background:transparent;border:none;color:#22d3ee;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🌊 Flow</a>
+      <a href="bgp-centro.html" class="btn" style="background:transparent;border:none;color:#93c5fd;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 BGP-Centro</a>
+      <a href="vpn-l2tp.html" class="btn" style="background:transparent;border:none;color:#a5b4fc;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🔐 VPN</a>
+      <a href="rb-cliente.html" class="btn" style="background:transparent;border:none;color:#c4b5fd;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 RB-Cliente</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Coletando dados BGP do RIPE Stat...</p>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="health-banner" id="healthBanner">
+      <div class="health-score" id="healthScore" style="color:#fbbf24">--</div>
+      <div class="health-label" id="healthLabel">Health Score / 100 — Carregando...</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="statPrefixos" style="color:#4ade80">--</div><div class="stat-lbl">Prefixos OK</div></div>
+      <div class="stat-card"><div class="stat-val" id="statPeers" style="color:#60a5fa">--</div><div class="stat-lbl">Peers BGP</div></div>
+      <div class="stat-card"><div class="stat-val" id="statAlertas" style="color:#fbbf24">--</div><div class="stat-lbl">Alertas Ativos</div></div>
+      <div class="stat-card"><div class="stat-val" id="statScore" style="color:#4ade80">--</div><div class="stat-lbl">RIPE Score</div></div>
+    </div>
+    <div id="alertas"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Score BGP</div>
+        <div class="card-value" id="score">--</div>
+        <div class="score-bar"><div class="score-fill" id="score-bar" style="width:0%; background:#3b82f6;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prefixos Ativos</div>
+        <div class="card-value" id="prefixos-ok">--</div>
+        <div class="card-sub" id="prefixos-total">de --</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Peers BGP</div>
+        <div class="card-value" id="peers-count">--</div>
+        <div class="card-sub" id="peers-detail">-- upstreams</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Alertas</div>
+        <div class="card-value" id="alertas-count">--</div>
+        <div class="card-sub" id="alertas-detail">--</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-title">📡 Prefixos Anunciados</div>
+        <table>
+          <thead>
+            <tr><th>Prefixo</th><th>Tipo</th><th>Origin AS</th><th>Status</th></tr>
+          </thead>
+          <tbody id="prefixos-table"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="section-title">🔗 Peers BGP (Vizinhos)</div>
+        <table>
+          <thead>
+            <tr><th>ASN</th><th>Nome</th><th>Tipo</th><th>Power</th></tr>
+          </thead>
+          <tbody id="peers-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">👁️ Visibilidade Global (RIPE RIS) — clique para ver peers que não recebem</div>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Prefixo</th>
+          <th>RRCs Visíveis</th>
+          <th>Visibilidade</th>
+          <th>Peers c/ Problema</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="vis-table"></tbody>
+    </table>
+
+    <div class="section-title">🛣️ Targets MTR (Fase 2 — via VPN/Sandbox)</div>
+    <div id="mtr-targets"></div>
+
+    <div class="footer">
+      NOC Preditivo — AS264025 Arroba Banda Larga | Dados: RIPE Stat API | Atualização: <span id="last-update">--</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function badge(status) {
+  const map = {
+    'ok': ['badge-ok', 'OK'],
+    'HIJACK': ['badge-hijack', 'HIJACK'],
+    'nao_anunciado': ['badge-nao', 'NAO ANUNCIADO'],
+    'terceiro': ['badge-nao', 'TERCEIRO'],
+    'parcial': ['badge-parcial', 'PARCIAL'],
+    'baixa': ['badge-baixa', 'BAIXA'],
+    'erro': ['badge-erro', 'ERRO']
+  };
+  const [cls, txt] = map[status] || ['badge-erro', status];
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+
+function peerBadge(tipo) {
+  const map = {
+    'upstream_nacional': ['badge-upstream', 'Upstream'],
+    'transit_internacional': ['badge-transit', 'Transit'],
+    'ix_ptt': ['badge-ix', 'IX/PTT'],
+    'peer_regional': ['badge-peer', 'Peer']
+  };
+  const [cls, txt] = map[tipo] || ['badge-erro', tipo];
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+
+function toggleVis(idx) {
+  const row = document.getElementById('vis-detail-' + idx);
+  const icon = document.getElementById('vis-icon-' + idx);
+  if (row) {
+    row.classList.toggle('show');
+    if (icon) icon.classList.toggle('open');
+  }
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/bgp');
+    const data = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+    document.getElementById('asn-info').textContent =
+      `AS${data.asn} — ${data.overview.holder || 'Arroba Banda Larga'} | ${data.fase}`;
+
+    const score = data.score_bgp;
+    // Health Score
+    const healthBGP = calcHealthBGP(data);
+    updateHealth(healthBGP, data.alertas.length);
+    document.getElementById('statPrefixos').textContent = data.stats.prefixos_ok;
+    document.getElementById('statPeers').textContent = data.stats.peers || '--';
+    document.getElementById('statAlertas').textContent = data.alertas.length;
+    document.getElementById('statScore').textContent = score;
+    renderAlertasComEvidencia(data.alertas);
+    document.getElementById('score').textContent = score;
+    document.getElementById('score-bar').style.width = score + '%';
+    document.getElementById('score-bar').style.background =
+      score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+
+    document.getElementById('prefixos-ok').textContent = data.stats.prefixos_ok;
+    document.getElementById('prefixos-total').textContent =
+      `de ${data.stats.total_prefixos} | ${data.stats.prefixos_hijack} hijack | ${data.stats.prefixos_nao_anunciado} nao anunciados`;
+
+    document.getElementById('peers-count').textContent = data.stats.total_peers;
+    document.getElementById('peers-detail').textContent =
+      `${data.stats.peers_upstream} upstreams | ${data.stats.peers_transit} transit | ${data.stats.peers_ix} IX`;
+
+    document.getElementById('alertas-count').textContent = data.alertas.length;
+    document.getElementById('alertas-detail').textContent =
+      data.alertas.length === 0 ? 'Nenhum alerta' : data.alertas.map(a => a.msg).join('; ');
+
+    const alertasHtml = data.alertas.map(a =>
+      `<div class="alert-box ${a.severity === 'atencao' ? 'atencao' : ''}">
+        <span class="alert-icon">${a.severity === 'critico' ? '🔴' : '🟡'}</span>
+        <span>${a.msg}</span>
+      </div>`
+    ).join('');
+    document.getElementById('alertas').innerHTML = alertasHtml;
+
+    document.getElementById('prefixos-table').innerHTML = data.prefixos.map(p =>
+      `<tr>
+        <td style="font-family:monospace">${p.prefix}</td>
+        <td>${p.tipo}</td>
+        <td>${p.origin_asn ? 'AS' + p.origin_asn : '--'}</td>
+        <td>${badge(p.status)}</td>
+      </tr>`
+    ).join('');
+
+    document.getElementById('peers-table').innerHTML = data.peers.map(p => {
+      const maxPower = Math.max(...data.peers.map(x => x.power));
+      const pct = maxPower > 0 ? (p.power / maxPower * 100) : 0;
+      return `<tr>
+        <td style="font-family:monospace">AS${p.asn}</td>
+        <td>${p.nome}</td>
+        <td>${peerBadge(p.tipo)}</td>
+        <td>${p.power} <span class="peer-power-bar"><span class="peer-power-fill" style="width:${pct}%"></span></span></td>
+      </tr>`;
+    }).join('');
+
+    // Tabela de visibilidade com expansão
+    document.getElementById('vis-table').innerHTML = data.visibilidade.map((v, idx) => {
+      const hasDetail = v.peers_nao_vendo > 0;
+      const pctColor = v.visibilidade_pct >= 90 ? '#10b981' : v.visibilidade_pct >= 70 ? '#f59e0b' : '#ef4444';
+      let html = `<tr class="expand-row" ${hasDetail ? `onclick="toggleVis(${idx})"` : ''}>
+        <td>${hasDetail ? `<span class="expand-icon" id="vis-icon-${idx}">▶</span>` : ''}</td>
+        <td style="font-family:monospace">${v.prefix}</td>
+        <td>${v.rrcs_visible}/${v.rrcs_total}</td>
+        <td>${v.visibilidade_pct}% <span class="vis-pct-bar"><span class="vis-pct-fill" style="width:${v.visibilidade_pct}%;background:${pctColor}"></span></span></td>
+        <td>${v.peers_nao_vendo || 0}</td>
+        <td>${badge(v.status)}</td>
+      </tr>`;
+
+      if (hasDetail) {
+        const detalhe = (v.peers_nao_vendo_detalhe || []).map(p => `
+          <div class="peer-card">
+            <span class="asn">AS${p.asn}</span>
+            <span class="holder">${p.holder}</span>
+            <span class="ip">IP: ${p.ip}</span>
+            <span class="rrcs">RRCs: ${p.rrcs.join(', ')}</span>
+            <span class="pfx">tabela: ${p.prefix_count.toLocaleString()} pfx</span>
+          </div>
+        `).join('');
+        html += `<tr class="sub-row" id="vis-detail-${idx}"><td colspan="6"><div class="sub-detail">${detalhe}</div></td></tr>`;
+      }
+      return html;
+    }).join('');
+
+    document.getElementById('mtr-targets').innerHTML = data.mtr_targets.map(t =>
+      `<span class="mtr-target">${t.nome} <code>${t.ip}</code></span>`
+    ).join('');
+
+    
+// === HEALTH SCORE ===
+function calcHealthBGP(data) {
+  const score = data.stats.score || 0;
+  const alerts = (data.alertas || []).length;
+  const prefixosOk = data.stats.prefixos_ok || 0;
+  const prefixosTotal = data.stats.prefixos_total || 1;
+  const ratio = prefixosOk / prefixosTotal;
+  let health = score * 0.5 + ratio * 50 - alerts * 3;
+  return Math.max(0, Math.min(100, health));
+}
+
+function updateHealth(score, alertsCount) {
+  const hs = document.getElementById('healthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('healthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
+
+// === ALERTAS COM EVIDÊNCIA ===
+function renderAlertasComEvidencia(alertas) {
+  const container = document.getElementById('alertas');
+  if(!alertas || alertas.length === 0){
+    container.innerHTML = '<div class="alert-evidence ok"><div class="alert-ev-icon">✅</div><div class="alert-ev-content"><div class="alert-ev-title">Nenhum alerta BGP ativo</div><div class="alert-ev-desc">Todos os prefixos anunciados corretamente. Sem evidência de hijack ou problema de roteamento.</div></div></div>';
+    return;
+  }
+  container.innerHTML = alertas.map(a => {
+    const sev = a.tipo === 'HIJACK' ? 'critical' : 'warning';
+    const icon = sev === 'critical' ? '🔴' : '⚠️';
+    return '<div class="alert-evidence ' + sev + '"><div class="alert-ev-icon">' + icon + '</div><div class="alert-ev-content"><div class="alert-ev-title">' + a.prefixo + ' — ' + a.tipo + '</div><div class="alert-ev-desc">Origin AS: ' + a.origin_as + '. <b>Evidência:</b> ' + a.razao + '. <b>Ação NOC:</b> Verificar anúncio BGP e origem do prefixo.</div></div></div>';
+  }).join('');
+}
+
+document.getElementById('last-update').textContent =
+      new Date(data.timestamp).toLocaleString('pt-BR');
+
+  } catch (e) {
+    document.getElementById('loading').innerHTML = `<p style="color:#ef4444">Erro: ${e.message}</p>`;
+  }
+}
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

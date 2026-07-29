@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BGP Centro — NOC Preditivo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:4px}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
+.btn:disabled{opacity:.5;cursor:wait}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.kpi-thresh-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.kpi-thresh{font-size:10px;padding:2px 6px;border-radius:4px}
+.kpi-thresh.good{background:#064e3b22;color:#4ade80}
+.kpi-thresh.warn{background:#78350f22;color:#fbbf24}
+.kpi-thresh.crit{background:#7f1d1d22;color:#f87171}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
+.kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px}
+.kpi-card.alert{border-color:#ef4444;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
+.kpi-card .label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600}
+.kpi-card .value{font-size:24px;font-weight:700;margin:8px 0 4px}
+.kpi-card .sub{font-size:11px;color:#475569}
+.section-title{font-size:16px;font-weight:700;margin:24px 0 12px;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #1e293b}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.info-grid{grid-template-columns:1fr}}
+.info-box{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px}
+.info-box h3{font-size:14px;color:#94a3b8;margin-bottom:12px;font-weight:600}
+.info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b;font-size:13px}
+.info-row:last-child{border:none}
+.info-row .key{color:#64748b}
+.info-row .val{color:#cbd5e1;font-weight:600}
+.status-ok{color:#22c55e}
+.status-down{color:#ef4444}
+.status-warn{color:#fbbf24}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;font-size:11px;text-transform:uppercase}
+td{padding:8px 12px;border-bottom:1px solid #111827;color:#cbd5e1}
+tr:hover td{background:#0f172a}
+.sev-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase}
+.loading{text-align:center;padding:40px;color:#64748b}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.status-bar .ok{color:#22c55e}
+.bar-chart{margin-bottom:12px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-label{width:150px;font-size:12px;color:#cbd5e1;font-weight:600;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:20px;background:#1e293b;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;color:#fff}
+.bar-value{width:100px;font-size:12px;color:#94a3b8;font-family:monospace}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📡 BGP Centro — MX204</h1>
+    <div class="sub">143.137.32.3 | AS264025 | Juniper MX204</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/"><button class="btn btn-ghost">← Dashboard</button></a>
+    <a href="flow.html"><button class="btn btn-ghost">Flow</button></a>
+    <a href="zabbix.html"><button class="btn btn-ghost">Zabbix</button></a>
+    <button class="btn btn-primary" id="btnRefresh" onclick="carregar()">Atualizar</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="bgpHealthScore" style="color:#fbbf24">--</div>
+    <div class="health-label" id="bgpHealthLabel">Health Score / 100 — Carregando...</div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="label">Status Host</div><div class="value" id="kpiStatus">--</div><div class="sub">Zabbix Monitor</div></div>
+    <div class="kpi-card" id="kpiAlertCard"><div class="label">Alertas Ativos</div><div class="value" id="kpiAlerts">--</div><div class="sub">Triggers em alerta</div></div>
+    <div class="kpi-card"><div class="label">Tráfego Total</div><div class="value" id="kpiTraffic" style="color:#3b82f6">--</div><div class="sub">Flow Centro</div></div>
+    <div class="kpi-card"><div class="label">Score BGP</div><div class="value" id="kpiScore" style="color:#22c55e">--</div><div class="sub">RIPE Stat</div></div>
+    <div class="kpi-card"><div class="label">Prefixos</div><div class="value" id="kpiPrefixos">--</div><div class="sub">Anunciados</div></div>
+    <div class="kpi-card"><div class="label">Peers</div><div class="value" id="kpiPeers">--</div><div class="sub">Vizinhos BGP</div></div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <h3>📍 Informações do Equipamento</h3>
+      <div class="info-row"><span class="key">IP</span><span class="val">143.137.32.3</span></div>
+      <div class="info-row"><span class="key">Hostname</span><span class="val" id="infoHost">BGP MX204</span></div>
+      <div class="info-row"><span class="key">Modelo</span><span class="val">Juniper MX204</span></div>
+      <div class="info-row"><span class="key">Função</span><span class="val">BGP Router / PPPoE BRAS</span></div>
+      <div class="info-row"><span class="key">ASN</span><span class="val">AS264025</span></div>
+      <div class="info-row"><span class="key">Acesso</span><span class="val">SSH porta 22</span></div>
+      <div class="info-row"><span class="key">Fonte Flow</span><span class="val">ANB-BRAS01-MX204-CENTRO</span></div>
+      <div class="info-row"><span class="key">Zabbix ID</span><span class="val" id="infoZabbix">--</span></div>
+    </div>
+    <div class="info-box">
+      <h3>🚨 Alertas Recentes (Zabbix)</h3>
+      <table id="alertTable">
+        <thead><tr><th>Sev</th><th>Descrição</th><th>Tempo</th></tr></thead>
+        <tbody id="alertBody"><tr><td colspan="3" style="color:#64748b">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">📊 Tráfego por Protocolo (Flow)</div>
+  <div class="bar-chart" id="protoChart"><div class="loading"><div class="spinner"></div></div></div>
+
+  <div class="status-bar" id="statusBar">Aguardando dados...</div>
+</div>
+
+<script>
+const ZABBIX_URL = 'http://143.137.32.8:9090/zabbix/api_jsonrpc.php';
+const ZABBIX_TOKEN = 'b43086606cc8e30738c7fea7b2e4ffc2c7cc6c27d81c11832a13c96940d2bc71';
+const FLOW_API = 'https://solene-4b7d7251.base44.app/functions/flowProxy?action=overview';
+const SEV_COLORS = {5:'#dc2626',4:'#ef4444',3:'#f97316',2:'#fbbf24',1:'#3b82f6',0:'#64748b'};
+const SEV_NAMES = {5:'DISAS',4:'HIGH',3:'MED',2:'WARN',1:'INFO',0:'NA'};
+
+async function zabbixCall(method, params) {
+  const res = await fetch(ZABBIX_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json-rpc','Authorization':'Bearer '+ZABBIX_TOKEN},
+    body: JSON.stringify({jsonrpc:'2.0',method,params,id:1})
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.data);
+  return data.result;
+}
+
+function fmtBps(bps) {
+  if (bps >= 1e9) return (bps/1e9).toFixed(1) + ' Gbps';
+  if (bps >= 1e6) return (bps/1e6).toFixed(1) + ' Mbps';
+  if (bps >= 1e3) return (bps/1e3).toFixed(1) + ' Kbps';
+  return (bps||0).toFixed(0) + ' bps';
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderBars(containerId, data) {
+  const c = document.getElementById(containerId);
+  if (!data || !data.rx || !data.rx.length) { c.innerHTML = '<div style="color:#64748b;padding:12px;">Sem dados de flow</div>'; return; }
+  const maxBps = Math.max(...data.rx.map(d => d.bps), 1);
+  c.innerHTML = data.rx.map((item, i) => {
+    const pct = (item.bps / maxBps * 100).toFixed(1);
+    const colors = ['#3b82f6','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#6366f1'];
+    const color = colors[i % colors.length];
+    return '<div class="bar-row">' +
+      '<div class="bar-label" title="' + esc(item.name) + '">' + esc(item.name) + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '">' + pct + '%</div></div>' +
+      '<div class="bar-value">' + fmtBps(item.bps) + '</div></div>';
+  }).join('');
+}
+
+
+function updateBgpHealth(score) {
+  const hs = document.getElementById('bgpHealthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('bgpHealthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
+async function carregar() {
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true; btn.textContent = 'Carregando...';
+
+  try {
+    // Buscar Zabbix + BGP + Flow em paralelo
+    const [zabbixProm, bgpProm, flowProm] = await Promise.allSettled([
+      // Zabbix: buscar host BGP MX204 e seus triggers
+      (async () => {
+        const hosts = await zabbixCall('host.get', {
+          output: ['hostid','name','status'],
+          selectInterfaces: ['ip','available','error'],
+          search: {name: 'BGP MX204'},
+          filter: {status: 0}
+        });
+        const host = hosts.find(h => h.name === 'BGP MX204') || hosts[0];
+        if (!host) return null;
+
+        const triggers = await zabbixCall('trigger.get', {
+          output: ['triggerid','description','priority','value','lastchange'],
+          selectHosts: ['name'],
+          hostids: host.hostid,
+          filter: {value: 1},
+          sortfield: 'lastchange',
+          sortorder: 'DESC',
+          limit: 10
+        });
+        return { host, triggers };
+      })(),
+      // BGP RIPE
+      fetch('/api/bgp').then(r => r.json()).catch(() => null),
+      // Flow
+      fetch(FLOW_API).then(r => r.json()).catch(() => null)
+    ]);
+
+    // Zabbix
+    if (zabbixProm.status === 'fulfilled' && zabbixProm.value) {
+      const { host, triggers } = zabbixProm.value;
+      const iface = host.interfaces?.[0];
+      const available = iface?.available;
+      const statusEl = updateBgpHealth(zabbixData ? Math.max(0, 100 - (zabbixData.totalTriggers * 5)) : 100);
+    document.getElementById('kpiStatus');
+      if (available === '1') {
+        statusEl.innerHTML = '<span class="status-ok">ONLINE ✓</span>';
+      } else if (available === '2') {
+        statusEl.innerHTML = '<span class="status-down">OFFLINE ✗</span>';
+        document.querySelector('.kpi-card').classList.add('alert');
+      } else {
+        statusEl.innerHTML = '<span class="status-warn">UNKNOWN</span>';
+      }
+      document.getElementById('infoZabbix').textContent = host.hostid;
+
+      document.getElementById('kpiAlerts').textContent = triggers.length;
+      if (triggers.length > 0) document.getElementById('kpiAlertCard').classList.add('alert');
+
+      const now = Date.now()/1000;
+      document.getElementById('alertBody').innerHTML = triggers.map(t => {
+        const sev = parseInt(t.priority || 0);
+        const c = SEV_COLORS[sev];
+        const ageSec = now - parseInt(t.lastchange || 0);
+        let age = ageSec < 3600 ? Math.floor(ageSec/60)+'min' : ageSec < 86400 ? (ageSec/3600).toFixed(1)+'h' : (ageSec/86400).toFixed(1)+'d';
+        return '<tr><td><span class="sev-badge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'66">'+SEV_NAMES[sev]+'</span></td>' +
+          '<td style="font-size:12px;color:#94a3b8">' + esc(t.description) + '</td>' +
+          '<td>' + age + '</td></tr>';
+      }).join('') || '<tr><td colspan="3" style="color:#22c55e">Sem alertas ✓</td></tr>';
+    } else {
+      updateBgpHealth(zabbixData ? Math.max(0, 100 - (zabbixData.totalTriggers * 5)) : 100);
+    document.getElementById('kpiStatus').innerHTML = '<span class="status-warn">N/A</span>';
+      document.getElementById('alertBody').innerHTML = '<tr><td colspan="3" style="color:#64748b">Host não encontrado no Zabbix</td></tr>';
+    }
+
+    // BGP
+    if (bgpProm.status === 'fulfilled' && bgpProm.value) {
+      const bgp = bgpProm.value;
+      document.getElementById('kpiScore').textContent = bgp.score_bgp || '--';
+      document.getElementById('kpiPrefixos').textContent = bgp.overview?.announced_prefixes || '--';
+      document.getElementById('kpiPeers').textContent = bgp.overview?.peers_count || '--';
+    }
+
+    // Flow
+    if (flowProm.status === 'fulfilled' && flowProm.value) {
+      const flow = flowProm.value;
+      const centro = flow.traffic?.centro;
+      document.getElementById('kpiTraffic').textContent = fmtBps(centro?.total_bps || 0);
+      renderBars('protoChart', centro?.proto);
+    } else {
+      document.getElementById('protoChart').innerHTML = '<div style="color:#64748b;padding:12px;">Flow indisponível</div>';
+    }
+
+    const agora = new Date().toLocaleString('pt-BR');
+    document.getElementById('statusBar').innerHTML =
+      '<span><span class="ok">✓</span> Atualizado em ' + agora + '</span><span>BGP MX204 | Zabbix + Flow + RIPE</span>';
+  } catch (err) {
+    document.getElementById('statusBar').textContent = 'Erro: ' + err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Atualizar';
+  }
+}
+
+carregar();
+setInterval(carregar, 60000);
+</script>
+</body>
+</html>
