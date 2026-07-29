@@ -36,6 +36,10 @@
       "dest": "/api/scan-network.js"
     },
     {
+      "src": "/api/zabbix",
+      "dest": "/api/zabbix.js"
+    },
+    {
       "src": "/mtr.json",
       "dest": "/public/mtr.json"
     },
@@ -46,6 +50,10 @@
     {
       "src": "/security.html",
       "dest": "/public/security.html"
+    },
+    {
+      "src": "/zabbix.html",
+      "dest": "/public/zabbix.html"
     },
     {
       "src": "/index.html",
