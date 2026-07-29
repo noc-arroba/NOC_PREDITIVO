@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RB Cliente — NOC Preditivo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:4px}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
+.btn:disabled{opacity:.5;cursor:wait}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
+.kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px}
+.kpi-card .label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600}
+.kpi-card .value{font-size:24px;font-weight:700;margin:8px 0 4px}
+.kpi-card .sub{font-size:11px;color:#475569}
+.section-title{font-size:16px;font-weight:700;margin:24px 0 12px;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #1e293b}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.info-grid{grid-template-columns:1fr}}
+.info-box{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px}
+.info-box h3{font-size:14px;color:#94a3b8;margin-bottom:12px;font-weight:600}
+.info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b;font-size:13px}
+.info-row:last-child{border:none}
+.info-row .key{color:#64748b}
+.info-row .val{color:#cbd5e1;font-weight:600}
+.status-ok{color:#22c55e}
+.status-down{color:#ef4444}
+.status-warn{color:#fbbf24}
+.diag-box{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:16px;margin-top:12px}
+.diag-step{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px}
+.diag-step:last-child{border:none}
+.diag-icon{font-size:18px;width:24px;text-align:center}
+.diag-desc{color:#94a3b8;flex:1}
+.diag-result{font-weight:600;font-size:12px}
+.cmd-box{background:#0a0e17;border:1px solid #1e293b;border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:#67e8f9;margin-top:12px;white-space:pre-wrap}
+.loading{text-align:center;padding:40px;color:#64748b}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.status-bar .ok{color:#22c55e}
+.alert-warn{background:#78350f;border:1px solid #92400e;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#fcd34d;display:flex;align-items:center;gap:10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📡 RB Cliente — Simulação de Rede</h1>
+    <div class="sub">100.65.0.116 | RouterBoard | Simulação de Cliente</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/"><button class="btn btn-ghost">← Dashboard</button></a>
+    <a href="flow.html"><button class="btn btn-ghost">Flow</button></a>
+    <a href="zabbix.html"><button class="btn btn-ghost">Zabbix</button></a>
+    <button class="btn btn-primary" id="btnRefresh" onclick="carregar()">Atualizar</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="alert-warn">
+    ⚠️ Este equipamento está em rede privada (100.65.0.0/10) e não é monitorado pelo Zabbix. O acesso SSH requer VPN ou rede interna ativa.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="label">IP do RB</div><div class="value" id="kpiIP" style="font-size:18px;color:#3b82f6">100.65.0.116</div><div class="sub">Rede CGNAT/VPN</div></div>
+    <div class="kpi-card"><div class="label">Porta SSH</div><div class="value">22</div><div class="sub">Acesso remoto</div></div>
+    <div class="kpi-card"><div class="label">Status Zabbix</div><div class="value" id="kpiZabbix" style="color:#fbbf24">N/A</div><div class="sub">Não monitorado</div></div>
+    <div class="kpi-card"><div class="label">Conectividade</div><div class="value" id="kpiConn" style="color:#fbbf24">Verificando</div><div class="sub">Ping/SSH</div></div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <h3>📍 Informações do Equipamento</h3>
+      <div class="info-row"><span class="key">IP</span><span class="val">100.65.0.116</span></div>
+      <div class="info-row"><span class="key">Porta SSH</span><span class="val">22</span></div>
+      <div class="info-row"><span class="key">Usuário</span><span class="val">otia</span></div>
+      <div class="info-row"><span class="key">Tipo</span><span class="val">RouterBoard (Mikrotik)</span></div>
+      <div class="info-row"><span class="key">Função</span><span class="val">Simulação de Rede do Cliente</span></div>
+      <div class="info-row"><span class="key">Rede</span><span class="val">100.65.0.0/10 (CGNAT/VPN)</span></div>
+      <div class="info-row"><span class="key">Acesso</span><span class="val">Via VPN L2TP</span></div>
+      <div class="info-row"><span class="key">Zabbix</span><span class="val" style="color:#fbbf24">Não monitorado</span></div>
+    </div>
+    <div class="info-box">
+      <h3>🔍 Diagnóstico de Conectividade</h3>
+      <div class="diag-box">
+        <div class="diag-step">
+          <div class="diag-icon">1️⃣</div>
+          <div class="diag-desc">VPN L2TP ativa (143.137.32.6)</div>
+          <div class="diag-result" id="diagVpn"><span class="status-warn">Verificando...</span></div>
+        </div>
+        <div class="diag-step">
+          <div class="diag-icon">2️⃣</div>
+          <div class="diag-desc">Rota para 100.65.0.116</div>
+          <div class="diag-result"><span class="status-warn">Depende da VPN</span></div>
+        </div>
+        <div class="diag-step">
+          <div class="diag-icon">3️⃣</div>
+          <div class="diag-desc">SSH disponível na porta 22</div>
+          <div class="diag-result"><span class="status-warn">Requer VPN ativa</span></div>
+        </div>
+        <div class="diag-step">
+          <div class="diag-icon">4️⃣</div>
+          <div class="diag-desc">Monitoramento Zabbix</div>
+          <div class="diag-result"><span class="status-down">Não configurado</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🛠️ Comandos de Acesso</div>
+  <div class="info-box">
+    <h3>Acesso via VPN L2TP</h3>
+    <div class="cmd-box"># 1. Conectar à VPN L2TP (a partir do NOC)
+ssh otia@143.137.32.6
+
+# 2. Acessar o RB do cliente via VPN
+ssh otia@100.65.0.116
+
+# 3. Verificar status do RB
+/system identity print
+/interface print
+/ip address print
+/ping 8.8.8.8 count=4</div>
+  </div>
+
+  <div class="section-title">📋 Recomendações</div>
+  <div class="info-box">
+    <h3>Para monitoramento completo deste equipamento</h3>
+    <div class="info-row"><span class="key">1.</span><span class="val">Adicionar host no Zabbix (100.65.0.116 via SNMP)</span></div>
+    <div class="info-row"><span class="key">2.</span><span class="val">Configurar template Mikrotik SNMP no Zabbix</span></div>
+    <div class="info-row"><span class="key">3.</span><span class="val">Criar trigger de indisponibilidade (ping)</span></div>
+    <div class="info-row"><span class="key">4.</span><span class="val">Adicionar na rota SNMP da VPN para coleta remota</span></div>
+  </div>
+
+  <div class="status-bar" id="statusBar">Aguardando dados...</div>
+</div>
+
+<script>
+const ZABBIX_URL = 'http://143.137.32.8:9090/zabbix/api_jsonrpc.php';
+const ZABBIX_TOKEN = 'b43086606cc8e30738c7fea7b2e4ffc2c7cc6c27d81c11832a13c96940d2bc71';
+
+async function zabbixCall(method, params) {
+  const res = await fetch(ZABBIX_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json-rpc','Authorization':'Bearer '+ZABBIX_TOKEN},
+    body: JSON.stringify({jsonrpc:'2.0',method,params,id:1})
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.data);
+  return data.result;
+}
+
+async function carregar() {
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true; btn.textContent = 'Carregando...';
+
+  try {
+    // Verificar se o RB está no Zabbix
+    const hosts = await zabbixCall('host.get', {
+      output: ['hostid','name','status'],
+      selectInterfaces: ['ip','available'],
+      filter: {status: 0}
+    });
+
+    const rbHost = hosts.find(h => {
+      return h.interfaces?.some(i => i.ip === '100.65.0.116');
+    });
+
+    if (rbHost) {
+      document.getElementById('kpiZabbix').innerHTML = '<span class="status-ok">MONITORADO</span>';
+      const iface = rbHost.interfaces[0];
+      document.getElementById('kpiConn').innerHTML = iface.available === '1' ?
+        '<span class="status-ok">ONLINE</span>' : '<span class="status-down">OFFLINE</span>';
+      document.getElementById('diagVpn').innerHTML = '<span class="status-ok">VPN ATIVA</span>';
+    } else {
+      document.getElementById('kpiZabbix').innerHTML = '<span class="status-warn">N/A</span>';
+      document.getElementById('kpiConn').innerHTML = '<span class="status-warn">Sem monitoramento</span>';
+      document.getElementById('diagVpn').innerHTML = '<span class="status-warn">Verificar manualmente</span>';
+    }
+
+    // Verificar status da VPN (CCR Santa Rosa = 143.137.32.6)
+    const vpnHost = hosts.find(h => {
+      return h.interfaces?.some(i => i.ip === '143.137.32.6');
+    });
+
+    if (vpnHost) {
+      const vpnIface = vpnHost.interfaces[0];
+      if (vpnIface.available === '1') {
+        document.getElementById('diagVpn').innerHTML = '<span class="status-ok">VPN ATIVA ✓</span>';
+      } else {
+        document.getElementById('diagVpn').innerHTML = '<span class="status-down">VPN CAÍDA ✗</span>';
+      }
+    }
+
+    const agora = new Date().toLocaleString('pt-BR');
+    document.getElementById('statusBar').innerHTML =
+      '<span><span class="ok">✓</span> Verificado em ' + agora + '</span><span>RB Cliente | 100.65.0.116</span>';
+  } catch (err) {
+    document.getElementById('statusBar').textContent = 'Erro: ' + err.message;
+    document.getElementById('kpiConn').innerHTML = '<span class="status-down">ERRO</span>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Atualizar';
+  }
+}
+
+carregar();
+setInterval(carregar, 60000);
+</script>
+</body>
+</html>
