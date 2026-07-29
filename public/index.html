@@ -3,404 +3,391 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOC Preditivo — BGP AS264025</title>
+<title>NOC Preditivo — Arroba Banda Larga</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a0e1a; color: #e0e0e0; }
-.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 1px solid #1e293b; }
-.header h1 { font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
-.header .asn { font-size: 14px; color: #64748b; margin-top: 4px; }
-.header .fase { background: #1e40af; color: #dbeafe; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
-.card-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.card-value { font-size: 32px; font-weight: 700; color: #f8fafc; }
-.card-sub { font-size: 12px; color: #475569; margin-top: 4px; }
-.score-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 10px; overflow: hidden; }
-.score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
-.section-title { font-size: 16px; color: #94a3b8; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; }
-td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #cbd5e1; }
-tr:hover { background: #0f172a; }
-.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.badge-ok { background: #064e3b; color: #6ee7b7; }
-.badge-hijack { background: #7f1d1d; color: #fca5a5; }
-.badge-nao { background: #78350f; color: #fcd34d; }
-.badge-erro { background: #1e1b4b; color: #c4b5fd; }
-.badge-parcial { background: #78350f; color: #fcd34d; }
-.badge-baixa { background: #7f1d1d; color: #fca5a5; }
-.badge-upstream { background: #1e3a5f; color: #93c5fd; }
-.badge-transit { background: #312e81; color: #a5b4fc; }
-.badge-ix { background: #164e63; color: #67e8f9; }
-.badge-peer { background: #064e3b; color: #6ee7b7; }
-.badge-alert { background: #7f1d1d; color: #fca5a5; animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e0e0;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:14px 20px;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100}
+.header-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;max-width:1500px;margin:0 auto}
+.header h1{font-size:18px;color:#f8fafc;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:11px;color:#64748b;margin-top:2px}
+.nav{display:flex;gap:3px;flex-wrap:wrap}
+.nav a{background:transparent;color:#94a3b8;text-decoration:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav a:hover{background:#1e293b;color:#f8fafc}
+.nav a.active{background:#1e40af;color:#dbeafe}
+.container{max-width:1500px;margin:0 auto;padding:14px}
+.health-banner{border-radius:14px;padding:24px;text-align:center;margin-bottom:14px;border:1px solid;transition:all .3s}
 .health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
 .health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
 .health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
-.health-score{font-size:48px;font-weight:800;line-height:1}
-.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
-.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
-.stat-val{font-size:28px;font-weight:800}
-.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
-.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
-.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
-.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
-.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
-.alert-ev-icon{font-size:18px;flex-shrink:0}
-.alert-ev-content{flex:1}
-.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
-.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
-.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
-.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
-
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media(max-width:768px) { 
-.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
-.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
-.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
-.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
-.health-score{font-size:48px;font-weight:800;line-height:1}
-.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
-.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
-.stat-val{font-size:28px;font-weight:800}
-.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
-.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
-.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
-.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
-.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
-.alert-ev-icon{font-size:18px;flex-shrink:0}
-.alert-ev-content{flex:1}
-.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
-.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
-.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
-.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
-
-.two-col { grid-template-columns: 1fr; } }
-.loading { text-align: center; padding: 60px; color: #475569; }
-.spinner { border: 3px solid #1e293b; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.peer-power-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 100px; display: inline-block; vertical-align: middle; margin-left: 8px; }
-.peer-power-fill { height: 100%; background: #3b82f6; border-radius: 3px; }
-.mtr-target { display: inline-block; background: #1e293b; padding: 6px 14px; border-radius: 8px; margin: 4px; font-size: 12px; }
-.mtr-target code { color: #67e8f9; }
-.footer { text-align: center; padding: 30px; color: #334155; font-size: 12px; }
-#alertas { margin-bottom: 20px; }
-.alert-box { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-.alert-box.atencao { background: #78350f; border-color: #92400e; }
-.alert-icon { font-size: 20px; }
-.expand-row { cursor: pointer; }
-.expand-row:hover { background: #0f172a; }
-.sub-row { display: none; }
-.sub-row.show { display: table-row; }
-.sub-row td { padding: 0; border: none; background: #0a0e1a; }
-.sub-detail { padding: 12px 20px 16px 48px !important; }
-.peer-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #111827; border: 1px solid #1e293b; border-radius: 8px; margin-bottom: 8px; }
-.peer-card .asn { font-family: monospace; color: #93c5fd; font-weight: 600; min-width: 100px; }
-.peer-card .holder { color: #cbd5e1; flex: 1; font-size: 12px; }
-.peer-card .ip { color: #64748b; font-family: monospace; font-size: 11px; }
-.peer-card .rrcs { color: #67e8f9; font-size: 11px; }
-.peer-card .pfx { color: #475569; font-size: 11px; }
-.expand-icon { color: #475569; font-size: 14px; transition: transform 0.2s; }
-.expand-icon.open { transform: rotate(90deg); }
-.vis-pct-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 80px; display: inline-block; vertical-align: middle; }
-.vis-pct-fill { height: 100%; border-radius: 3px; }
+.health-score{font-size:52px;font-weight:800;line-height:1}
+.health-status{font-size:14px;font-weight:600;margin-top:4px}
+.health-label{font-size:11px;color:#94a3b8;margin-top:6px}
+.health-factors{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.health-factor{background:#ffffff11;padding:3px 8px;border-radius:6px;font-size:10px}
+.health-factor.neg{color:#f87171}.health-factor.pos{color:#4ade80}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px}
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px;transition:all .2s}
+.card:hover{border-color:#334155}
+.card-title{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.card-value{font-size:26px;font-weight:700;color:#f8fafc}
+.card-sub{font-size:10px;color:#475569;margin-top:3px}
+.card-icon{font-size:18px;float:right;opacity:.5}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.section{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e293b}
+.section-title{font-size:14px;color:#f8fafc;font-weight:600}
+.section-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 8px;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;text-transform:uppercase;font-size:10px}
+td{padding:7px 8px;border-bottom:1px solid #111827;color:#cbd5e1}
+tr:hover{background:#0f172a}
+.badge{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;display:inline-block}
+.badge-ok{background:#064e3b;color:#6ee7b7}.badge-warn{background:#78350f;color:#fcd34d}
+.badge-crit{background:#7f1d1d;color:#fca5a5}.badge-info{background:#1e3a5f;color:#93c5fd}
+.badge-up{background:#064e3b;color:#6ee7b7}.badge-down{background:#7f1d1d;color:#fca5a5}
+.alert-card{border-radius:8px;padding:12px;margin-bottom:6px;border-left:3px solid}
+.alert-card.crit{background:#7f1d1d22;border-color:#ef4444}
+.alert-card.high{background:#78350f22;border-color:#f97316}
+.alert-card.med{background:#78350f22;border-color:#fbbf24}
+.alert-card.info{background:#1e3a5f22;border-color:#3b82f6}
+.alert-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.alert-card-title{font-weight:700;font-size:12px;color:#e2e8f0}
+.alert-card-meta{font-size:10px;color:#64748b}
+.alert-card-desc{font-size:11px;color:#94a3b8}
+.prediction{border-radius:8px;padding:12px;margin-bottom:6px;border-left:3px solid;display:flex;gap:10px}
+.prediction.critico{background:#7f1d1d22;border-color:#ef4444}
+.prediction.alto{background:#78350f22;border-color:#f97316}
+.prediction.atencao{background:#78350f22;border-color:#fbbf24}
+.prediction.informativo{background:#1e3a5f22;border-color:#3b82f6}
+.pred-icon{font-size:20px;flex-shrink:0}
+.pred-content{flex:1}
+.pred-title{font-weight:700;font-size:12px;color:#e2e8f0;margin-bottom:2px}
+.pred-desc{font-size:11px;color:#94a3b8}
+.pred-action{font-size:10px;color:#60a5fa;margin-top:3px;font-weight:600}
+.pred-prob{font-size:10px;color:#fbbf24;font-weight:600;float:right}
+.topo-node{padding:10px 12px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.topo-node.core{border-left:3px solid #3b82f6}
+.topo-node.pop{border-left:3px solid #10b981}
+.topo-node.upstream{border-left:3px solid #a78bfa}
+.topo-name{font-weight:600;font-size:12px;color:#f8fafc;min-width:160px}
+.topo-info{font-size:10px;color:#64748b;flex:1}
+.traffic-bar{height:6px;background:#1e293b;border-radius:3px;margin-top:4px;overflow:hidden}
+.traffic-fill{height:100%;border-radius:3px;transition:width .5s}
+.ping-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid #111827;font-size:12px}
+.ping-target{min-width:140px}.ping-ip{font-family:monospace;font-size:10px;color:#64748b;min-width:110px}
+.ping-rtt{font-weight:700;min-width:70px}.ping-loss{font-size:10px;min-width:50px}
+.loading{text-align:center;padding:60px;color:#475569}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:20px;color:#334155;font-size:10px}
+.pulse{animation:pa 2s infinite}@keyframes pa{0%,100%{opacity:1}50%{opacity:.5}}
+.peer-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid #111827;font-size:11px}
+.peer-asn{font-family:monospace;color:#93c5fd;font-weight:600;min-width:70px}
+.peer-name{color:#cbd5e1;flex:1}
+.peer-type{font-size:9px;padding:2px 5px;border-radius:4px}
+.peer-type.upstream{background:#1e3a5f;color:#93c5fd}
+.peer-type.transit{background:#312e81;color:#a5b4fc}
+.peer-type.ix{background:#164e63;color:#67e8f9}
 </style>
 </head>
 <body>
 <div class="header">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-    <div>
-      <h1>🛰️ NOC Preditivo <span class="fase">Fase 1</span></h1>
-      <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
-    </div>
-    <div style="display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;">
-      <a href="index.html" class="btn" style="background:#1e40af;border:none;color:#dbeafe;text-decoration:none;font-weight:600;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Dashboard BGP</a>
-      <a href="config.html" class="btn" style="background:transparent;border:none;color:#fdba74;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">⚙️ Config VPN/SNMP</a>
-      <a href="security.html" class="btn" style="background:transparent;border:none;color:#fca5a5;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🛡️ Segurança</a>
-      <a href="zabbix.html" class="btn" style="background:transparent;border:none;color:#67e8f9;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Zabbix</a>
-      <a href="network-monitor.html" class="btn" style="background:transparent;border:none;color:#34d399;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Net Monitor</a>
-      <a href="evidence-report.html" class="btn" style="background:transparent;border:none;color:#f87171;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🔍 Evidência</a>
-      <a href="flow.html" class="btn" style="background:transparent;border:none;color:#22d3ee;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🌊 Flow</a>
-      <a href="bgp-centro.html" class="btn" style="background:transparent;border:none;color:#93c5fd;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 BGP-Centro</a>
-      <a href="vpn-l2tp.html" class="btn" style="background:transparent;border:none;color:#a5b4fc;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🔐 VPN</a>
-      <a href="rb-cliente.html" class="btn" style="background:transparent;border:none;color:#c4b5fd;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 RB-Cliente</a>
-    </div>
-  </div>
+<div class="header-row">
+<div>
+<h1>🛰️ NOC Preditivo — Arroba Banda Larga</h1>
+<div class="sub">AS264025 | Inteligência Operacional de Rede</div>
 </div>
-
-<div class="container">
-  <div id="loading" class="loading">
-    <div class="spinner"></div>
-    <p>Coletando dados BGP do RIPE Stat...</p>
-  </div>
-
-  <div id="content" style="display:none;">
-    <div class="health-banner" id="healthBanner">
-      <div class="health-score" id="healthScore" style="color:#fbbf24">--</div>
-      <div class="health-label" id="healthLabel">Health Score / 100 — Carregando...</div>
-    </div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-val" id="statPrefixos" style="color:#4ade80">--</div><div class="stat-lbl">Prefixos OK</div></div>
-      <div class="stat-card"><div class="stat-val" id="statPeers" style="color:#60a5fa">--</div><div class="stat-lbl">Peers BGP</div></div>
-      <div class="stat-card"><div class="stat-val" id="statAlertas" style="color:#fbbf24">--</div><div class="stat-lbl">Alertas Ativos</div></div>
-      <div class="stat-card"><div class="stat-val" id="statScore" style="color:#4ade80">--</div><div class="stat-lbl">RIPE Score</div></div>
-    </div>
-    <div id="alertas"></div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="card-title">Score BGP</div>
-        <div class="card-value" id="score">--</div>
-        <div class="score-bar"><div class="score-fill" id="score-bar" style="width:0%; background:#3b82f6;"></div></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Prefixos Ativos</div>
-        <div class="card-value" id="prefixos-ok">--</div>
-        <div class="card-sub" id="prefixos-total">de --</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Peers BGP</div>
-        <div class="card-value" id="peers-count">--</div>
-        <div class="card-sub" id="peers-detail">-- upstreams</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Alertas</div>
-        <div class="card-value" id="alertas-count">--</div>
-        <div class="card-sub" id="alertas-detail">--</div>
-      </div>
-    </div>
-
-    <div class="two-col">
-      <div>
-        <div class="section-title">📡 Prefixos Anunciados</div>
-        <table>
-          <thead>
-            <tr><th>Prefixo</th><th>Tipo</th><th>Origin AS</th><th>Status</th></tr>
-          </thead>
-          <tbody id="prefixos-table"></tbody>
-        </table>
-      </div>
-      <div>
-        <div class="section-title">🔗 Peers BGP (Vizinhos)</div>
-        <table>
-          <thead>
-            <tr><th>ASN</th><th>Nome</th><th>Tipo</th><th>Power</th></tr>
-          </thead>
-          <tbody id="peers-table"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="section-title">👁️ Visibilidade Global (RIPE RIS) — clique para ver peers que não recebem</div>
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>Prefixo</th>
-          <th>RRCs Visíveis</th>
-          <th>Visibilidade</th>
-          <th>Peers c/ Problema</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="vis-table"></tbody>
-    </table>
-
-    <div class="section-title">🛣️ Targets MTR (Fase 2 — via VPN/Sandbox)</div>
-    <div id="mtr-targets"></div>
-
-    <div class="footer">
-      NOC Preditivo — AS264025 Arroba Banda Larga | Dados: RIPE Stat API | Atualização: <span id="last-update">--</span>
-    </div>
-  </div>
+<div class="nav" id="nav">
+<a class="active" data-tab="overview">📊 Visão Geral</a>
+<a data-tab="backbone">🔗 Backbone</a>
+<a data-tab="bgp">🌐 BGP</a>
+<a data-tab="clients">👥 Clientes</a>
+<a data-tab="equipment">🖥️ Equipamentos</a>
+<a data-tab="topology">🗺️ Topologia</a>
+<a data-tab="predictions">🔮 Preditivo</a>
 </div>
+</div>
+</div>
+<div class="container" id="dashboard">
+<div class="loading" id="loading"><div class="spinner"></div><div>Coletando dados de BGP, Zabbix e Flow...</div><div style="font-size:10px;margin-top:6px;color:#475569">Cruzando fontes em tempo real</div></div>
+</div>
+<div class="footer">NOC Preditivo v2.0 | AS264025 | <span id="last-update">--</span></div>
 
 <script>
-function badge(status) {
-  const map = {
-    'ok': ['badge-ok', 'OK'],
-    'HIJACK': ['badge-hijack', 'HIJACK'],
-    'nao_anunciado': ['badge-nao', 'NAO ANUNCIADO'],
-    'terceiro': ['badge-nao', 'TERCEIRO'],
-    'parcial': ['badge-parcial', 'PARCIAL'],
-    'baixa': ['badge-baixa', 'BAIXA'],
-    'erro': ['badge-erro', 'ERRO']
+const BGP_API='https://noc-preditivo.vercel.app/api/bgp';
+const ZABBIX_API='https://noc-preditivo.vercel.app/api/zabbix';
+const FLOW_API='https://lvflow-conectti.lv.network/api';
+const FLOW_TOKEN='8OEHA-R5hLuuOerVPZ3HqdfCehlNF3ngOayQVGq7T1M';
+const SOURCES=['ANB-BRAS01-MX204-CENTRO','ANB-BRAS02-MX204-STA-ROSA','ANB-TH4430-A10-CGNAT-01'];
+const TOPOLOGY={core:[{n:'MX204 Centro',ip:'143.137.32.3',f:'BGP Router/PPPoE BRAS',m:'Juniper MX204',z:'MX 204 - PPPOE1'},{n:'MX204 Sta Rosa',ip:'143.137.32.4',f:'BGP Router/PPPoE BRAS',m:'Juniper MX204',z:'MX 204 - PPPOE2'},{n:'CCR Santa Rosa',ip:'143.137.32.6',f:'VPN L2TP',m:'Mikrotik CCR',z:'CCR SERVER_SANTA ROSA'},{n:'CCR Centro 1',ip:'143.137.32.8',f:'NAS/PPPoE',m:'CCR 1072',z:'CCR SERVER 1072'},{n:'CCR Centro 2',ip:'143.137.32.7',f:'NAS/PPPoE',m:'CCR 1036',z:'CCR SERVER 1036'},{n:'A10 CGNAT',ip:'143.137.32.5',f:'CGNAT/NAT64',m:'A10 Thunder',z:null}],pop:[{n:'POP Centro',t:'Fibra',olt:'79'},{n:'POP Santa Rosa',t:'Fibra',olt:'73/74/76'},{n:'POP Canã',t:'Fibra',olt:'69'},{n:'POP Ururaí',t:'Fibra',olt:'70'},{n:'POP São José',t:'Fibra',olt:'72'},{n:'POP Aurora',t:'Fibra',olt:'77'},{n:'POP Nova Brasília',t:'Fibra',olt:'78'},{n:'POP Travessão',t:'Fibra',olt:'64'},{n:'POP Titan',t:'Fibra',olt:'82'}],upstreams:[{asn:'6939',n:'Hurricane Electric',t:'transit_internacional'},{asn:'14840',n:'BR.Digital',t:'upstream_nacional'},{asn:'268696',n:'Tuddo Telecom',t:'upstream_nacional'},{asn:'263009',n:'Forte Telecom',t:'upstream_nacional'},{asn:'22548',n:'NIC.BR (IX.br)',t:'ix_ptt'}]};
+let D={};
+let currentTab='overview';
+
+async function fetchData(){
+  const [bgpRes,zbxRes,...flowRes]=await Promise.all([
+    fetch(BGP_API).then(r=>r.json()).catch(e=>({error:e.message})),
+    fetch(ZABBIX_API+'?action=overview').then(r=>r.json()).catch(e=>({error:e.message})),
+    ...SOURCES.map(s=>fetch(`${FLOW_API}/traffic-interfaces?source=${s}&minutes=1`,{headers:{Authorization:`Bearer ${FLOW_TOKEN}`}}).then(r=>r.json()).catch(e=>({error:e.message})))
+  ]);
+  D.bgp=bgpRes;
+  D.zabbix=zbxRes;
+  D.flow={
+    sources:SOURCES.map((s,i)=>{
+      const f=flowRes[i]||{};
+      if(f.error)return{source:s,error:f.error,rx:0,tx:0};
+      const rx=(f.series?.rx||[]).reduce((sum,iface)=>{const a=iface.data?.bps||[];return sum+(a[a.length-1]||0)},0);
+      const tx=(f.series?.tx||[]).reduce((sum,iface)=>{const a=iface.data?.bps||[];return sum+(a[a.length-1]||0)},0);
+      return{source:s,rx,tx,rx_fmt:fmtBps(rx),tx_fmt:fmtBps(tx)};
+    }),
+    total_rx:0,total_tx:0
   };
-  const [cls, txt] = map[status] || ['badge-erro', status];
-  return `<span class="badge ${cls}">${txt}</span>`;
+  D.flow.total_rx=D.flow.sources.reduce((s,r)=>s+(r.rx||0),0);
+  D.flow.total_tx=D.flow.sources.reduce((s,r)=>s+(r.tx||0),0);
+  D.flow.total_rx_fmt=fmtBps(D.flow.total_rx);
+  D.flow.total_tx_fmt=fmtBps(D.flow.total_tx);
+  D.health=calcHealth(D.zabbix,D.bgp,D.flow);
+  D.predictions=analyzeTrends(D.zabbix,D.flow);
+  D.alerts=buildAlerts(D.zabbix);
+  document.getElementById('loading').style.display='none';
+  document.getElementById('last-update').textContent='Atualizado: '+new Date().toLocaleString('pt-BR');
+  renderTab(currentTab);
 }
 
-function peerBadge(tipo) {
-  const map = {
-    'upstream_nacional': ['badge-upstream', 'Upstream'],
-    'transit_internacional': ['badge-transit', 'Transit'],
-    'ix_ptt': ['badge-ix', 'IX/PTT'],
-    'peer_regional': ['badge-peer', 'Peer']
+function fmtBps(b){if(b>=1e9)return(b/1e9).toFixed(1)+' Gbps';if(b>=1e6)return(b/1e6).toFixed(1)+' Mbps';if(b>=1e3)return(b/1e3).toFixed(1)+' Kbps';return b+' bps'}
+
+function calcHealth(z,b,f){
+  let score=100;const factors=[];
+  if(b&&!b.error){
+    if(b.stats){
+      const hij=b.stats.prefixos_hijack||0;
+      if(hij>0){score-=30;factors.push({a:'BGP',r:`${hij} hijack(s)`})}
+      const na=b.stats.prefixos_nao_anunciado||0;
+      if(na>0){score-=20;factors.push({a:'BGP',r:`${na} prefixo(s) não anunciado(s)`})}
+      if((b.stats.total_peers||0)<20){score-=5;factors.push({a:'BGP',r:'Poucos peers'})}
+    }
+  }
+  if(z&&!z.error){
+    const trigs=z.triggers||[];
+    const crit=trigs.filter(t=>t.severity>=4).length;
+    const high=trigs.filter(t=>t.severity===3).length;
+    if(crit>0){const p=Math.min(25,crit*2);score-=p;factors.push({a:'Zabbix',r:`${crit} triggers críticos`})}
+    if(high>0){const p=Math.min(10,high);score-=p;factors.push({a:'Zabbix',r:`${high} triggers altos`})}
+    if((z.stats?.hostsDown||0)>0){const p=Math.min(10,z.stats.hostsDown*2);score-=p;factors.push({a:'Zabbix',r:`${z.stats.hostsDown} hosts down`})}
+  }
+  if(f&&f.sources){
+    const err=f.sources.filter(s=>s.error).length;
+    if(err>0){score-=err*3;factors.push({a:'Flow',r:`${err} fonte(s) sem dados`})}
+  }
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  let status='SAUDÁVEL',color='#10b981';
+  if(score<50){status='CRÍTICO';color='#ef4444'}else if(score<75){status='ATENÇÃO';color='#f59e0b'}
+  return{score,status,color,factors};
+}
+
+function analyzeTrends(z,f){
+  const preds=[];
+  if(f&&f.sources){
+    for(const s of f.sources){
+      if(s.error)continue;
+      const pct=(s.rx/100e9)*100;
+      if(pct>80){preds.push({severidade:'alto',equipamento:s.source,probabilidade:Math.round(pct),impacto_estimado:`${pct.toFixed(1)}% utilização do link`,acao:'Planejar upgrade de capacidade'})}
+      else if(pct>60){preds.push({severidade:'atencao',equipamento:s.source,probabilidade:Math.round(pct),impacto_estimado:`${pct.toFixed(1)}% utilização`,acao:'Acompanhar crescimento semanal'})}
+    }
+  }
+  if(z&&z.triggers){
+    const infra=z.triggers.filter(t=>{const h=t.host.toUpperCase();return h.includes('OLT')||h.includes('MX')||h.includes('CCR')||h.includes('BGP')});
+    for(const t of infra){
+      if(t.severity>=4){preds.push({severidade:'critico',equipamento:t.host,probabilidade:80,impacto_estimado:`Trigger: ${t.description}`,acao:`Acionar — verificar ${t.host}`,idade:t.ageTxt})}
+    }
+    const byHost={};
+    for(const t of z.triggers)byHost[t.host]=(byHost[t.host]||0)+1;
+    for(const[host,count]of Object.entries(byHost)){
+      if(count>=3){preds.push({severidade:'alto',equipamento:host,probabilidade:70,impacto_estimado:`${count} triggers simultâneos — possível cascata`,acao:`Investigar ${host} como SPOF`})}
+    }
+  }
+  return preds;
+}
+
+function buildAlerts(z){
+  if(!z||z.error||!z.triggers)return[];
+  const groups={};
+  for(const t of z.triggers){
+    const lvl=t.severity>=4?'critico':t.severity===3?'alto':t.severity===2?'medio':'info';
+    if(!groups[lvl])groups[lvl]={level:lvl,items:[]};
+    groups[lvl].items.push(t);
+  }
+  return Object.values(groups).map(g=>({...g,count:g.items.length,items:g.items.slice(0,10)}));
+}
+
+document.querySelectorAll('.nav a').forEach(a=>{
+  a.onclick=()=>{
+    document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+    currentTab=a.dataset.tab;
+    renderTab(currentTab);
   };
-  const [cls, txt] = map[tipo] || ['badge-erro', tipo];
-  return `<span class="badge ${cls}">${txt}</span>`;
+});
+
+function renderTab(tab){
+  const d=document.getElementById('dashboard');
+  if(!D.bgp&&!D.zabbix)return;
+  if(tab==='overview')d.innerHTML=rOverview();
+  else if(tab==='backbone')d.innerHTML=rBackbone();
+  else if(tab==='bgp')d.innerHTML=rBGP();
+  else if(tab==='clients')d.innerHTML=rClients();
+  else if(tab==='equipment')d.innerHTML=rEquipment();
+  else if(tab==='topology')d.innerHTML=rTopology();
+  else if(tab==='predictions')d.innerHTML=rPredictions();
 }
 
-function toggleVis(idx) {
-  const row = document.getElementById('vis-detail-' + idx);
-  const icon = document.getElementById('vis-icon-' + idx);
-  if (row) {
-    row.classList.toggle('show');
-    if (icon) icon.classList.toggle('open');
+function rOverview(){
+  const h=D.health||{},z=D.zabbix||{},b=D.bgp||{},f=D.flow||{};
+  const alerts=D.alerts||[],preds=D.predictions||[];
+  const hc=h.score>=75?'ok':h.score>=50?'warn':'crit';
+  const factors=(h.factors||[]).length>0?(h.factors||[]).map(x=>`<span class="health-factor neg">${x.a}: ${x.r}</span>`).join(''):'<span class="health-factor pos">Todos sistemas operacionais</span>';
+  let aHtml='';
+  for(const a of alerts){
+    const cls=a.level==='critico'?'crit':a.level==='alto'?'high':a.level==='medio'?'med':'info';
+    aHtml+=`<div class="section" style="margin-bottom:6px"><div class="section-header"><span class="section-title">${a.level==='critico'?'🔴':a.level==='alto'?'🟠':'🟡'} ${a.count} Alertas ${a.level.toUpperCase()}</span></div>${(a.items||[]).map(i=>`<div class="alert-card ${cls}" style="margin-bottom:3px"><div class="alert-card-head"><span class="alert-card-title">${i.host}</span><span class="alert-card-meta">${i.ageTxt}</span></div><div class="alert-card-desc">${i.description}</div></div>`).join('')}</div>`;
   }
+  if(!aHtml)aHtml='<div class="section"><div style="color:#4ade80;font-size:13px">✅ Nenhum alerta ativo</div></div>';
+  let tHtml='';
+  if(f.sources){tHtml=f.sources.map(s=>{const pct=s.rx>0?Math.min(100,(s.rx/100e9)*100):0;const c=pct>80?'#ef4444':pct>60?'#f59e0b':'#10b981';const n=s.source.includes('CENTRO')?'MX204 Centro':s.source.includes('STA-ROSA')?'MX204 Sta Rosa':s.source.includes('CGNAT')?'A10 CGNAT':s.source;return`<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>${n}</span><span style="font-weight:600">${s.rx_fmt||'--'} ↓ ${s.tx_fmt||'--'} ↑</span></div><div class="traffic-bar"><div class="traffic-fill" style="width:${pct}%;background:${c}"></div></div></div>`}).join('')}
+  let pHtml='';
+  if(preds.length>0){pHtml=preds.slice(0,3).map(p=>`<div class="prediction ${p.severidade}"><div class="pred-icon">${p.severidade==='critico'?'🚨':p.severidade==='alto'?'⚠️':'📊'}</div><div class="pred-content"><div class="pred-title">${p.equipamento} <span class="pred-prob">${p.probabilidade}%</span></div><div class="pred-desc">${p.impacto_estimado}</div><div class="pred-action">→ ${p.acao}</div></div></div>`).join('')}else{pHtml='<div style="color:#4ade80;padding:10px;font-size:12px">✅ Nenhuma tendência de falha</div>'}
+  return `<div class="health-banner ${hc}"><div class="health-score" style="color:${h.color}">${h.score||'--'}</div><div class="health-status" style="color:${h.color}">${h.status||'...'}</div><div class="health-label">Health Score / 100 — AS264025</div><div class="health-factors">${factors}</div></div>
+  <div class="grid">
+  <div class="card"><div class="card-icon">🖥️</div><div class="card-title">Hosts Monitorados</div><div class="card-value">${z.stats?.totalHosts||0}</div><div class="card-sub">${z.stats?.hostsOk||0} OK · ${z.stats?.hostsDown||0} DOWN</div></div>
+  <div class="card"><div class="card-icon">🔔</div><div class="card-title">Alertas Ativos</div><div class="card-value" style="color:${(z.stats?.totalTriggers||0)>5?'#f87171':'#fbbf24'}">${z.stats?.totalTriggers||0}</div><div class="card-sub">${(z.triggers||[]).filter(t=>t.severity>=4).length} críticos</div></div>
+  <div class="card"><div class="card-icon">🌐</div><div class="card-title">Peers BGP</div><div class="card-value" style="color:#4ade80">${b.stats?.total_peers||0}</div><div class="card-sub">${b.stats?.total_prefixos||22} prefixos</div></div>
+  <div class="card"><div class="card-icon">📈</div><div class="card-title">Tráfego Total</div><div class="card-value" style="color:#67e8f9">${f.total_rx_fmt||'--'}</div><div class="card-sub">${f.total_tx_fmt||'--'} TX</div></div>
+  <div class="card"><div class="card-icon">🔮</div><div class="card-title">Previsões</div><div class="card-value" style="color:${preds.length>0?'#fbbf24':'#4ade80'}">${preds.length}</div><div class="card-sub">tendências ativas</div></div>
+  <div class="card"><div class="card-icon">🛡️</div><div class="card-title">Score BGP</div><div class="card-value" style="color:#4ade80">${b.score_bgp||'--'}</div><div class="card-sub">RIPE Stat</div></div>
+  </div>
+  <div class="two-col">
+  <div class="section"><div class="section-header"><span class="section-title">🚨 Alertas Inteligentes</span><span class="section-badge badge-${alerts.length>0?'crit':'ok'}">${alerts.reduce((s,a)=>s+a.count,0)} ativos</span></div>${aHtml}</div>
+  <div class="section"><div class="section-header"><span class="section-title">📊 Tráfego em Tempo Real</span><span class="section-badge badge-info">${(f.sources||[]).length} fontes</span></div>${tHtml||'<div style="color:#64748b">Carregando...</div>'}</div>
+  </div>
+  <div class="two-col">
+  <div class="section"><div class="section-header"><span class="section-title">🔮 Análise Preditiva</span><span class="section-badge badge-${preds.length>0?'warn':'ok'}">${preds.length} previsões</span></div>${pHtml}</div>
+  <div class="section"><div class="section-header"><span class="section-title">📡 Status BGP — RIPE Stat</span></div>
+  <table><thead><tr><th>Métrica</th><th>Valor</th><th>Status</th></tr></thead><tbody>
+  <tr><td>Score BGP</td><td>${b.score_bgp||'--'}/100</td><td><span class="badge badge-${(b.score_bgp||0)>=80?'ok':'warn'}">${(b.score_bgp||0)>=80?'OK':'Atenção'}</span></td></tr>
+  <tr><td>Prefixos OK</td><td>${b.stats?.prefixos_ok||0}/${b.stats?.total_prefixos||0}</td><td><span class="badge badge-ok">OK</span></td></tr>
+  <tr><td>Hijacks</td><td>${b.stats?.prefixos_hijack||0}</td><td><span class="badge badge-${(b.stats?.prefixos_hijack||0)===0?'ok':'crit'}">${(b.stats?.prefixos_hijack||0)===0?'Nenhum':'DETECTADO'}</span></td></tr>
+  <tr><td>Peers Ativos</td><td>${b.stats?.total_peers||0}</td><td><span class="badge badge-${(b.stats?.total_peers||0)>=20?'ok':'warn'}">${(b.stats?.total_peers||0)>=20?'Suficiente':'Baixo'}</span></td></tr>
+  <tr><td>Visibilidade /22</td><td>${b.visibilidade?.[0]?.visibilidade_pct||100}%</td><td><span class="badge badge-ok">Global</span></td></tr>
+  </tbody></table></div>
+  </div>`;
 }
 
-async function load() {
-  try {
-    const res = await fetch('/api/bgp');
-    const data = await res.json();
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-
-    document.getElementById('asn-info').textContent =
-      `AS${data.asn} — ${data.overview.holder || 'Arroba Banda Larga'} | ${data.fase}`;
-
-    const score = data.score_bgp;
-    // Health Score
-    const healthBGP = calcHealthBGP(data);
-    updateHealth(healthBGP, data.alertas.length);
-    document.getElementById('statPrefixos').textContent = data.stats.prefixos_ok;
-    document.getElementById('statPeers').textContent = data.stats.peers || '--';
-    document.getElementById('statAlertas').textContent = data.alertas.length;
-    document.getElementById('statScore').textContent = score;
-    renderAlertasComEvidencia(data.alertas);
-    document.getElementById('score').textContent = score;
-    document.getElementById('score-bar').style.width = score + '%';
-    document.getElementById('score-bar').style.background =
-      score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
-
-    document.getElementById('prefixos-ok').textContent = data.stats.prefixos_ok;
-    document.getElementById('prefixos-total').textContent =
-      `de ${data.stats.total_prefixos} | ${data.stats.prefixos_hijack} hijack | ${data.stats.prefixos_nao_anunciado} nao anunciados`;
-
-    document.getElementById('peers-count').textContent = data.stats.total_peers;
-    document.getElementById('peers-detail').textContent =
-      `${data.stats.peers_upstream} upstreams | ${data.stats.peers_transit} transit | ${data.stats.peers_ix} IX`;
-
-    document.getElementById('alertas-count').textContent = data.alertas.length;
-    document.getElementById('alertas-detail').textContent =
-      data.alertas.length === 0 ? 'Nenhum alerta' : data.alertas.map(a => a.msg).join('; ');
-
-    const alertasHtml = data.alertas.map(a =>
-      `<div class="alert-box ${a.severity === 'atencao' ? 'atencao' : ''}">
-        <span class="alert-icon">${a.severity === 'critico' ? '🔴' : '🟡'}</span>
-        <span>${a.msg}</span>
-      </div>`
-    ).join('');
-    document.getElementById('alertas').innerHTML = alertasHtml;
-
-    document.getElementById('prefixos-table').innerHTML = data.prefixos.map(p =>
-      `<tr>
-        <td style="font-family:monospace">${p.prefix}</td>
-        <td>${p.tipo}</td>
-        <td>${p.origin_asn ? 'AS' + p.origin_asn : '--'}</td>
-        <td>${badge(p.status)}</td>
-      </tr>`
-    ).join('');
-
-    document.getElementById('peers-table').innerHTML = data.peers.map(p => {
-      const maxPower = Math.max(...data.peers.map(x => x.power));
-      const pct = maxPower > 0 ? (p.power / maxPower * 100) : 0;
-      return `<tr>
-        <td style="font-family:monospace">AS${p.asn}</td>
-        <td>${p.nome}</td>
-        <td>${peerBadge(p.tipo)}</td>
-        <td>${p.power} <span class="peer-power-bar"><span class="peer-power-fill" style="width:${pct}%"></span></span></td>
-      </tr>`;
-    }).join('');
-
-    // Tabela de visibilidade com expansão
-    document.getElementById('vis-table').innerHTML = data.visibilidade.map((v, idx) => {
-      const hasDetail = v.peers_nao_vendo > 0;
-      const pctColor = v.visibilidade_pct >= 90 ? '#10b981' : v.visibilidade_pct >= 70 ? '#f59e0b' : '#ef4444';
-      let html = `<tr class="expand-row" ${hasDetail ? `onclick="toggleVis(${idx})"` : ''}>
-        <td>${hasDetail ? `<span class="expand-icon" id="vis-icon-${idx}">▶</span>` : ''}</td>
-        <td style="font-family:monospace">${v.prefix}</td>
-        <td>${v.rrcs_visible}/${v.rrcs_total}</td>
-        <td>${v.visibilidade_pct}% <span class="vis-pct-bar"><span class="vis-pct-fill" style="width:${v.visibilidade_pct}%;background:${pctColor}"></span></span></td>
-        <td>${v.peers_nao_vendo || 0}</td>
-        <td>${badge(v.status)}</td>
-      </tr>`;
-
-      if (hasDetail) {
-        const detalhe = (v.peers_nao_vendo_detalhe || []).map(p => `
-          <div class="peer-card">
-            <span class="asn">AS${p.asn}</span>
-            <span class="holder">${p.holder}</span>
-            <span class="ip">IP: ${p.ip}</span>
-            <span class="rrcs">RRCs: ${p.rrcs.join(', ')}</span>
-            <span class="pfx">tabela: ${p.prefix_count.toLocaleString()} pfx</span>
-          </div>
-        `).join('');
-        html += `<tr class="sub-row" id="vis-detail-${idx}"><td colspan="6"><div class="sub-detail">${detalhe}</div></td></tr>`;
-      }
-      return html;
-    }).join('');
-
-    document.getElementById('mtr-targets').innerHTML = data.mtr_targets.map(t =>
-      `<span class="mtr-target">${t.nome} <code>${t.ip}</code></span>`
-    ).join('');
-
-    
-// === HEALTH SCORE ===
-function calcHealthBGP(data) {
-  const score = data.stats.score || 0;
-  const alerts = (data.alertas || []).length;
-  const prefixosOk = data.stats.prefixos_ok || 0;
-  const prefixosTotal = data.stats.prefixos_total || 1;
-  const ratio = prefixosOk / prefixosTotal;
-  let health = score * 0.5 + ratio * 50 - alerts * 3;
-  return Math.max(0, Math.min(100, health));
+function rBackbone(){
+  const f=D.flow||{},z=D.zabbix||{};
+  let tHtml='';
+  if(f.sources){tHtml=f.sources.map(s=>{const pct=s.rx>0?Math.min(100,(s.rx/100e9)*100):0;const c=pct>80?'#ef4444':pct>60?'#f59e0b':'#10b981';const n=s.source.includes('CENTRO')?'MX204 Centro':s.source.includes('STA-ROSA')?'MX204 Sta Rosa':'A10 CGNAT';return`<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;border:1px solid #1e293b"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:600">${n}</span><span style="font-size:11px;color:#67e8f9;font-weight:600">${s.rx_fmt||'--'} ↓ | ${s.tx_fmt||'--'} ↑</span></div><div class="traffic-bar" style="height:8px"><div class="traffic-fill" style="width:${pct}%;background:${c}"></div></div><div style="font-size:10px;color:#64748b;margin-top:3px">Utilização: ${pct.toFixed(1)}% do link 100G</div></div>`}).join('')}
+  const bbTr=(z.triggers||[]).filter(t=>{const h=t.host.toUpperCase();return h.includes('MX')||h.includes('CCR')||h.includes('BGP')||h.includes('OLT')||h.includes('ENERGIA')});
+  let aHtml=bbTr.length>0?bbTr.map(t=>{const cls=t.severity>=4?'crit':t.severity===3?'high':'med';return`<div class="alert-card ${cls}"><div class="alert-card-head"><span class="alert-card-title">${t.host}</span><span class="alert-card-meta">${t.ageTxt}</span></div><div class="alert-card-desc">${t.description}</div></div>`}).join(''):'<div style="color:#4ade80;font-size:12px">✅ Backbone sem alertas</div>';
+  return `<div class="grid">
+  <div class="card"><div class="card-icon">📈</div><div class="card-title">Tráfego RX</div><div class="card-value" style="color:#67e8f9">${f.total_rx_fmt||'--'}</div></div>
+  <div class="card"><div class="card-icon">📉</div><div class="card-title">Tráfego TX</div><div class="card-value" style="color:#a78bfa">${f.total_tx_fmt||'--'}</div></div>
+  <div class="card"><div class="card-icon">🔌</div><div class="card-title">Fontes Flow</div><div class="card-value">${(f.sources||[]).length}</div></div>
+  <div class="card"><div class="card-icon">⚠️</div><div class="card-title">Alertas BB</div><div class="card-value" style="color:${bbTr.length>0?'#f87171':'#4ade80'}">${bbTr.length}</div></div>
+  </div>
+  <div class="two-col">
+  <div class="section"><div class="section-header"><span class="section-title">📊 Utilização dos Links</span></div>${tHtml||'<div style="color:#64748b">Carregando...</div>'}</div>
+  <div class="section"><div class="section-header"><span class="section-title">🚨 Alertas do Backbone</span></div>${aHtml}</div>
+  </div>`;
 }
 
-function updateHealth(score, alertsCount) {
-  const hs = document.getElementById('healthScore');
-  const hb = document.getElementById('healthBanner');
-  const hl = document.getElementById('healthLabel');
-  hs.textContent = score.toFixed(1);
-  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
-  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
-  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+function rBGP(){
+  const b=D.bgp||{},top=TOPOLOGY;
+  let peersHtml='';
+  if(b.peers){peersHtml=b.peers.filter(p=>p.power>0).slice(0,10).map(p=>{const tc=p.tipo?.includes('transit')?'transit':p.tipo?.includes('ix')?'ix':'upstream';return`<div class="peer-row"><span class="peer-asn">AS${p.asn}</span><span class="peer-name">${p.nome}</span><span class="peer-type ${tc}">${p.tipo?.replace(/_/g,' ')||'desconhecido'}</span></div>`}).join('')}
+  let visHtml='';
+  if(b.visibilidade){visHtml=b.visibilidade.map(v=>`<tr><td>${v.prefix}</td><td style="color:${v.visibilidade_pct>=90?'#4ade80':v.visibilidade_pct>=70?'#fbbf24':'#f87171'}">${v.visibilidade_pct}%</td><td>${v.rrcs_visible}/${v.rrcs_total}</td><td>${v.peers_nao_vendo}</td><td><span class="badge badge-${v.status==='ok'?'ok':'warn'}">${v.status.toUpperCase()}</span></td></tr>`).join('')}
+  let pfxHtml='';
+  if(b.prefixos){pfxHtml=b.prefixos.map(p=>`<tr><td>${p.prefix}</td><td>${p.tipo}</td><td style="color:${p.annunciado?'#4ade80':'#f87171'}">${p.annunciado?'Sim':'Não'}</td><td>${p.origin_asn||'--'}</td><td><span class="badge badge-${p.status==='ok'?'ok':p.status==='HIJACK'?'crit':'warn'}">${p.status.toUpperCase()}</span></td></tr>`).join('')}
+  return `<div class="grid">
+  <div class="card"><div class="card-icon">🌐</div><div class="card-title">AS Number</div><div class="card-value" style="color:#67e8f9">AS264025</div><div class="card-sub">${b.overview?.holder||'Arroba Banda Larga'}</div></div>
+  <div class="card"><div class="card-icon">📡</div><div class="card-title">Prefixos</div><div class="card-value">${b.stats?.total_prefixos||22}</div><div class="card-sub">${b.stats?.prefixos_ok||0} OK</div></div>
+  <div class="card"><div class="card-icon">🤝</div><div class="card-title">Peers</div><div class="card-value" style="color:#4ade80">${b.stats?.total_peers||0}</div><div class="card-sub">${b.stats?.peers_upstream||0} upstreams</div></div>
+  <div class="card"><div class="card-icon">🛡️</div><div class="card-title">Score BGP</div><div class="card-value" style="color:#4ade80">${b.score_bgp||'--'}</div><div class="card-sub">/ 100</div></div>
+  </div>
+  <div class="two-col">
+  <div class="section"><div class="section-header"><span class="section-title">🤝 Peers BGP Ativos</span></div>${peersHtml}</div>
+  <div class="section"><div class="section-header"><span class="section-title">📡 Visibilidade Global</span></div><table><thead><tr><th>Prefixo</th><th>Visibilidade</th><th>RRCs</th><th>Peers não veem</th><th>Status</th></tr></thead><tbody>${visHtml}</tbody></table></div>
+  </div>
+  <div class="section"><div class="section-header"><span class="section-title">📋 Prefixos Anunciados — Detalhe</span></div><table><thead><tr><th>Prefixo</th><th>Tipo</th><th>Anunciado</th><th>Origin AS</th><th>Status</th></tr></thead><tbody>${pfxHtml}</tbody></table></div>`;
 }
 
-// === ALERTAS COM EVIDÊNCIA ===
-function renderAlertasComEvidencia(alertas) {
-  const container = document.getElementById('alertas');
-  if(!alertas || alertas.length === 0){
-    container.innerHTML = '<div class="alert-evidence ok"><div class="alert-ev-icon">✅</div><div class="alert-ev-content"><div class="alert-ev-title">Nenhum alerta BGP ativo</div><div class="alert-ev-desc">Todos os prefixos anunciados corretamente. Sem evidência de hijack ou problema de roteamento.</div></div></div>';
-    return;
-  }
-  container.innerHTML = alertas.map(a => {
-    const sev = a.tipo === 'HIJACK' ? 'critical' : 'warning';
-    const icon = sev === 'critical' ? '🔴' : '⚠️';
-    return '<div class="alert-evidence ' + sev + '"><div class="alert-ev-icon">' + icon + '</div><div class="alert-ev-content"><div class="alert-ev-title">' + a.prefixo + ' — ' + a.tipo + '</div><div class="alert-ev-desc">Origin AS: ' + a.origin_as + '. <b>Evidência:</b> ' + a.razao + '. <b>Ação NOC:</b> Verificar anúncio BGP e origem do prefixo.</div></div></div>';
-  }).join('');
+function rClients(){
+  const z=D.zabbix||{};
+  const trigs=(z.triggers||[]).filter(t=>t.severity>=3).slice(0,20);
+  return `<div class="grid">
+  <div class="card"><div class="card-icon">👥</div><div class="card-title">Total Hosts</div><div class="card-value">${z.stats?.totalHosts||0}</div></div>
+  <div class="card"><div class="card-icon">🟢</div><div class="card-title">Hosts OK</div><div class="card-value" style="color:#4ade80">${z.stats?.hostsOk||0}</div></div>
+  <div class="card"><div class="card-icon">🔴</div><div class="card-title">Hosts DOWN</div><div class="card-value" style="color:${(z.stats?.hostsDown||0)>0?'#f87171':'#4ade80'}">${z.stats?.hostsDown||0}</div></div>
+  <div class="card"><div class="card-icon">⚠️</div><div class="card-title">Alertas Alto+</div><div class="card-value" style="color:#fbbf24">${trigs.length}</div></div>
+  </div>
+  <div class="section"><div class="section-header"><span class="section-title">👥 Hosts com Alertas Críticos/Altos</span></div>${trigs.length>0?trigs.map(t=>{const cls=t.severity>=4?'crit':'high';return`<div class="alert-card ${cls}"><div class="alert-card-head"><span class="alert-card-title">${t.host}</span><span class="alert-card-meta">${t.ageTxt}</span></div><div class="alert-card-desc">${t.description}</div></div>`}).join(''):'<div style="color:#4ade80">✅ Nenhum alerta crítico</div>'}</div>
+  <div class="section"><div class="section-header"><span class="section-title">📌 Clientes Críticos Conhecidos</span></div><table><thead><tr><th>Cliente</th><th>ID</th><th>Localização</th><th>Histórico</th><th>Status</th></tr></thead><tbody><tr><td>Luis Eduardo Gonzalez Morales</td><td>28913</td><td>Pq Nova Canaã, Rua Sete 34</td><td>59 OS</td><td><span class="badge badge-warn">Alta Reincidência</span></td></tr></tbody></table></div>`;
 }
 
-document.getElementById('last-update').textContent =
-      new Date(data.timestamp).toLocaleString('pt-BR');
-
-  } catch (e) {
-    document.getElementById('loading').innerHTML = `<p style="color:#ef4444">Erro: ${e.message}</p>`;
-  }
+function rEquipment(){
+  const z=D.zabbix||{},top=TOPOLOGY;
+  const infra={};
+  if(z.triggers){z.triggers.forEach(t=>{const h=t.host.toUpperCase();if(h.includes('MX')||h.includes('CCR')||h.includes('BGP')||h.includes('OLT')){if(!infra[t.host])infra[t.host]=[];infra[t.host].push(t)}})}
+  let coreHtml=top.core.map(c=>{const trigs=infra[c.z]||infra[c.n];const status=trigs&&trigs.some(t=>t.severity>=4)?'DOWN':trigs&&trigs.length>0?'WARN':'UP';const cls=status==='UP'?'up':status==='DOWN'?'down':'warn';return`<tr><td style="font-weight:600">${c.n}</td><td style="font-family:monospace;font-size:10px">${c.ip}</td><td>${c.m}</td><td>${c.f}</td><td><span class="badge badge-${cls}">${status}</span></td></tr>`}).join('');
+  let popHtml=top.pop.map(p=>`<tr><td style="font-weight:600">${p.n}</td><td>${p.t}</td><td>OLT ${p.olt}</td><td><span class="badge badge-info">FTTH</span></td></tr>`).join('');
+  let oltAlerts=(z.triggers||[]).filter(t=>t.host.toUpperCase().includes('OLT')).map(t=>{const cls=t.severity>=4?'crit':'high';return`<div class="alert-card ${cls}"><div class="alert-card-head"><span class="alert-card-title">${t.host}</span><span class="alert-card-meta">${t.ageTxt}</span></div><div class="alert-card-desc">${t.description}</div></div>`}).join('');
+  return `<div class="grid">
+  <div class="card"><div class="card-icon">🖥️</div><div class="card-title">Core</div><div class="card-value">${top.core.length}</div></div>
+  <div class="card"><div class="card-icon">📡</div><div class="card-title">POPs/OLTs</div><div class="card-value">${top.pop.length}</div></div>
+  <div class="card"><div class="card-icon">🟢</div><div class="card-title">Hosts UP</div><div class="card-value" style="color:#4ade80">${z.stats?.hostsOk||0}</div></div>
+  <div class="card"><div class="card-icon">🔌</div><div class="card-title">Hosts DOWN</div><div class="card-value" style="color:${(z.stats?.hostsDown||0)>0?'#f87171':'#4ade80'}">${z.stats?.hostsDown||0}</div></div>
+  </div>
+  <div class="section"><div class="section-header"><span class="section-title">🖥️ Equipamentos Core</span><span class="section-badge badge-info">Juniper+Mikrotik+A10</span></div><table><thead><tr><th>Equipamento</th><th>IP</th><th>Modelo</th><th>Função</th><th>Status</th></tr></thead><tbody>${coreHtml}</tbody></table></div>
+  <div class="two-col">
+  <div class="section"><div class="section-header"><span class="section-title">📡 POPs e OLTs</span></div><table><thead><tr><th>POP</th><th>Tipo</th><th>OLT</th><th>Tech</th></tr></thead><tbody>${popHtml}</tbody></table></div>
+  <div class="section"><div class="section-header"><span class="section-title">🚨 Alertas de OLT</span></div>${oltAlerts||'<div style="color:#4ade80">✅ Nenhuma OLT com alerta</div>'}</div>
+  </div>`;
 }
 
-load();
-setInterval(load, 60000);
+function rTopology(){
+  const top=TOPOLOGY;
+  let upHtml=top.upstreams.map(u=>`<div class="topo-node upstream"><span class="topo-name">AS${u.asn} — ${u.n}</span><span class="topo-info">${u.t.replace(/_/g,' ')}</span><span class="peer-type ${u.t.includes('transit')?'transit':u.t.includes('ix')?'ix':'upstream'}">${u.t}</span></div>`).join('');
+  let coreHtml=top.core.map(c=>`<div class="topo-node core"><span class="topo-name">${c.n}</span><span class="topo-info">${c.f} | ${c.ip} | ${c.m}</span></div>`).join('');
+  let popHtml=top.pop.map(p=>`<div class="topo-node pop"><span class="topo-name">${p.n}</span><span class="topo-info">OLT ${p.olt} | ${p.t}</span></div>`).join('');
+  return `<div class="section"><div class="section-header"><span class="section-title">🗺️ Topologia da Rede</span><span class="section-badge badge-info">AS264025</span></div>
+  <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">Hierarquia: Upstreams → Core → POPs/OLTs → CTOs → Clientes</div>
+  <div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600">🌐 UPLINKS / TRÂNSITO</div>${upHtml}
+  <div style="font-size:11px;color:#64748b;margin:10px 0 4px;font-weight:600">🖥️ CORE / BRAS</div>${coreHtml}
+  <div style="font-size:11px;color:#64748b;margin:10px 0 4px;font-weight:600">📡 POPS / OLTS</div>${popHtml}
+  </div>
+  <div class="section"><div class="section-header"><span class="section-title">⚠️ Pontos Únicos de Falha (SPOF)</span><span class="section-badge badge-warn">Análise</span></div>
+  <div class="alert-card high"><div class="alert-card-head"><span class="alert-card-title">⚠️ A10 CGNAT — SPOF</span></div><div class="alert-card-desc">Sem redundância. Falha do CGNAT afeta todos os clientes NAT.</div><div style="font-size:10px;color:#60a5fa;margin-top:4px;font-weight:600">→ Planejar CGNAT secundário</div></div>
+  <div class="alert-card med"><div class="alert-card-head"><span class="alert-card-title">⚠️ POPs sem roteador dedicado</span></div><div class="alert-card-desc">Canã, Ururaí, São José, Aurora, Nova Brasília, Travessão e Titan dependem do MX204 para uplink.</div><div style="font-size:10px;color:#60a5fa;margin-top:4px;font-weight:600">→ Avaliar caminhos alternativos</div></div>
+  </div>`;
+}
+
+function rPredictions(){
+  const preds=D.predictions||[],h=D.health||{},f=D.flow||{};
+  let pHtml=preds.length===0?'<div style="text-align:center;padding:30px;color:#4ade80;font-size:14px">✅ Nenhuma tendência de falha detectada<br><span style="font-size:11px;color:#64748b">Monitoramento contínuo ativo</span></div>':preds.map(p=>{const ic=p.severidade==='critico'?'🚨':p.severidade==='alto'?'⚠️':p.severidade==='atencao'?'📊':'ℹ️';return`<div class="prediction ${p.severidade}"><div class="pred-icon">${ic}</div><div class="pred-content"><div class="pred-title">${p.equipamento} <span class="pred-prob">${p.probabilidade}% risco</span></div><div class="pred-desc">${p.impacto_estimado}${p.idade?` (há ${p.idade})`:''}</div><div class="pred-action">→ ${p.acao}</div></div></div>`}).join('');
+  let capHtml='';
+  if(f.sources){capHtml=f.sources.map(s=>{const u=((s.rx||0)/100e9)*100;const d80=u>0&&u<80?Math.round((80-u)/(u*0.02)):null;const cls=u>80?'crit':u>60?'warn':'ok';const n=s.source.includes('CENTRO')?'MX204 Centro':s.source.includes('STA-ROSA')?'MX204 Sta Rosa':'A10 CGNAT';return`<tr><td>${n}</td><td style="color:${u>80?'#f87171':u>60?'#fbbf24':'#4ade80'}">${u.toFixed(1)}%</td><td>${s.rx_fmt||'--'}</td><td>${d80?d80+' dias':u>=80?'SATURADO':'--'}</td><td><span class="badge badge-${cls}">${u>80?'Crítico':u>60?'Atenção':'OK'}</span></td></tr>`}).join('')}
+  return `<div class="grid">
+  <div class="card"><div class="card-icon">🔮</div><div class="card-title">Previsões</div><div class="card-value" style="color:${preds.length>0?'#fbbf24':'#4ade80'}">${preds.length}</div></div>
+  <div class="card"><div class="card-icon">📊</div><div class="card-title">Health Score</div><div class="card-value" style="color:${h.score>=75?'#4ade80':h.score>=50?'#fbbf24':'#f87171'}">${h.score||'--'}</div><div class="card-sub">${h.status||'--'}</div></div>
+  <div class="card"><div class="card-icon">📈</div><div class="card-title">Risco Médio</div><div class="card-value" style="color:#fbbf24">${preds.length>0?Math.round(preds.reduce((s,p)=>s+p.probabilidade,0)/preds.length):0}%</div></div>
+  </div>
+  <div class="section"><div class="section-header"><span class="section-title">🔮 Análise Preditiva</span><span class="section-badge badge-${preds.length>0?'warn':'ok'}">${preds.length} previsões</span></div>${pHtml}</div>
+  <div class="section"><div class="section-header"><span class="section-title">📊 Capacidade — Saturação de Links</span></div><table><thead><tr><th>Enlace</th><th>Utilização</th><th>Tráfego</th><th>Estim. 80%</th><th>Status</th></tr></thead><tbody>${capHtml}</tbody></table><div style="font-size:10px;color:#64748b;margin-top:8px">ℹ️ Projeção assume crescimento ~2%/dia</div></div>`;
+}
+
+fetchData();
+setInterval(fetchData,60000);
 </script>
 </body>
 </html>

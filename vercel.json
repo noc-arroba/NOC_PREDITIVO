@@ -108,6 +108,14 @@
       "dest": "/public/cabos-pa-aurora.geojson"
     },
     {
+      "src": "/api/flow",
+      "dest": "/api/flow-proxy.js"
+    },
+    {
+      "src": "/api/executive",
+      "dest": "/api/executive.js"
+    },
+    {
       "src": "/",
       "dest": "/public/index.html"
     }
