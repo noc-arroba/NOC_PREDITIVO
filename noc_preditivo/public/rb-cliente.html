@@ -15,6 +15,19 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
 .btn:disabled{opacity:.5;cursor:wait}
 .container{max-width:1400px;margin:0 auto;padding:20px}
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.kpi-thresh-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.kpi-thresh{font-size:10px;padding:2px 6px;border-radius:4px}
+.kpi-thresh.good{background:#064e3b22;color:#4ade80}
+.kpi-thresh.warn{background:#78350f22;color:#fbbf24}
+.kpi-thresh.crit{background:#7f1d1d22;color:#f87171}
+
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
 .kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px}
 .kpi-card .label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600}
@@ -63,6 +76,10 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 </div>
 
 <div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="rbHealthScore" style="color:#fbbf24">--</div>
+    <div class="health-label" id="rbHealthLabel">Health Score / 100 — Carregando...</div>
+  </div>
   <div class="alert-warn">
     ⚠️ Este equipamento está em rede privada (100.65.0.0/10) e não é monitorado pelo Zabbix. O acesso SSH requer VPN ou rede interna ativa.
   </div>
@@ -142,26 +159,50 @@ ssh otia@100.65.0.116
 </div>
 
 <script>
-const ZABBIX_API = '/api/zabbix';
+const ZABBIX_URL = 'http://143.137.32.8:9090/zabbix/api_jsonrpc.php';
+const ZABBIX_TOKEN = 'b43086606cc8e30738c7fea7b2e4ffc2c7cc6c27d81c11832a13c96940d2bc71';
 
-async function zabbixCall(action) {
-  const res = await fetch(ZABBIX_API + (action.includes('?') ? action : '?action=' + action));
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return await res.json();
+async function zabbixCall(method, params) {
+  const res = await fetch(ZABBIX_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json-rpc','Authorization':'Bearer '+ZABBIX_TOKEN},
+    body: JSON.stringify({jsonrpc:'2.0',method,params,id:1})
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.data);
+  return data.result;
 }
 
+
+function updateRbHealth(score) {
+  const hs = document.getElementById('rbHealthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('rbHealthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
 async function carregar() {
   const btn = document.getElementById('btnRefresh');
   btn.disabled = true; btn.textContent = 'Carregando...';
 
   try {
     // Verificar se o RB está no Zabbix
-    const rbData = await zabbixCall('host&ip=100.65.0.116');
-    const rbHost = rbData.host;
+    const hosts = await zabbixCall('host.get', {
+      output: ['hostid','name','status'],
+      selectInterfaces: ['ip','available'],
+      filter: {status: 0}
+    });
+
+    const rbHost = hosts.find(h => {
+      return h.interfaces?.some(i => i.ip === '100.65.0.116');
+    });
 
     if (rbHost) {
       document.getElementById('kpiZabbix').innerHTML = '<span class="status-ok">MONITORADO</span>';
-      document.getElementById('kpiConn').innerHTML = rbHost.interfaces?.[0]?.available === '1' ?
+      const iface = rbHost.interfaces[0];
+      document.getElementById('kpiConn').innerHTML = iface.available === '1' ?
         '<span class="status-ok">ONLINE</span>' : '<span class="status-down">OFFLINE</span>';
       document.getElementById('diagVpn').innerHTML = '<span class="status-ok">VPN ATIVA</span>';
     } else {
@@ -171,10 +212,13 @@ async function carregar() {
     }
 
     // Verificar status da VPN (CCR Santa Rosa = 143.137.32.6)
-    const vpnData = await zabbixCall('host&ip=143.137.32.6');
+    const vpnHost = hosts.find(h => {
+      return h.interfaces?.some(i => i.ip === '143.137.32.6');
+    });
 
-    if (vpnData.host) {
-      if (vpnData.host.interfaces?.[0]?.available === '1') {
+    if (vpnHost) {
+      const vpnIface = vpnHost.interfaces[0];
+      if (vpnIface.available === '1') {
         document.getElementById('diagVpn').innerHTML = '<span class="status-ok">VPN ATIVA ✓</span>';
       } else {
         document.getElementById('diagVpn').innerHTML = '<span class="status-down">VPN CAÍDA ✗</span>';
