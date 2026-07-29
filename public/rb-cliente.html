@@ -15,6 +15,19 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
 .btn:disabled{opacity:.5;cursor:wait}
 .container{max-width:1400px;margin:0 auto;padding:20px}
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.kpi-thresh-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.kpi-thresh{font-size:10px;padding:2px 6px;border-radius:4px}
+.kpi-thresh.good{background:#064e3b22;color:#4ade80}
+.kpi-thresh.warn{background:#78350f22;color:#fbbf24}
+.kpi-thresh.crit{background:#7f1d1d22;color:#f87171}
+
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
 .kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px}
 .kpi-card .label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600}
@@ -63,6 +76,10 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 </div>
 
 <div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="rbHealthScore" style="color:#fbbf24">--</div>
+    <div class="health-label" id="rbHealthLabel">Health Score / 100 — Carregando...</div>
+  </div>
   <div class="alert-warn">
     ⚠️ Este equipamento está em rede privada (100.65.0.0/10) e não é monitorado pelo Zabbix. O acesso SSH requer VPN ou rede interna ativa.
   </div>
@@ -156,6 +173,16 @@ async function zabbixCall(method, params) {
   return data.result;
 }
 
+
+function updateRbHealth(score) {
+  const hs = document.getElementById('rbHealthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('rbHealthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
 async function carregar() {
   const btn = document.getElementById('btnRefresh');
   btn.disabled = true; btn.textContent = 'Carregando...';
