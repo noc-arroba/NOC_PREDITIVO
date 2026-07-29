@@ -3,404 +3,980 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOC Preditivo — BGP AS264025</title>
+<title>NOC Preditivo — Arroba Banda Larga</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a0e1a; color: #e0e0e0; }
-.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 30px; border-bottom: 1px solid #1e293b; }
-.header h1 { font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 10px; }
-.header .asn { font-size: 14px; color: #64748b; margin-top: 4px; }
-.header .fase { background: #1e40af; color: #dbeafe; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
-.card-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.card-value { font-size: 32px; font-weight: 700; color: #f8fafc; }
-.card-sub { font-size: 12px; color: #475569; margin-top: 4px; }
-.score-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 10px; overflow: hidden; }
-.score-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
-.section-title { font-size: 16px; color: #94a3b8; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; }
-td { padding: 10px 12px; border-bottom: 1px solid #111827; color: #cbd5e1; }
-tr:hover { background: #0f172a; }
-.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.badge-ok { background: #064e3b; color: #6ee7b7; }
-.badge-hijack { background: #7f1d1d; color: #fca5a5; }
-.badge-nao { background: #78350f; color: #fcd34d; }
-.badge-erro { background: #1e1b4b; color: #c4b5fd; }
-.badge-parcial { background: #78350f; color: #fcd34d; }
-.badge-baixa { background: #7f1d1d; color: #fca5a5; }
-.badge-upstream { background: #1e3a5f; color: #93c5fd; }
-.badge-transit { background: #312e81; color: #a5b4fc; }
-.badge-ix { background: #164e63; color: #67e8f9; }
-.badge-peer { background: #064e3b; color: #6ee7b7; }
-.badge-alert { background: #7f1d1d; color: #fca5a5; animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e0e0;overflow-x:hidden}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:16px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
+.header h1{font-size:20px;color:#f8fafc;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:2px}
+.nav{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;flex-wrap:wrap}
+.nav a{background:transparent;border:none;color:#94a3b8;text-decoration:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;transition:all .2s;cursor:pointer;white-space:nowrap}
+.nav a:hover{background:#1e293b;color:#f8fafc}
+.nav a.active{background:#1e40af;color:#dbeafe}
+.container{max-width:1500px;margin:0 auto;padding:16px}
+/* Health Banner */
+.health-banner{border-radius:14px;padding:24px;text-align:center;margin-bottom:16px;border:1px solid;transition:all .3s;position:relative;overflow:hidden}
 .health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
 .health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
 .health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
-.health-score{font-size:48px;font-weight:800;line-height:1}
-.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
-.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
-.stat-val{font-size:28px;font-weight:800}
-.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
-.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
-.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
-.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
-.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
-.alert-ev-icon{font-size:18px;flex-shrink:0}
-.alert-ev-content{flex:1}
-.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
-.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
-.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
-.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
-
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media(max-width:768px) { 
-.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b;transition:all .3s}
-.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
-.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
-.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
-.health-score{font-size:48px;font-weight:800;line-height:1}
-.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
-.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
-.stat-val{font-size:28px;font-weight:800}
-.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
-.alert-evidence{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
-.alert-evidence.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
-.alert-evidence.warning{background:#78350f22;border-left:3px solid #f59e0b}
-.alert-evidence.ok{background:#064e3b22;border-left:3px solid #10b981}
-.alert-ev-icon{font-size:18px;flex-shrink:0}
-.alert-ev-content{flex:1}
-.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
-.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
-.kpi-thresh{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;margin:2px}
-.kpi-thresh.good{color:#4ade80}.kpi-thresh.warn{color:#fbbf24}.kpi-thresh.crit{color:#f87171}
-
-.two-col { grid-template-columns: 1fr; } }
-.loading { text-align: center; padding: 60px; color: #475569; }
-.spinner { border: 3px solid #1e293b; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.peer-power-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 100px; display: inline-block; vertical-align: middle; margin-left: 8px; }
-.peer-power-fill { height: 100%; background: #3b82f6; border-radius: 3px; }
-.mtr-target { display: inline-block; background: #1e293b; padding: 6px 14px; border-radius: 8px; margin: 4px; font-size: 12px; }
-.mtr-target code { color: #67e8f9; }
-.footer { text-align: center; padding: 30px; color: #334155; font-size: 12px; }
-#alertas { margin-bottom: 20px; }
-.alert-box { background: #7f1d1d; border: 1px solid #991b1b; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-.alert-box.atencao { background: #78350f; border-color: #92400e; }
-.alert-icon { font-size: 20px; }
-.expand-row { cursor: pointer; }
-.expand-row:hover { background: #0f172a; }
-.sub-row { display: none; }
-.sub-row.show { display: table-row; }
-.sub-row td { padding: 0; border: none; background: #0a0e1a; }
-.sub-detail { padding: 12px 20px 16px 48px !important; }
-.peer-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #111827; border: 1px solid #1e293b; border-radius: 8px; margin-bottom: 8px; }
-.peer-card .asn { font-family: monospace; color: #93c5fd; font-weight: 600; min-width: 100px; }
-.peer-card .holder { color: #cbd5e1; flex: 1; font-size: 12px; }
-.peer-card .ip { color: #64748b; font-family: monospace; font-size: 11px; }
-.peer-card .rrcs { color: #67e8f9; font-size: 11px; }
-.peer-card .pfx { color: #475569; font-size: 11px; }
-.expand-icon { color: #475569; font-size: 14px; transition: transform 0.2s; }
-.expand-icon.open { transform: rotate(90deg); }
-.vis-pct-bar { height: 6px; background: #1e293b; border-radius: 3px; width: 80px; display: inline-block; vertical-align: middle; }
-.vis-pct-fill { height: 100%; border-radius: 3px; }
+.health-score{font-size:56px;font-weight:800;line-height:1}
+.health-status{font-size:14px;font-weight:600;margin-top:4px;letter-spacing:1px}
+.health-label{font-size:12px;color:#94a3b8;margin-top:8px}
+.health-factors{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.health-factor{background:#ffffff11;padding:4px 10px;border-radius:6px;font-size:11px}
+.health-factor.neg{color:#f87171}
+.health-factor.pos{color:#4ade80}
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px;transition:all .2s}
+.card:hover{border-color:#334155}
+.card-title{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.card-value{font-size:28px;font-weight:700;color:#f8fafc}
+.card-sub{font-size:11px;color:#475569;margin-top:4px}
+.card-icon{font-size:20px;float:right;opacity:.5}
+/* Two columns */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:900px){.three-col{grid-template-columns:1fr}}
+/* Section */
+.section{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-bottom:16px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #1e293b}
+.section-title{font-size:15px;color:#f8fafc;font-weight:600;display:flex;align-items:center;gap:8px}
+.section-badge{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+td{padding:8px 10px;border-bottom:1px solid #111827;color:#cbd5e1}
+tr:hover{background:#0f172a}
+/* Badges */
+.badge{padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;display:inline-block}
+.badge-ok{background:#064e3b;color:#6ee7b7}
+.badge-warn{background:#78350f;color:#fcd34d}
+.badge-crit{background:#7f1d1d;color:#fca5a5}
+.badge-info{background:#1e3a5f;color:#93c5fd}
+.badge-down{background:#7f1d1d;color:#fca5a5}
+.badge-up{background:#064e3b;color:#6ee7b7}
+/* Alert cards */
+.alert-card{border-radius:8px;padding:14px;margin-bottom:8px;border-left:3px solid}
+.alert-card.crit{background:#7f1d1d22;border-color:#ef4444}
+.alert-card.high{background:#78350f22;border-color:#f97316}
+.alert-card.med{background:#78350f22;border-color:#fbbf24}
+.alert-card.info{background:#1e3a5f22;border-color:#3b82f6}
+.alert-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.alert-card-title{font-weight:700;font-size:13px;color:#e2e8f0}
+.alert-card-meta{font-size:11px;color:#64748b}
+.alert-card-desc{font-size:12px;color:#94a3b8;margin-top:4px}
+.alert-card-action{font-size:11px;color:#60a5fa;margin-top:6px;font-weight:600}
+/* Prediction */
+.prediction{border-radius:8px;padding:14px;margin-bottom:8px;border-left:3px solid;display:flex;gap:12px}
+.prediction.critico{background:#7f1d1d22;border-color:#ef4444}
+.prediction.alto{background:#78350f22;border-color:#f97316}
+.prediction.atencao{background:#78350f22;border-color:#fbbf24}
+.prediction.informativo{background:#1e3a5f22;border-color:#3b82f6}
+.pred-icon{font-size:24px;flex-shrink:0}
+.pred-content{flex:1}
+.pred-title{font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:2px}
+.pred-desc{font-size:12px;color:#94a3b8}
+.pred-action{font-size:11px;color:#60a5fa;margin-top:4px;font-weight:600}
+.pred-prob{font-size:11px;color:#fbbf24;font-weight:600;float:right}
+/* Topology tree */
+.topo-node{padding:10px 14px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.topo-node.core{border-left:3px solid #3b82f6}
+.topo-node.pop{border-left:3px solid #10b981}
+.topo-node.upstream{border-left:3px solid #a78bfa}
+.topo-name{font-weight:600;font-size:13px;color:#f8fafc;min-width:180px}
+.topo-info{font-size:11px;color:#64748b;flex:1}
+.topo-status{font-size:11px;padding:2px 8px;border-radius:6px}
+/* Loading */
+.loading{text-align:center;padding:60px;color:#475569}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Traffic bar */
+.traffic-bar{height:6px;background:#1e293b;border-radius:3px;margin-top:6px;overflow:hidden}
+.traffic-fill{height:100%;border-radius:3px;transition:width .5s}
+/* Ping result */
+.ping-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #111827}
+.ping-target{font-size:12px;color:#cbd5e1;min-width:160px}
+.ping-ip{font-size:11px;color:#64748b;font-family:monospace;min-width:120px}
+.ping-rtt{font-size:13px;font-weight:700;min-width:80px}
+.ping-loss{font-size:11px;min-width:60px}
+.ping-status{font-size:11px;padding:2px 6px;border-radius:4px;font-weight:600}
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid #1e293b}
+.tab{padding:8px 16px;font-size:12px;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:#f8fafc}
+.tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* Footer */
+.footer{text-align:center;padding:24px;color:#334155;font-size:11px}
+/* Pulse animation */
+.pulse{animation:pulse-anim 2s infinite}
+@keyframes pulse-anim{0%,100%{opacity:1}50%{opacity:.5}}
+/* BGP peers */
+.peer-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #111827;font-size:12px}
+.peer-asn{font-family:monospace;color:#93c5fd;font-weight:600;min-width:80px}
+.peer-name{color:#cbd5e1;flex:1}
+.peer-type{font-size:10px;padding:2px 6px;border-radius:4px}
+.peer-type.upstream{background:#1e3a5f;color:#93c5fd}
+.peer-type.transit{background:#312e81;color:#a5b4fc}
+.peer-type.ix{background:#164e63;color:#67e8f9}
 </style>
 </head>
 <body>
 <div class="header">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-    <div>
-      <h1>🛰️ NOC Preditivo <span class="fase">Fase 1</span></h1>
-      <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
-    </div>
-    <div style="display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;">
-      <a href="index.html" class="btn" style="background:#1e40af;border:none;color:#dbeafe;text-decoration:none;font-weight:600;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Dashboard BGP</a>
-      <a href="config.html" class="btn" style="background:transparent;border:none;color:#fdba74;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">⚙️ Config VPN/SNMP</a>
-      <a href="security.html" class="btn" style="background:transparent;border:none;color:#fca5a5;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🛡️ Segurança</a>
-      <a href="zabbix.html" class="btn" style="background:transparent;border:none;color:#67e8f9;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Zabbix</a>
-      <a href="network-monitor.html" class="btn" style="background:transparent;border:none;color:#34d399;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📊 Net Monitor</a>
-      <a href="evidence-report.html" class="btn" style="background:transparent;border:none;color:#f87171;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🔍 Evidência</a>
-      <a href="flow.html" class="btn" style="background:transparent;border:none;color:#22d3ee;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🌊 Flow</a>
-      <a href="bgp-centro.html" class="btn" style="background:transparent;border:none;color:#93c5fd;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 BGP-Centro</a>
-      <a href="vpn-l2tp.html" class="btn" style="background:transparent;border:none;color:#a5b4fc;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">🔐 VPN</a>
-      <a href="rb-cliente.html" class="btn" style="background:transparent;border:none;color:#c4b5fd;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;">📡 RB-Cliente</a>
-    </div>
+  <div>
+    <h1>🛰️ NOC Preditivo — Arroba Banda Larga</h1>
+    <div class="sub" id="header-sub">AS264025 | Transformando dados em previsões</div>
+  </div>
+  <div class="nav" id="nav">
+    <a class="active" onclick="switchTab('overview')">📊 Visão Geral</a>
+    <a onclick="switchTab('backbone')">🔗 Backbone</a>
+    <a onclick="switchTab('bgp')">🌐 BGP</a>
+    <a onclick="switchTab('clients')">👥 Clientes</a>
+    <a onclick="switchTab('equipment')">🖥️ Equipamentos</a>
+    <a onclick="switchTab('topology')">🗺️ Topologia</a>
+    <a onclick="switchTab('predictions')">🔮 Preditivo</a>
+    <a onclick="loadPage('zabbix.html')">📊 Zabbix</a>
+    <a onclick="loadPage('flow.html')">📈 Flow</a>
+    <a onclick="loadPage('evidence-report.html')">🔍 Evidência</a>
+    <a onclick="loadPage('sla.html')">⏱️ SLA</a>
   </div>
 </div>
 
-<div class="container">
-  <div id="loading" class="loading">
+<div class="container" id="dashboard">
+  <div class="loading" id="loading">
     <div class="spinner"></div>
-    <p>Coletando dados BGP do RIPE Stat...</p>
+    <div>Coletando dados de BGP, Zabbix, Flow e medições ativas...</div>
+    <div style="font-size:11px;margin-top:8px;color:#475569">Aguarde — cruzando fontes em tempo real</div>
   </div>
+</div>
 
-  <div id="content" style="display:none;">
-    <div class="health-banner" id="healthBanner">
-      <div class="health-score" id="healthScore" style="color:#fbbf24">--</div>
-      <div class="health-label" id="healthLabel">Health Score / 100 — Carregando...</div>
+<div class="footer">
+  NOC Preditivo v2.0 | Arroba Banda Larga | AS264025 | <span id="last-update">--</span>
+</div>
+
+<script>
+let DATA = null;
+let autoRefresh = null;
+
+async function loadData(includePing = false) {
+  const url = includePing ? '/api/executive?include_ping=1' : '/api/executive';
+  try {
+    const res = await fetch(url);
+    DATA = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('last-update').textContent = 'Última atualização: ' + new Date(DATA.timestamp).toLocaleString('pt-BR');
+    renderCurrentTab();
+  } catch (e) {
+    document.getElementById('loading').innerHTML = '<div style="color:#ef4444">Erro ao carregar dados: ' + e.message + '</div>';
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTab(tab);
+}
+
+function loadPage(page) {
+  window.location.href = page;
+}
+
+function renderCurrentTab() {
+  const active = document.querySelector('.nav a.active');
+  if (active) {
+    const tab = active.textContent.includes('Visão') ? 'overview' :
+                active.textContent.includes('Backbone') ? 'backbone' :
+                active.textContent.includes('BGP') ? 'bgp' :
+                active.textContent.includes('Cliente') ? 'clients' :
+                active.textContent.includes('Equipamento') ? 'equipment' :
+                active.textContent.includes('Topologia') ? 'topology' :
+                active.textContent.includes('Preditivo') ? 'predictions' : 'overview';
+    renderTab(tab);
+  }
+}
+
+function fmtBps(bps) {
+  if (bps >= 1e9) return (bps/1e9).toFixed(1)+' Gbps';
+  if (bps >= 1e6) return (bps/1e6).toFixed(1)+' Mbps';
+  if (bps >= 1e3) return (bps/1e3).toFixed(1)+' Kbps';
+  return bps+' bps';
+}
+
+function renderTab(tab) {
+  const d = document.getElementById('dashboard');
+  if (!DATA) return;
+
+  if (tab === 'overview') d.innerHTML = renderOverview();
+  else if (tab === 'backbone') d.innerHTML = renderBackbone();
+  else if (tab === 'bgp') d.innerHTML = renderBGP();
+  else if (tab === 'clients') d.innerHTML = renderClients();
+  else if (tab === 'equipment') d.innerHTML = renderEquipment();
+  else if (tab === 'topology') d.innerHTML = renderTopology();
+  else if (tab === 'predictions') d.innerHTML = renderPredictions();
+
+  // Carregar ping se tab for overview ou backbone
+  if ((tab === 'overview' || tab === 'backbone') && !DATA.measurements) {
+    loadPingData();
+  }
+}
+
+async function loadPingData() {
+  try {
+    const res = await fetch('/api/executive?include_ping=1&nocache=1');
+    const pingData = await res.json();
+    if (pingData.measurements) {
+      DATA.measurements = pingData.measurements;
+      // Atualizar health score com ping
+      if (pingData.health) DATA.health = pingData.health;
+      renderCurrentTab();
+    }
+  } catch {}
+}
+
+// === VISÃO GERAL ===
+function renderOverview() {
+  const h = DATA.health || {};
+  const z = DATA.zabbix || {};
+  const b = DATA.bgp || {};
+  const f = DATA.flow || {};
+  const m = DATA.measurements;
+  const alerts = DATA.alerts || [];
+  const preds = DATA.predictions || [];
+
+  const healthClass = h.score >= 75 ? 'ok' : h.score >= 50 ? 'warn' : 'crit';
+  const healthColor = h.score >= 75 ? '#10b981' : h.score >= 50 ? '#f59e0b' : '#ef4444';
+
+  let factorsHtml = '';
+  if (h.factors && h.factors.length > 0) {
+    factorsHtml = h.factors.map(f => `<span class="health-factor neg">${f.area}: ${f.reason} (${f.impact})</span>`).join('');
+  } else {
+    factorsHtml = '<span class="health-factor pos">Todos os sistemas operacionais</span>';
+  }
+
+  // Alertas
+  let alertsHtml = '';
+  for (const a of alerts) {
+    const cls = a.level === 'critico' ? 'crit' : a.level === 'alto' ? 'high' : a.level === 'medio' ? 'med' : 'info';
+    const items = (a.items || []).map(i => `
+      <div class="alert-card ${cls}" style="margin-bottom:4px">
+        <div class="alert-card-head">
+          <span class="alert-card-title">${i.host}</span>
+          <span class="alert-card-meta">${i.age || ''}</span>
+        </div>
+        <div class="alert-card-desc">${i.description}</div>
+      </div>`).join('');
+    alertsHtml += `<div class="section" style="margin-bottom:8px">
+      <div class="section-header">
+        <span class="section-title">${a.level === 'critico' ? '🔴' : a.level === 'alto' ? '🟠' : '🟡'} ${a.count} Alertas ${a.level.toUpperCase()}</span>
+      </div>
+      ${items}
+    </div>`;
+  }
+  if (!alertsHtml) alertsHtml = '<div class="section"><div style="color:#4ade80;font-size:14px">✅ Nenhum alerta ativo</div></div>';
+
+  // Medições ativas
+  let pingHtml = '';
+  if (m && m.results) {
+    pingHtml = m.results.map(r => {
+      const lossOk = r.loss_pct < 10;
+      const lossWarn = r.loss_pct >= 10 && r.loss_pct < 50;
+      const lossCrit = r.loss_pct >= 50;
+      const rttOk = r.rtt_avg < 50;
+      const rttWarn = r.rtt_avg >= 50 && r.rtt_avg < 150;
+      const status = r.error ? 'ERR' : lossCrit ? 'CRÍTICO' : lossWarn ? 'ATENÇÃO' : 'OK';
+      const cls = r.error ? 'crit' : lossCrit ? 'crit' : lossWarn ? 'warn' : 'ok';
+      const rttColor = r.error ? '#64748b' : rttOk ? '#4ade80' : rttWarn ? '#fbbf24' : '#f87171';
+      return `<div class="ping-row">
+        <span class="ping-target">${r.name}</span>
+        <span class="ping-ip">${r.ip}</span>
+        <span class="ping-rtt" style="color:${rttColor}">${r.error ? '--' : r.rtt_avg + 'ms'}</span>
+        <span class="ping-loss">${r.error ? '--' : r.loss_pct + '% loss'}</span>
+        <span class="badge badge-${cls}">${status}</span>
+      </div>`;
+    }).join('');
+  } else {
+    pingHtml = '<div style="padding:12px;color:#64748b;font-size:12px">⏳ Executando medições ativas (ping via Flow server)...</div>';
+  }
+
+  // Predições resumidas
+  let predHtml = '';
+  if (preds.length > 0) {
+    predHtml = preds.slice(0, 3).map(p => `
+      <div class="prediction ${p.severidade}">
+        <div class="pred-icon">${p.severidade === 'critico' ? '🚨' : p.severidade === 'alto' ? '⚠️' : '📊'}</div>
+        <div class="pred-content">
+          <div class="pred-title">${p.equipamento} <span class="pred-prob">${p.probabilidade}% risco</span></div>
+          <div class="pred-desc">${p.impacto_estimado}</div>
+          <div class="pred-action">→ ${p.acao}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    predHtml = '<div style="color:#4ade80;padding:12px;font-size:13px">✅ Nenhuma tendência de falha detectada</div>';
+  }
+
+  // Tráfego
+  let trafficHtml = '';
+  if (f && f.sources) {
+    trafficHtml = f.sources.map(s => {
+      const pct = s.rx > 0 ? Math.min(100, (s.rx / 100e9) * 100) : 0;
+      const color = pct > 80 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#10b981';
+      const srcName = s.source.includes('CENTRO') ? 'MX204 Centro' : s.source.includes('STA-ROSA') ? 'MX204 Sta Rosa' : s.source.includes('CGNAT') ? 'A10 CGNAT' : s.source;
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">
+          <span>${srcName}</span>
+          <span style="font-weight:600">${s.rx_fmt || fmtBps(s.rx||0)} ↓ ${s.tx_fmt || fmtBps(s.tx||0)} ↑</span>
+        </div>
+        <div class="traffic-bar"><div class="traffic-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  return `
+    <div class="health-banner ${healthClass}">
+      <div class="health-score" style="color:${healthColor}">${h.score || '--'}</div>
+      <div class="health-status" style="color:${healthColor}">${h.status || 'Carregando...'}</div>
+      <div class="health-label">Health Score / 100 — AS264025 Arroba Banda Larga</div>
+      <div class="health-factors">${factorsHtml}</div>
     </div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-val" id="statPrefixos" style="color:#4ade80">--</div><div class="stat-lbl">Prefixos OK</div></div>
-      <div class="stat-card"><div class="stat-val" id="statPeers" style="color:#60a5fa">--</div><div class="stat-lbl">Peers BGP</div></div>
-      <div class="stat-card"><div class="stat-val" id="statAlertas" style="color:#fbbf24">--</div><div class="stat-lbl">Alertas Ativos</div></div>
-      <div class="stat-card"><div class="stat-val" id="statScore" style="color:#4ade80">--</div><div class="stat-lbl">RIPE Score</div></div>
-    </div>
-    <div id="alertas"></div>
 
     <div class="grid">
       <div class="card">
-        <div class="card-title">Score BGP</div>
-        <div class="card-value" id="score">--</div>
-        <div class="score-bar"><div class="score-fill" id="score-bar" style="width:0%; background:#3b82f6;"></div></div>
+        <div class="card-icon">🖥️</div>
+        <div class="card-title">Hosts Monitorados</div>
+        <div class="card-value">${z.totalHosts || 0}</div>
+        <div class="card-sub">${z.hostsOk || 0} OK · ${z.hostsDown || 0} DOWN</div>
       </div>
       <div class="card">
-        <div class="card-title">Prefixos Ativos</div>
-        <div class="card-value" id="prefixos-ok">--</div>
-        <div class="card-sub" id="prefixos-total">de --</div>
+        <div class="card-icon">🔔</div>
+        <div class="card-title">Alertas Ativos</div>
+        <div class="card-value" style="color:${(z.totalTriggers||0) > 5 ? '#f87171' : '#fbbf24'}">${z.totalTriggers || 0}</div>
+        <div class="card-sub">${(z.triggers||[]).filter(t=>t.severity>=4).length} críticos</div>
       </div>
       <div class="card">
+        <div class="card-icon">🌐</div>
         <div class="card-title">Peers BGP</div>
-        <div class="card-value" id="peers-count">--</div>
-        <div class="card-sub" id="peers-detail">-- upstreams</div>
+        <div class="card-value" style="color:#4ade80">${b.active_peers || b.total_peers || 0}</div>
+        <div class="card-sub">${b.announced_prefixes || 22} prefixos</div>
       </div>
       <div class="card">
-        <div class="card-title">Alertas</div>
-        <div class="card-value" id="alertas-count">--</div>
-        <div class="card-sub" id="alertas-detail">--</div>
+        <div class="card-icon">📈</div>
+        <div class="card-title">Tráfego Total</div>
+        <div class="card-value" style="color:#67e8f9">${f.total_rx_fmt || '--'}</div>
+        <div class="card-sub">${f.total_tx_fmt || '--'} TX</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔮</div>
+        <div class="card-title">Previsões</div>
+        <div class="card-value" style="color:${preds.length > 0 ? '#fbbf24' : '#4ade80'}">${preds.length}</div>
+        <div class="card-sub">tendências ativas</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Medições Ativas</div>
+        <div class="card-value" style="color:${m && m.results ? '#4ade80' : '#64748b'}">${m && m.results ? m.results.length : '--'}</div>
+        <div class="card-sub">alvos de ping ativos</div>
       </div>
     </div>
 
     <div class="two-col">
-      <div>
-        <div class="section-title">📡 Prefixos Anunciados</div>
-        <table>
-          <thead>
-            <tr><th>Prefixo</th><th>Tipo</th><th>Origin AS</th><th>Status</th></tr>
-          </thead>
-          <tbody id="prefixos-table"></tbody>
-        </table>
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">🚨 Alertas Inteligentes</span>
+          <span class="section-badge badge-${alerts.length > 0 ? 'crit' : 'ok'}">${alerts.reduce((s,a)=>s+a.count,0)} ativos</span>
+        </div>
+        ${alertsHtml}
       </div>
-      <div>
-        <div class="section-title">🔗 Peers BGP (Vizinhos)</div>
-        <table>
-          <thead>
-            <tr><th>ASN</th><th>Nome</th><th>Tipo</th><th>Power</th></tr>
-          </thead>
-          <tbody id="peers-table"></tbody>
-        </table>
+
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">📊 Tráfego em Tempo Real</span>
+          <span class="section-badge badge-info">${(f.sources||[]).length} fontes</span>
+        </div>
+        ${trafficHtml || '<div style="color:#64748b">Carregando...</div>'}
       </div>
     </div>
 
-    <div class="section-title">👁️ Visibilidade Global (RIPE RIS) — clique para ver peers que não recebem</div>
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>Prefixo</th>
-          <th>RRCs Visíveis</th>
-          <th>Visibilidade</th>
-          <th>Peers c/ Problema</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="vis-table"></tbody>
-    </table>
+    <div class="two-col">
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">⚡ Medições Ativas (Ping via RB/Flow)</span>
+          <span class="section-badge badge-${m && m.results && m.results.some(r=>r.loss_pct>=50) ? 'crit' : 'ok'}">Live</span>
+        </div>
+        ${pingHtml}
+      </div>
 
-    <div class="section-title">🛣️ Targets MTR (Fase 2 — via VPN/Sandbox)</div>
-    <div id="mtr-targets"></div>
-
-    <div class="footer">
-      NOC Preditivo — AS264025 Arroba Banda Larga | Dados: RIPE Stat API | Atualização: <span id="last-update">--</span>
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">🔮 Análise Preditiva</span>
+          <span class="section-badge badge-${preds.length > 0 ? 'warn' : 'ok'}">${preds.length} previsões</span>
+        </div>
+        ${predHtml}
+      </div>
     </div>
-  </div>
-</div>
-
-<script>
-function badge(status) {
-  const map = {
-    'ok': ['badge-ok', 'OK'],
-    'HIJACK': ['badge-hijack', 'HIJACK'],
-    'nao_anunciado': ['badge-nao', 'NAO ANUNCIADO'],
-    'terceiro': ['badge-nao', 'TERCEIRO'],
-    'parcial': ['badge-parcial', 'PARCIAL'],
-    'baixa': ['badge-baixa', 'BAIXA'],
-    'erro': ['badge-erro', 'ERRO']
-  };
-  const [cls, txt] = map[status] || ['badge-erro', status];
-  return `<span class="badge ${cls}">${txt}</span>`;
+  `;
 }
 
-function peerBadge(tipo) {
-  const map = {
-    'upstream_nacional': ['badge-upstream', 'Upstream'],
-    'transit_internacional': ['badge-transit', 'Transit'],
-    'ix_ptt': ['badge-ix', 'IX/PTT'],
-    'peer_regional': ['badge-peer', 'Peer']
-  };
-  const [cls, txt] = map[tipo] || ['badge-erro', tipo];
-  return `<span class="badge ${cls}">${txt}</span>`;
-}
+// === BACKBONE ===
+function renderBackbone() {
+  const f = DATA.flow || {};
+  const z = DATA.zabbix || {};
+  const m = DATA.measurements;
 
-function toggleVis(idx) {
-  const row = document.getElementById('vis-detail-' + idx);
-  const icon = document.getElementById('vis-icon-' + idx);
-  if (row) {
-    row.classList.toggle('show');
-    if (icon) icon.classList.toggle('open');
-  }
-}
-
-async function load() {
-  try {
-    const res = await fetch('/api/bgp');
-    const data = await res.json();
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-
-    document.getElementById('asn-info').textContent =
-      `AS${data.asn} — ${data.overview.holder || 'Arroba Banda Larga'} | ${data.fase}`;
-
-    const score = data.score_bgp;
-    // Health Score
-    const healthBGP = calcHealthBGP(data);
-    updateHealth(healthBGP, data.alertas.length);
-    document.getElementById('statPrefixos').textContent = data.stats.prefixos_ok;
-    document.getElementById('statPeers').textContent = data.stats.peers || '--';
-    document.getElementById('statAlertas').textContent = data.alertas.length;
-    document.getElementById('statScore').textContent = score;
-    renderAlertasComEvidencia(data.alertas);
-    document.getElementById('score').textContent = score;
-    document.getElementById('score-bar').style.width = score + '%';
-    document.getElementById('score-bar').style.background =
-      score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
-
-    document.getElementById('prefixos-ok').textContent = data.stats.prefixos_ok;
-    document.getElementById('prefixos-total').textContent =
-      `de ${data.stats.total_prefixos} | ${data.stats.prefixos_hijack} hijack | ${data.stats.prefixos_nao_anunciado} nao anunciados`;
-
-    document.getElementById('peers-count').textContent = data.stats.total_peers;
-    document.getElementById('peers-detail').textContent =
-      `${data.stats.peers_upstream} upstreams | ${data.stats.peers_transit} transit | ${data.stats.peers_ix} IX`;
-
-    document.getElementById('alertas-count').textContent = data.alertas.length;
-    document.getElementById('alertas-detail').textContent =
-      data.alertas.length === 0 ? 'Nenhum alerta' : data.alertas.map(a => a.msg).join('; ');
-
-    const alertasHtml = data.alertas.map(a =>
-      `<div class="alert-box ${a.severity === 'atencao' ? 'atencao' : ''}">
-        <span class="alert-icon">${a.severity === 'critico' ? '🔴' : '🟡'}</span>
-        <span>${a.msg}</span>
-      </div>`
-    ).join('');
-    document.getElementById('alertas').innerHTML = alertasHtml;
-
-    document.getElementById('prefixos-table').innerHTML = data.prefixos.map(p =>
-      `<tr>
-        <td style="font-family:monospace">${p.prefix}</td>
-        <td>${p.tipo}</td>
-        <td>${p.origin_asn ? 'AS' + p.origin_asn : '--'}</td>
-        <td>${badge(p.status)}</td>
-      </tr>`
-    ).join('');
-
-    document.getElementById('peers-table').innerHTML = data.peers.map(p => {
-      const maxPower = Math.max(...data.peers.map(x => x.power));
-      const pct = maxPower > 0 ? (p.power / maxPower * 100) : 0;
-      return `<tr>
-        <td style="font-family:monospace">AS${p.asn}</td>
-        <td>${p.nome}</td>
-        <td>${peerBadge(p.tipo)}</td>
-        <td>${p.power} <span class="peer-power-bar"><span class="peer-power-fill" style="width:${pct}%"></span></span></td>
-      </tr>`;
+  let trafficHtml = '';
+  if (f && f.sources) {
+    trafficHtml = f.sources.map(s => {
+      const pct = s.rx > 0 ? Math.min(100, (s.rx / 100e9) * 100) : 0;
+      const color = pct > 80 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#10b981';
+      const srcName = s.source.includes('CENTRO') ? 'MX204 Centro (BRAS01)' : s.source.includes('STA-ROSA') ? 'MX204 Sta Rosa (BRAS02)' : s.source.includes('CGNAT') ? 'A10 CGNAT' : s.source;
+      return `<div style="margin-bottom:12px;padding:12px;background:#0f172a;border-radius:8px;border:1px solid #1e293b">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:13px;font-weight:600">${srcName}</span>
+          <span style="font-size:12px;color:#67e8f9;font-weight:600">${s.rx_fmt || '--'} ↓ | ${s.tx_fmt || '--'} ↑</span>
+        </div>
+        <div class="traffic-bar" style="height:8px"><div class="traffic-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div style="font-size:10px;color:#64748b;margin-top:4px">Utilização: ${pct.toFixed(1)}% do link 100G</div>
+      </div>`;
     }).join('');
+  }
 
-    // Tabela de visibilidade com expansão
-    document.getElementById('vis-table').innerHTML = data.visibilidade.map((v, idx) => {
-      const hasDetail = v.peers_nao_vendo > 0;
-      const pctColor = v.visibilidade_pct >= 90 ? '#10b981' : v.visibilidade_pct >= 70 ? '#f59e0b' : '#ef4444';
-      let html = `<tr class="expand-row" ${hasDetail ? `onclick="toggleVis(${idx})"` : ''}>
-        <td>${hasDetail ? `<span class="expand-icon" id="vis-icon-${idx}">▶</span>` : ''}</td>
-        <td style="font-family:monospace">${v.prefix}</td>
-        <td>${v.rrcs_visible}/${v.rrcs_total}</td>
-        <td>${v.visibilidade_pct}% <span class="vis-pct-bar"><span class="vis-pct-fill" style="width:${v.visibilidade_pct}%;background:${pctColor}"></span></span></td>
-        <td>${v.peers_nao_vendo || 0}</td>
-        <td>${badge(v.status)}</td>
+  // Ping detalhado
+  let pingHtml = '';
+  if (m && m.results) {
+    pingHtml = `<table><thead><tr><th>Alvo</th><th>IP</th><th>RTT Avg</th><th>RTT Min</th><th>RTT Max</th><th>Jitter</th><th>Perda</th><th>Status</th></tr></thead><tbody>`;
+    for (const r of m.results) {
+      const status = r.error ? 'ERR' : r.loss_pct >= 50 ? 'CRÍTICO' : r.loss_pct >= 10 ? 'ATENÇÃO' : 'OK';
+      const cls = r.error ? 'crit' : r.loss_pct >= 50 ? 'crit' : r.loss_pct >= 10 ? 'warn' : 'ok';
+      pingHtml += `<tr>
+        <td>${r.name}</td><td style="font-family:monospace;font-size:11px">${r.ip}</td>
+        <td style="color:${r.rtt_avg < 50 ? '#4ade80' : r.rtt_avg < 150 ? '#fbbf24' : '#f87171'}">${r.error ? '--' : r.rtt_avg + 'ms'}</td>
+        <td>${r.error ? '--' : r.rtt_min + 'ms'}</td>
+        <td>${r.error ? '--' : r.rtt_max + 'ms'}</td>
+        <td>${r.error ? '--' : r.jitter + 'ms'}</td>
+        <td style="color:${r.loss_pct === 0 ? '#4ade80' : r.loss_pct < 50 ? '#fbbf24' : '#f87171'}">${r.error ? '--' : r.loss_pct + '%'}</td>
+        <td><span class="badge badge-${cls}">${status}</span></td>
       </tr>`;
+    }
+    pingHtml += '</tbody></table>';
+  } else {
+    pingHtml = '<div style="padding:12px;color:#64748b">⏳ Executando medições...</div>';
+  }
 
-      if (hasDetail) {
-        const detalhe = (v.peers_nao_vendo_detalhe || []).map(p => `
-          <div class="peer-card">
-            <span class="asn">AS${p.asn}</span>
-            <span class="holder">${p.holder}</span>
-            <span class="ip">IP: ${p.ip}</span>
-            <span class="rrcs">RRCs: ${p.rrcs.join(', ')}</span>
-            <span class="pfx">tabela: ${p.prefix_count.toLocaleString()} pfx</span>
+  // Alertas de backbone
+  const backboneTriggers = (z.triggers || []).filter(t => {
+    const h = t.host.toUpperCase();
+    return h.includes('MX') || h.includes('CCR') || h.includes('BGP') || h.includes('OLT') || h.includes('ENERGIA');
+  });
+  let bbAlertsHtml = '';
+  if (backboneTriggers.length > 0) {
+    bbAlertsHtml = backboneTriggers.map(t => {
+      const cls = t.severity >= 4 ? 'crit' : t.severity === 3 ? 'high' : 'med';
+      return `<div class="alert-card ${cls}">
+        <div class="alert-card-head">
+          <span class="alert-card-title">${t.host}</span>
+          <span class="alert-card-meta">${t.ageTxt}</span>
+        </div>
+        <div class="alert-card-desc">${t.description}</div>
+      </div>`;
+    }).join('');
+  } else {
+    bbAlertsHtml = '<div style="color:#4ade80;font-size:13px">✅ Backbone sem alertas</div>';
+  }
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Tráfego RX Total</div>
+        <div class="card-value" style="color:#67e8f9">${f.total_rx_fmt || '--'}</div>
+        <div class="card-sub">Recepção consolidada</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📉</div>
+        <div class="card-title">Tráfego TX Total</div>
+        <div class="card-value" style="color:#a78bfa">${f.total_tx_fmt || '--'}</div>
+        <div class="card-sub">Transmissão consolidada</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔌</div>
+        <div class="card-title">Fontes Flow</div>
+        <div class="card-value">${(f.sources||[]).length}</div>
+        <div class="card-sub">Bras/CGNAT ativos</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚠️</div>
+        <div class="card-title">Alertas Backbone</div>
+        <div class="card-value" style="color:${backboneTriggers.length > 0 ? '#f87171' : '#4ade80'}">${backboneTriggers.length}</div>
+        <div class="card-sub">Infraestrutura</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="section">
+        <div class="section-header"><span class="section-title">📊 Utilização dos Links</span></div>
+        ${trafficHtml || '<div style="color:#64748b">Carregando...</div>'}
+      </div>
+      <div class="section">
+        <div class="section-header"><span class="section-title">🚨 Alertas do Backbone</span></div>
+        ${bbAlertsHtml}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">⚡ Medições Ativas — Ping/Traceroute</span>
+        <span class="section-badge badge-info">Via Flow Server</span>
+      </div>
+      ${pingHtml}
+    </div>
+  `;
+}
+
+// === BGP ===
+function renderBGP() {
+  const b = DATA.bgp || {};
+  const top = DATA.topology || {};
+
+  let prefixHtml = '';
+  if (b.prefix_status) {
+    const ps = b.prefix_status;
+    const ok = ps.announced && ps.origin_asn === '264025';
+    prefixHtml = `<div class="card" style="margin-bottom:12px">
+      <div class="card-title">Prefixo Principal: ${ps.prefix}</div>
+      <div class="card-value" style="color:${ok ? '#4ade80' : '#f87171'};font-size:20px">${ps.announced ? 'ANUNCIADO' : 'NÃO ANUNCIADO'}</div>
+      <div class="card-sub">Origin AS: ${ps.origin_asn || 'N/A'} (${ps.origin_holder || 'N/A'})</div>
+    </div>`;
+  }
+
+  let peersHtml = '';
+  if (top.upstreams) {
+    peersHtml = top.upstreams.map(u => {
+      const typeClass = u.tipo.includes('transit') ? 'transit' : u.tipo.includes('ix') ? 'ix' : 'upstream';
+      return `<div class="peer-row">
+        <span class="peer-asn">AS${u.asn}</span>
+        <span class="peer-name">${u.nome}</span>
+        <span class="peer-type ${typeClass}">${u.tipo.replace(/_/g,' ')}</span>
+      </div>`;
+    }).join('');
+  }
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">AS Number</div>
+        <div class="card-value" style="color:#67e8f9">AS${b.asn || ASN}</div>
+        <div class="card-sub">${b.holder || 'Arroba Banda Larga'}</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📡</div>
+        <div class="card-title">Prefixos Anunciados</div>
+        <div class="card-value">${b.announced_prefixes || 22}</div>
+        <div class="card-sub">IPv4 + IPv6</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤝</div>
+        <div class="card-title">Peers Ativos</div>
+        <div class="card-value" style="color:#4ade80">${b.active_peers || 0}</div>
+        <div class="card-sub">de ${b.total_peers || 0} vizinhos</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">Status BGP</div>
+        <div class="card-value" style="color:${b.prefix_status && b.prefix_status.announced ? '#4ade80' : '#f87171'}">${b.prefix_status && b.prefix_status.announced ? 'OK' : 'ALERTA'}</div>
+        <div class="card-sub">Prefixo /22</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="section">
+        <div class="section-header"><span class="section-title">📡 Status de Prefixos</span></div>
+        ${prefixHtml || '<div style="color:#64748b">Verificando RIPE Stat...</div>'}
+        <div style="font-size:12px;color:#94a3b8;margin-top:12px">
+          🔍 Análise contínua: RPKI, ROA, hijack detection, route leak e AS Path via RIPE Stat e BGP HE
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header"><span class="section-title">🤝 Upstreams e Peers</span></div>
+        ${peersHtml}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">📊 Engenharia de Tráfego BGP</span>
+        <span class="section-badge badge-info">Análise contínua</span>
+      </div>
+      <table>
+        <thead><tr><th>Métrica</th><th>Valor</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Prefixo /22</td><td>${b.prefix_status?.prefix || '143.137.32.0/22'}</td><td><span class="badge badge-${b.prefix_status?.announced ? 'ok' : 'crit'}">${b.prefix_status?.announced ? 'Anunciado' : 'Problema'}</span></td></tr>
+          <tr><td>AS Origin</td><td>${b.prefix_status?.origin_asn || '--'} (${b.prefix_status?.origin_holder || '--'})</td><td><span class="badge badge-${b.prefix_status?.origin_asn === '264025' ? 'ok' : 'crit'}">${b.prefix_status?.origin_asn === '264025' ? 'Próprio' : 'TERCEIRO'}</span></td></tr>
+          <tr><td>Total Peers</td><td>${b.total_peers || 0}</td><td><span class="badge badge-${(b.total_peers||0) >= 20 ? 'ok' : 'warn'}">${(b.total_peers||0) >= 20 ? 'Suficiente' : 'Baixo'}</span></td></tr>
+          <tr><td>Peers Ativos</td><td>${b.active_peers || 0}</td><td><span class="badge badge-${(b.active_peers||0) >= 15 ? 'ok' : 'warn'}">${(b.active_peers||0) >= 15 ? 'OK' : 'Atenção'}</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// === CLIENTES ===
+function renderClients() {
+  const z = DATA.zabbix || {};
+  const infra = z.infraHosts || {};
+
+  // Contar hosts por tipo
+  const clientHosts = (z.totalHosts || 0) - Object.keys(infra).length;
+  const downHosts = z.hostsDown || 0;
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">👥</div>
+        <div class="card-title">Total Hosts (Clientes)</div>
+        <div class="card-value">${clientHosts}</div>
+        <div class="card-sub">Monitorados via Zabbix</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔴</div>
+        <div class="card-title">Hosts Down</div>
+        <div class="card-value" style="color:${downHosts > 0 ? '#f87171' : '#4ade80'}">${downHosts}</div>
+        <div class="card-sub">Indisponíveis agora</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🟢</div>
+        <div class="card-title">Hosts OK</div>
+        <div class="card-value" style="color:#4ade80">${z.hostsOk || 0}</div>
+        <div class="card-sub">Operacionais</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚠️</div>
+        <div class="card-title">Alertas Cliente</div>
+        <div class="card-value" style="color:#fbbf24">${(z.triggers||[]).filter(t=>t.severity>=3).length}</div>
+        <div class="card-sub">Críticos e altos</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span class="section-title">👥 Clientes Afetados — Alertas Ativos</span></div>
+      ${(z.triggers||[]).filter(t=>t.severity>=3).slice(0,20).map(t => {
+        const cls = t.severity >= 4 ? 'crit' : 'high';
+        return `<div class="alert-card ${cls}">
+          <div class="alert-card-head">
+            <span class="alert-card-title">${t.host}</span>
+            <span class="alert-card-meta">${t.ageTxt}</span>
           </div>
-        `).join('');
-        html += `<tr class="sub-row" id="vis-detail-${idx}"><td colspan="6"><div class="sub-detail">${detalhe}</div></td></tr>`;
-      }
-      return html;
+          <div class="alert-card-desc">${t.description}</div>
+        </div>`;
+      }).join('') || '<div style="color:#4ade80">✅ Nenhum cliente com alerta crítico</div>'}
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span class="section-title">📌 Clientes Críticos Conhecidos</span></div>
+      <table>
+        <thead><tr><th>Cliente</th><th>ID</th><th>Localização</th><th>Histórico</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Luis Eduardo Gonzalez Morales</td>
+            <td>28913</td>
+            <td>Parque Nova Canaã, Rua Sete 34</td>
+            <td>59 OS</td>
+            <td><span class="badge badge-warn">Alta Reincidência</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// === EQUIPAMENTOS ===
+function renderEquipment() {
+  const z = DATA.zabbix || {};
+  const infra = z.infraHosts || {};
+  const top = DATA.topology || {};
+
+  let coreHtml = '';
+  if (top.core) {
+    coreHtml = top.core.map(c => {
+      const zbxHost = infra[c.zabbix];
+      const status = zbxHost ? zbxHost.status : 'N/A';
+      const cls = status === 'UP' ? 'up' : status === 'DOWN' ? 'down' : 'warn';
+      return `<tr>
+        <td style="font-weight:600">${c.nome}</td>
+        <td style="font-family:monospace;font-size:11px">${c.ip}</td>
+        <td>${c.modelo}</td>
+        <td>${c.funcao}</td>
+        <td><span class="badge badge-${cls}">${status}</span></td>
+      </tr>`;
     }).join('');
-
-    document.getElementById('mtr-targets').innerHTML = data.mtr_targets.map(t =>
-      `<span class="mtr-target">${t.nome} <code>${t.ip}</code></span>`
-    ).join('');
-
-    
-// === HEALTH SCORE ===
-function calcHealthBGP(data) {
-  const score = data.stats.score || 0;
-  const alerts = (data.alertas || []).length;
-  const prefixosOk = data.stats.prefixos_ok || 0;
-  const prefixosTotal = data.stats.prefixos_total || 1;
-  const ratio = prefixosOk / prefixosTotal;
-  let health = score * 0.5 + ratio * 50 - alerts * 3;
-  return Math.max(0, Math.min(100, health));
-}
-
-function updateHealth(score, alertsCount) {
-  const hs = document.getElementById('healthScore');
-  const hb = document.getElementById('healthBanner');
-  const hl = document.getElementById('healthLabel');
-  hs.textContent = score.toFixed(1);
-  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
-  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
-  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
-}
-
-// === ALERTAS COM EVIDÊNCIA ===
-function renderAlertasComEvidencia(alertas) {
-  const container = document.getElementById('alertas');
-  if(!alertas || alertas.length === 0){
-    container.innerHTML = '<div class="alert-evidence ok"><div class="alert-ev-icon">✅</div><div class="alert-ev-content"><div class="alert-ev-title">Nenhum alerta BGP ativo</div><div class="alert-ev-desc">Todos os prefixos anunciados corretamente. Sem evidência de hijack ou problema de roteamento.</div></div></div>';
-    return;
   }
-  container.innerHTML = alertas.map(a => {
-    const sev = a.tipo === 'HIJACK' ? 'critical' : 'warning';
-    const icon = sev === 'critical' ? '🔴' : '⚠️';
-    return '<div class="alert-evidence ' + sev + '"><div class="alert-ev-icon">' + icon + '</div><div class="alert-ev-content"><div class="alert-ev-title">' + a.prefixo + ' — ' + a.tipo + '</div><div class="alert-ev-desc">Origin AS: ' + a.origin_as + '. <b>Evidência:</b> ' + a.razao + '. <b>Ação NOC:</b> Verificar anúncio BGP e origem do prefixo.</div></div></div>';
-  }).join('');
-}
 
-document.getElementById('last-update').textContent =
-      new Date(data.timestamp).toLocaleString('pt-BR');
-
-  } catch (e) {
-    document.getElementById('loading').innerHTML = `<p style="color:#ef4444">Erro: ${e.message}</p>`;
+  let popHtml = '';
+  if (top.pop) {
+    popHtml = top.pop.map(p => {
+      return `<tr>
+        <td style="font-weight:600">${p.nome}</td>
+        <td>${p.tipo}</td>
+        <td>OLT ${p.olt}</td>
+        <td><span class="badge badge-info">FTTH</span></td>
+      </tr>`;
+    }).join('');
   }
+
+  let oltAlertsHtml = '';
+  const oltTriggers = (z.triggers||[]).filter(t => t.host.toUpperCase().includes('OLT'));
+  if (oltTriggers.length > 0) {
+    oltAlertsHtml = oltTriggers.map(t => {
+      const cls = t.severity >= 4 ? 'crit' : 'high';
+      return `<div class="alert-card ${cls}">
+        <div class="alert-card-head">
+          <span class="alert-card-title">${t.host}</span>
+          <span class="alert-card-meta">${t.ageTxt}</span>
+        </div>
+        <div class="alert-card-desc">${t.description}</div>
+      </div>`;
+    }).join('');
+  } else {
+    oltAlertsHtml = '<div style="color:#4ade80;font-size:13px">✅ Nenhuma OLT com alerta</div>';
+  }
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🖥️</div>
+        <div class="card-title">Equipamentos Core</div>
+        <div class="card-value">${(top.core||[]).length}</div>
+        <div class="card-sub">Roteadores e BRAS</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📡</div>
+        <div class="card-title">POPs / OLTs</div>
+        <div class="card-value">${(top.pop||[]).length}</div>
+        <div class="card-sub">Pontos de presença</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🟢</div>
+        <div class="card-title">Hosts UP</div>
+        <div class="card-value" style="color:#4ade80">${z.hostsOk || 0}</div>
+        <div class="card-sub">de ${z.totalHosts || 0} total</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔌</div>
+        <div class="card-title">Hosts DOWN</div>
+        <div class="card-value" style="color:${(z.hostsDown||0) > 0 ? '#f87171' : '#4ade80'}">${z.hostsDown || 0}</div>
+        <div class="card-sub">Indisponíveis</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">🖥️ Equipamentos Core — Status</span>
+        <span class="section-badge badge-info">Juniper + Mikrotik + A10</span>
+      </div>
+      <table>
+        <thead><tr><th>Equipamento</th><th>IP</th><th>Modelo</th><th>Função</th><th>Status Zabbix</th></tr></thead>
+        <tbody>${coreHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="two-col">
+      <div class="section">
+        <div class="section-header"><span class="section-title">📡 POPs e OLTs</span></div>
+        <table>
+          <thead><tr><th>POP</th><th>Tipo</th><th>OLT</th><th>Tecnologia</th></tr></thead>
+          <tbody>${popHtml}</tbody>
+        </table>
+      </div>
+      <div class="section">
+        <div class="section-header"><span class="section-title">🚨 Alertas de OLT</span></div>
+        ${oltAlertsHtml}
+      </div>
+    </div>
+  `;
 }
 
-load();
-setInterval(load, 60000);
+// === TOPOLOGIA ===
+function renderTopology() {
+  const top = DATA.topology || {};
+  const z = DATA.zabbix || {};
+  const infra = z.infraHosts || {};
+
+  let coreHtml = '';
+  if (top.core) {
+    coreHtml = top.core.map(c => {
+      const zbxHost = infra[c.zabbix];
+      const status = zbxHost ? zbxHost.status : 'UNKNOWN';
+      const cls = status === 'UP' ? 'up' : status === 'DOWN' ? 'down' : 'warn';
+      return `<div class="topo-node core">
+        <span class="topo-name">${c.nome}</span>
+        <span class="topo-info">${c.funcao} | ${c.ip} | ${c.modelo}</span>
+        <span class="badge badge-${cls} topo-status">${status}</span>
+      </div>`;
+    }).join('');
+  }
+
+  let popHtml = '';
+  if (top.pop) {
+    popHtml = top.pop.map(p => {
+      return `<div class="topo-node pop">
+        <span class="topo-name">${p.nome}</span>
+        <span class="topo-info">OLT ${p.olt} | ${p.tipo}</span>
+        <span class="badge badge-info topo-status">FTTH</span>
+      </div>`;
+    }).join('');
+  }
+
+  let upstreamHtml = '';
+  if (top.upstreams) {
+    upstreamHtml = top.upstreams.map(u => {
+      const typeClass = u.tipo.includes('transit') ? 'transit' : u.tipo.includes('ix') ? 'ix' : 'upstream';
+      return `<div class="topo-node upstream">
+        <span class="topo-name">AS${u.asn} — ${u.nome}</span>
+        <span class="topo-info">${u.tipo.replace(/_/g,' ')}</span>
+        <span class="peer-type ${typeClass} topo-status">${u.tipo}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Identificar SPOFs
+  let spofHtml = `
+    <div class="alert-card high">
+      <div class="alert-card-head">
+        <span class="alert-card-title">⚠️ A10 CGNAT — Ponto Único de Falha</span>
+      </div>
+      <div class="alert-card-desc">Sem redundância identificada. Falha do CGNAT afeta todos os clientes NAT.</div>
+      <div class="alert-card-action">→ Planejar CGNAT secundário ou fallback NAT444</div>
+    </div>
+    <div class="alert-card med">
+      <div class="alert-card-head">
+        <span class="alert-card-title">⚠️ POPs sem roteador dedicado</span>
+      </div>
+      <div class="alert-card-desc">Canã, Ururaí, São José, Aurora, Nova Brasília, Travessão e Titan dependem do MX204 Centro/Sta Rosa para uplink.</div>
+      <div class="alert-card-action">→ Avaliar caminhos alternativos via rádio ou fibra diversa</div>
+    </div>
+  `;
+
+  return `
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">🗺️ Árvore de Topologia da Rede</span>
+        <span class="section-badge badge-info">AS264025</span>
+      </div>
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:12px">
+        Hierarquia: Upstreams → Core (MX204/CCR) → POPs/OLTs → CTOs → Clientes
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px;font-weight:600;text-transform:uppercase">🌐 Upstreams / Trânsito</div>
+      ${upstreamHtml}
+      <div style="font-size:12px;color:#64748b;margin:12px 0 6px;font-weight:600;text-transform:uppercase">🖥️ Core / BRAS</div>
+      ${coreHtml}
+      <div style="font-size:12px;color:#64748b;margin:12px 0 6px;font-weight:600;text-transform:uppercase">📡 POPs / OLTs</div>
+      ${popHtml}
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">⚠️ Pontos Únicos de Falha (SPOF)</span>
+        <span class="section-badge badge-warn">Análise automática</span>
+      </div>
+      ${spofHtml}
+    </div>
+  `;
+}
+
+// === PREDITIVO ===
+function renderPredictions() {
+  const preds = DATA.predictions || [];
+  const h = DATA.health || {};
+  const f = DATA.flow || {};
+
+  let predHtml = '';
+  if (preds.length === 0) {
+    predHtml = '<div style="text-align:center;padding:40px;color:#4ade80;font-size:16px">✅ Nenhuma tendência de falha detectada<br><span style="font-size:12px;color:#64748b">Sistema monitorando continuamente</span></div>';
+  } else {
+    predHtml = preds.map(p => {
+      const icon = p.severidade === 'critico' ? '🚨' : p.severidade === 'alto' ? '⚠️' : p.severidade === 'atencao' ? '📊' : 'ℹ️';
+      return `<div class="prediction ${p.severidade}">
+        <div class="pred-icon">${icon}</div>
+        <div class="pred-content">
+          <div class="pred-title">${p.equipamento} <span class="pred-prob">${p.probabilidade}% risco</span></div>
+          <div class="pred-desc">${p.impacto_estimado}${p.idade ? ` (há ${p.idade})` : ''}</div>
+          <div class="pred-action">→ ${p.acao}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Análise de capacidade
+  let capacityHtml = '';
+  if (f && f.sources) {
+    capacityHtml = f.sources.map(s => {
+      const util = ((s.rx || 0) / 100e9) * 100;
+      const daysTo80 = util > 0 && util < 80 ? Math.round((80 - util) / (util * 0.02)) : null;
+      const cls = util > 80 ? 'crit' : util > 60 ? 'warn' : 'ok';
+      return `<tr>
+        <td>${s.source.includes('CENTRO') ? 'MX204 Centro' : s.source.includes('STA-ROSA') ? 'MX204 Sta Rosa' : 'A10 CGNAT'}</td>
+        <td style="color:${util > 80 ? '#f87171' : util > 60 ? '#fbbf24' : '#4ade80'}">${util.toFixed(1)}%</td>
+        <td>${s.rx_fmt || '--'}</td>
+        <td>${daysTo80 ? daysTo80 + ' dias' : util >= 80 ? 'JÁ SATURADO' : '--'}</td>
+        <td><span class="badge badge-${cls}">${util > 80 ? 'Crítico' : util > 60 ? 'Atenção' : 'OK'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🔮</div>
+        <div class="card-title">Previsões Ativas</div>
+        <div class="card-value" style="color:${preds.length > 0 ? '#fbbf24' : '#4ade80'}">${preds.length}</div>
+        <div class="card-sub">tendências monitoradas</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Health Score</div>
+        <div class="card-value" style="color:${h.score >= 75 ? '#4ade80' : h.score >= 50 ? '#fbbf24' : '#f87171'}">${h.score || '--'}</div>
+        <div class="card-sub">${h.status || '--'}</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Probabilidade Média</div>
+        <div class="card-value" style="color:#fbbf24">${preds.length > 0 ? Math.round(preds.reduce((s,p)=>s+p.probabilidade,0)/preds.length) : 0}%</div>
+        <div class="card-sub">de falha prevista</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">🔮 Análise Preditiva — Tendências e Previsões</span>
+        <span class="section-badge badge-${preds.length > 0 ? 'warn' : 'ok'}">${preds.length} previsões</span>
+      </div>
+      ${predHtml}
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">📊 Análise de Capacidade — Saturação de Links</span>
+        <span class="section-badge badge-info">Projeção baseada em uso atual</span>
+      </div>
+      <table>
+        <thead><tr><th>Enlace</th><th>Utilização</th><th>Tráfego Atual</th><th>Estim. p/ 80%</th><th>Status</th></tr></thead>
+        <tbody>${capacityHtml}</tbody>
+      </table>
+      <div style="font-size:11px;color:#64748b;margin-top:12px">
+        ℹ️ Projeção assume crescimento de ~2% ao dia. Atualizar com dados históricos quando disponível.
+      </div>
+    </div>
+  `;
+}
+
+// === INIT ===
+loadData(false);
+
+// Auto-refresh a cada 60s (sem ping)
+autoRefresh = setInterval(() => loadData(false), 60000);
 </script>
 </body>
 </html>

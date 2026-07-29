@@ -40,6 +40,14 @@
       "dest": "/api/zabbix.js"
     },
     {
+      "src": "/api/flow",
+      "dest": "/api/flow-proxy.js"
+    },
+    {
+      "src": "/api/executive",
+      "dest": "/api/executive.js"
+    },
+    {
       "src": "/mtr.json",
       "dest": "/public/mtr.json"
     },
@@ -70,6 +78,10 @@
     {
       "src": "/rb-cliente.html",
       "dest": "/public/rb-cliente.html"
+    },
+    {
+      "src": "/sla.html",
+      "dest": "/public/sla.html"
     },
     {
       "src": "/index.html",
