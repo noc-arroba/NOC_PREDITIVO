@@ -96,6 +96,12 @@ body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 </div>
 
 <div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="zbxHealthScore" style="color:#fbbf24">--</div>
+    <div class="health-label" id="zbxHealthLabel">Health Score / 100 — Carregando...</div>
+  </div>
+  <div id="zbxAlerts"></div>
+  
   <div class="kpi-grid">
     <div class="kpi-card"><div class="label">Hosts Ativos</div><div class="value" id="kpiHosts">--</div><div class="sub" id="kpiHostsSub">--</div></div>
     <div class="kpi-card"><div class="label">Hosts Offline</div><div class="value" id="kpiDown" style="color:#ef4444">--</div><div class="sub">Indisponíveis</div></div>
