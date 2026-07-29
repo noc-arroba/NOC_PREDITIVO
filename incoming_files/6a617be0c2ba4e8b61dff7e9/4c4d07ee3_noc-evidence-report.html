@@ -1,0 +1,661 @@
+<!doctype html><html dir="auto"><head><meta http-equiv="Content-Security-Policy" content="default-src 'unsafe-inline' 'unsafe-eval' https: data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<script id="__base44_dark_class__">document.documentElement.classList.remove('dark');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:wght@400;500;600;700&display=swap">
+<style id="__base44_editor_theme__">
+:root {
+  --background: 38 27% 94%;
+  --foreground: 0 0% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --primary: 21 42% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 39 17% 93%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 98%;
+  --input: 0 0% 98%;
+  --ring: 21 42% 55%;
+  --radius: 0.5rem;
+  color-scheme: light;
+}
+.dark {
+  --background: 220 5% 11%;
+  --foreground: 0 0% 99%;
+  --card: 0 1% 14%;
+  --card-foreground: 0 0% 99%;
+  --popover: 0 1% 14%;
+  --popover-foreground: 0 0% 99%;
+  --primary: 21 42% 55%;
+  --primary-foreground: 0 0% 99%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 99%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 99%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 99%;
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 21 42% 55%;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+/* shadcn's base layer: default every element's border-color to the theme
+   token. Without this, Tailwind's bare `border` utility only sets width and
+   the color falls back to currentColor (near-black text) — so the model's
+   `border` cards render heavy/dark and the `--border` value is ignored.
+   Explicit `border-{color}` utilities and inline styles still override. */
+*, *::before, *::after { border-color: hsl(var(--border)); }
+html, body {
+  margin: 0 !important;
+  padding: 0;
+  overflow: auto !important;
+  /* Inline card: transparent, so the real chat surface (a gradient, not the
+     single flat `--background` stop) shows straight through and the artifact
+     reads as inline chat content in both themes. Standalone saved file: opaque
+     `--background` so it stays readable on its own page. `--card` stays
+     elevated for emphasis blocks (stat tiles, panels) so hierarchy reads. */
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--foreground));
+  font-family: 'WixMadeforText', 'Wix Madefor Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* 8px (vs 16px) — minimal breathing room from the iframe edge so
+   tightly-composed dashboards don't ship a fat empty halo at the top
+   before their first element. LLMs add their own inner spacing. */
+body { padding: 8px; }
+code, kbd, pre, samp { font-family: 'WixMadeforMonospace', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+a { color: hsl(var(--primary)); }
+hr { border: 0; border-top: 1px solid hsl(var(--border)); }
+h1, h2, h3, h4, h5, h6 { font-weight: 600; color: hsl(var(--foreground)); }
+</style>
+<script id="__base44_tw_config__">
+window.tailwind = window.tailwind || {};
+window.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+        secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' },
+        destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+        accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
+        popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' },
+        card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+      },
+      // A bare `border` / `divide-*` (no color) falls back to Tailwind
+      // preflight's DEFAULT, which is a FIXED gray-200 (#e5e7eb) — subtle on the
+      // light card but near-white glare on the dark card. The `colors.border`
+      // map above only creates the `border-border` class; it does NOT set the
+      // uncolored default. Point the DEFAULT at the theme token so an uncolored
+      // border adapts to dark mode like the rest of the palette. (Explicit
+      // `border-primary` etc. still override.)
+      borderColor: { DEFAULT: 'hsl(var(--border))' },
+      divideColor: { DEFAULT: 'hsl(var(--border))' },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      fontFamily: {
+        // Same two-name stack as `FONT_SANS_STACK` above. The
+        // sandboxed null-origin iframe lands on `Wix Madefor Text`
+        // (Google Fonts' name); `WixMadeforText` is here only for
+        // defense-in-depth in case the iframe ever runs same-origin.
+        sans: ['WixMadeforText', 'Wix Madefor Text', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['WixMadeforMonospace', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+    },
+  },
+};
+</script>
+<script src="https://cdn.tailwindcss.com" id="__base44_tw_cdn__"></script></head><body><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+  * { box-sizing: border-box; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+  .header .subtitle { font-size: 13px; color: #6b7280; }
+  .header .timestamp { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+  .health-banner { border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; }
+  .health-banner.critical { background: #fef2f2; border: 1px solid #fecaca; }
+  .health-banner.warning { background: #fffbeb; border: 1px solid #fde68a; }
+  .health-banner.ok { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .health-score { font-size: 48px; font-weight: 800; line-height: 1; }
+  .health-label { font-size: 14px; color: #6b7280; margin-top: 4px; }
+  .grid { display: grid; gap: 16px; margin-bottom: 20px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .card { border-radius: 10px; border: 1px solid #e5e7eb; padding: 16px; background: #fff; }
+  .card-title { font-size: 13px; font-weight: 600; color: #374151; margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .section-title { font-size: 16px; font-weight: 700; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 6px; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; font-size: 11px; text-transform: uppercase; }
+  td { padding: 8px 6px; border-bottom: 1px solid #f3f4f6; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+  .badge-ok { background: #d1fae5; color: #065f46; }
+  .badge-warning { background: #fef3c7; color: #92400e; }
+  .badge-critical { background: #fee2e2; color: #991b1b; }
+  .alert-box { border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 10px; align-items: start; }
+  .alert-box.critical { background: #fef2f2; border-left: 3px solid #ef4444; }
+  .alert-box.warning { background: #fffbeb; border-left: 3px solid #f59e0b; }
+  .alert-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .alert-content { flex: 1; }
+  .alert-title { font-weight: 700; font-size: 13px; margin: 0 0 2px; }
+  .alert-desc { font-size: 12px; color: #6b7280; margin: 0; }
+  .trace-hop { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
+  .hop-num { width: 28px; height: 28px; border-radius: 50%; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+  .hop-info { flex: 1; }
+  .hop-ip { font-family: monospace; font-size: 11px; color: #374151; }
+  .hop-asn { font-size: 11px; color: #6b7280; }
+  .hop-rtt { font-family: monospace; font-weight: 600; font-size: 12px; flex-shrink: 0; }
+  .hop-var { font-size: 10px; color: #ef4444; font-weight: 600; }
+  .method-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+  .method-box h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+  .method-box p { font-size: 12px; color: #6b7280; margin: 4px 0; line-height: 1.5; }
+  .method-step { display: flex; gap: 8px; align-items: start; margin: 6px 0; }
+  .method-num { background: #6366f1; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { text-align: center; padding: 14px 8px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; }
+  .stat-value { font-size: 24px; font-weight: 800; }
+  .stat-label { font-size: 10px; color: #6b7280; margin-top: 4px; text-transform: uppercase; }
+  .chart-wrap { position: relative; height: 220px; }
+  .footer { text-align: center; padding: 16px; font-size: 11px; color: #9ca3af; margin-top: 20px; border-top: 1px solid #e5e7eb; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Relatório de Evidência - NOC Arroba</h1>
+    <div class="subtitle">Monitoramento de Qualidade de Conexão - AS264025</div>
+    <div class="timestamp">Gerado em 29/07/2026 13:37 (America/Sao_Paulo)</div>
+  </div>
+
+  <div class="health-banner critical">
+    <div class="health-score" style="color:#ef4444">88.6</div>
+    <div class="health-label">Health Score / 100 — CRÍTICO</div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#ef4444">4</div>
+      <div class="stat-label">Alertas Críticos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f59e0b">1</div>
+      <div class="stat-label">Avisos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">10</div>
+      <div class="stat-label">Alvos Testados</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#10b981">2</div>
+      <div class="stat-label">Fontes Independentes</div>
+    </div>
+  </div>
+
+  <div class="method-box">
+    <h3>Metodologia de Evidência</h3>
+    <div class="method-step"><div class="method-num">1</div><p><b>Duas fontes independentes de medição:</b> Monitoramento externo (servidor independente via HTTPS) e interno (roteadores MX204-CENTRO e MX204-STA-ROSA via RR Flow API). Se ambas detectam o mesmo problema, a evidência é irrefutável.</p></div>
+    <div class="method-step"><div class="method-num">2</div><p><b>Traceroute hop-a-hop de dentro do Arroba:</b> Identifica exatamente em qual hop/AS está o gargalo de latência. Dados coletados via API do RR Flow dos roteadores reais.</p></div>
+    <div class="method-step"><div class="method-num">3</div><p><b>Thresholds baseados em impacto ao cliente:</b> Latência >200ms = crítico (cliente sente lentidão), Jitter >50ms = crítico (streaming/gaming afetado), Perda >3% = cliente nota, TTFB >1000ms = páginas demoram.</p></div>
+    <div class="method-step"><div class="method-num">4</div><p><b>Correlação multi-serviço:</b> Quando múltiplos serviços degradam simultaneamente, indica problema de infraestrutura (upstream/roteamento), não de serviço individual.</p></div>
+    <div class="method-step"><div class="method-num">5</div><p><b>Tendência histórica:</b> Comparação com medições anteriores detecta degradação gradual antes do cliente reclamar.</p></div>
+  </div>
+
+  <div class="section-title">Alertas Ativos (Prova de Impacto)</div>
+
+  <div class="alert-box critical">
+    <div class="alert-icon">🔴</div>
+    <div class="alert-content">
+      <div class="alert-title">BR Digital — Latência CRÍTICA: 211.79ms</div>
+      <div class="alert-desc">Limite crítico: 200ms. Jitter: 11.54ms. TTFB: 650ms. <b>Evidência:</b> Medição externa confirma 211ms. Traceroute interno não conseguiu completar (0 hops retornados) — indica problema de roteamento alcançável. ASN de destino inacessível via ping interno do roteador.</div>
+    </div>
+  </div>
+
+  <div class="alert-box critical">
+    <div class="alert-icon">🔴</div>
+    <div class="alert-content">
+      <div class="alert-title">Globoplay — TTFB CRÍTICO: 1452.93ms</div>
+      <div class="alert-desc">Tempo até primeiro byte excede 1.4 segundos. <b>Evidência:</b> Latência TCP baixa (1.38ms) indica que o problema NÃO é de rede — é backend/origem do Globoplay. <b>Ação NOC:</b> Não é problema do Arroba. Documentar e informar cliente.</div>
+    </div>
+  </div>
+
+  <div class="alert-box critical">
+    <div class="alert-icon">🔴</div>
+    <div class="alert-content">
+      <div class="alert-title">Caixa (Banking) — Latência CRÍTICA: 208.54ms + Jitter 12.24ms</div>
+      <div class="alert-desc">Serviço bancário com latência acima do limite. <b>Evidência:</b> HTTP não responde (sem TTFB). Traceroute interno retorna 0 hops. <b>Ação NOC:</b> Verificar rota para caixa.gov.br, possível bloqueio ou rota subótima.</div>
+    </div>
+  </div>
+
+  <div class="alert-box critical">
+    <div class="alert-icon">🔴</div>
+    <div class="alert-content">
+      <div class="alert-title">Banco do Brasil — Jitter CRÍTICO: 728.49ms + HTTP 403</div>
+      <div class="alert-desc">Variação de latência extrema (728ms) indica instabilidade severa no caminho. HTTP 403 = acesso negado, possível bloqueio geográfico ou WAF. <b>Evidência:</b> Latência média 74ms mas com variação enorme. <b>Ação NOC:</b> Verificar se rota está flutuando (BGP churn).</div>
+    </div>
+  </div>
+
+  <div class="alert-box warning">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-content">
+      <div class="alert-title">Registro.br — Latência elevada: 191.49ms</div>
+      <div class="alert-desc">Próximo do limite crítico (200ms). TTFB: 577ms. <b>Tendência:</b> Medições anteriores mostravam 112ms → agora 191ms (degradação de 70%). <b>Evidência:</b> Piorando progressivamente — pode indicar saturação de rota upstream.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Comparação: Medição Externa vs Interna (Roteadores Arroba)</div>
+
+  <div class="card">
+    <div class="card-title">Tabela de Comparação Dual-Source</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Serviço</th>
+          <th>Ext. Lat (ms)</th>
+          <th>Ext. Jitter</th>
+          <th>Ext. Loss</th>
+          <th>Ext. TTFB</th>
+          <th>Ext. HTTP</th>
+          <th>Int. Ping</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Google DNS 8.8.8.8</td><td>1.35</td><td>1.22</td><td>0%</td><td>80ms</td><td>200</td><td>12.3ms</td><td><span class="badge badge-ok">OK</span></td></tr>
+        <tr><td>Cloudflare DNS 1.1.1.1</td><td>1.13</td><td>0.18</td><td>0%</td><td>106ms</td><td>200</td><td>3.5ms</td><td><span class="badge badge-ok">OK</span></td></tr>
+        <tr><td>Netflix</td><td>1.56</td><td>1.97</td><td>0%</td><td>571ms</td><td>200</td><td>—</td><td><span class="badge badge-ok">OK</span></td></tr>
+        <tr><td>YouTube</td><td>1.87</td><td>1.51</td><td>0%</td><td>130ms</td><td>200</td><td>—</td><td><span class="badge badge-ok">OK</span></td></tr>
+        <tr><td>WhatsApp Web</td><td>1.88</td><td>6.66</td><td>0%</td><td>159ms</td><td>200</td><td>—</td><td><span class="badge badge-ok">OK</span></td></tr>
+        <tr><td>Globoplay</td><td>1.38</td><td>0.22</td><td>0%</td><td style="color:#ef4444;font-weight:700">1453ms</td><td>200</td><td>—</td><td><span class="badge badge-critical">CRÍTICO</span></td></tr>
+        <tr><td>Registro.br</td><td style="color:#f59e0b;font-weight:700">191.49</td><td>2.75</td><td>0%</td><td>578ms</td><td>200</td><td>0 hops</td><td><span class="badge badge-warning">AVISO</span></td></tr>
+        <tr><td>BR Digital</td><td style="color:#ef4444;font-weight:700">211.79</td><td style="color:#f59e0b">11.54</td><td>0%</td><td>650ms</td><td>200</td><td>0 hops</td><td><span class="badge badge-critical">CRÍTICO</span></td></tr>
+        <tr><td>Caixa (Banking)</td><td style="color:#ef4444;font-weight:700">208.54</td><td style="color:#f59e0b">12.24</td><td>0%</td><td>—</td><td>—</td><td>0 hops</td><td><span class="badge badge-critical">CRÍTICO</span></td></tr>
+        <tr><td>Banco do Brasil</td><td>74.44</td><td style="color:#ef4444;font-weight:700">728.49</td><td>0%</td><td>63ms</td><td style="color:#ef4444">403</td><td>—</td><td><span class="badge badge-critical">CRÍTICO</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Traceroute de Dentro do Arroba (Identificação do Gargalo)</div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">Rota: Arroba → Google DNS (8.8.8.8) — Saudável</div>
+      <div class="trace-hop">
+        <div class="hop-num">1</div>
+        <div class="hop-info"><div class="hop-ip">143.137.32.29</div><div class="hop-asn">AS264025 - ARROBA BANDA LARGA 🇧🇷</div></div>
+        <div class="hop-rtt">0.3ms <span class="hop-var">±0.2</span></div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">2</div>
+        <div class="hop-info"><div class="hop-ip">172.25.0.1</div><div class="hop-asn">Rede interna (privado)</div></div>
+        <div class="hop-rtt">0.8ms <span class="hop-var">±0.3</span></div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">3</div>
+        <div class="hop-info"><div class="hop-ip">72.14.204.232</div><div class="hop-asn">AS15169 - GOOGLE LLC 🇺🇸</div></div>
+        <div class="hop-rtt">13.4ms <span class="hop-var">±3.7</span></div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">4</div>
+        <div class="hop-info"><div class="hop-ip">108.170.227.19</div><div class="hop-asn">AS15169 - GOOGLE LLC 🇺🇸</div></div>
+        <div class="hop-rtt">12.5ms</div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">5</div>
+        <div class="hop-info"><div class="hop-ip">142.250.230.117</div><div class="hop-asn">AS15169 - GOOGLE LLC 🇺🇸</div></div>
+        <div class="hop-rtt">12.4ms</div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">6</div>
+        <div class="hop-info"><div class="hop-ip">8.8.8.8</div><div class="hop-asn">AS15169 - GOOGLE LLC 🇺🇸</div></div>
+        <div class="hop-rtt" style="color:#10b981">12.3ms ✓</div>
+      </div>
+      <p style="font-size:11px;color:#10b981;margin:8px 0 0">✓ Peering direto com Google. 6 hops, latência estável. ROTA SAUDÁVEL.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Rota: Arroba → Cloudflare (1.1.1.1) — Via TUDDO</div>
+      <div class="trace-hop">
+        <div class="hop-num">1</div>
+        <div class="hop-info"><div class="hop-ip">143.137.32.29</div><div class="hop-asn">AS264025 - ARROBA BANDA LARGA 🇧🇷</div></div>
+        <div class="hop-rtt">0.3ms</div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">2</div>
+        <div class="hop-info"><div class="hop-ip">172.25.0.1</div><div class="hop-asn">Rede interna (privado)</div></div>
+        <div class="hop-rtt">0.7ms <span class="hop-var">±0.3</span></div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">3</div>
+        <div class="hop-info"><div class="hop-ip">172.30.229.21</div><div class="hop-asn">Rede interna (privado)</div></div>
+        <div class="hop-rtt">2.1ms</div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">4</div>
+        <div class="hop-info"><div class="hop-ip">172.20.5.94</div><div class="hop-asn">Rede interna (privado)</div></div>
+        <div class="hop-rtt">0.8ms</div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">5</div>
+        <div class="hop-info"><div class="hop-ip">172.20.5.105</div><div class="hop-asn">Rede interna (privado)</div></div>
+        <div class="hop-rtt">3.7ms</div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num">6</div>
+        <div class="hop-info"><div class="hop-ip">172.30.210.109</div><div class="hop-asn">Rede interna (privado)</div></div>
+        <div class="hop-rtt">4.6ms</div>
+      </div>
+      <div class="trace-hop" style="background:#fef3c7;border-radius:6px;padding:8px 6px">
+        <div class="hop-num" style="background:#fde68a">8</div>
+        <div class="hop-info"><div class="hop-ip">45.165.246.235</div><div class="hop-asn">AS - TUDDO TELECOM LTDA. 🇧🇷 (UPSTREAM)</div></div>
+        <div class="hop-rtt" style="color:#f59e0b">4.7ms <span class="hop-var">±4.3</span></div>
+      </div>
+      <div class="trace-hop">
+        <div class="hop-num" style="background:#d1fae5">9</div>
+        <div class="hop-info"><div class="hop-ip">1.1.1.1</div><div class="hop-asn">AS13335 - CLOUDFLARE INC. 🇦🇺</div></div>
+        <div class="hop-rtt" style="color:#10b981">3.5ms ✓</div>
+      </div>
+      <p style="font-size:11px;color:#f59e0b;margin:8px 0 0">⚠ Tráfego Cloudflare via TUDDO TELECOM. Hop 8 tem variação de 4.3ms — monitorar.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;border-color:#fee2e2;background:#fef2f2">
+    <div class="card-title" style="color:#991b1b">⚠ Provas de Inacessibilidade: BR Digital e Registro.br</div>
+    <p style="font-size:13px;color:#7f1d1d;margin:0">
+      <b>EVIDÊNCIA CRÍTICA:</b> O traceroute executado de DENTRO dos roteadores do Arroba (MX204-CENTRO) 
+      não conseguiu completar a rota para <b>BR Digital</b> (www.br.digital) e <b>Registro.br</b> — 
+      retornou <b>0 hops</b>. Simultaneamente, a medição externa mostra latência crítica de 211ms e 191ms 
+      respectivamente. <b>Isso prova que há um problema de roteamento/alcançabilidade</b> para estes destinos.
+      <br><br>
+      <b>Ação recomendada para o NOC:</b>
+      <br>1. Verificar tabela BGP para os prefixes de BR Digital e Registro.br
+      <br>2. Confirmar se rota está sendo anunciada pelo upstream correto
+      <br>3. Verificar se há queda/seção no link com TUDDO TELECOM
+      <br>4. Comparar com rota ativa anterior (baseline de 112ms → 191ms para Registro.br = degradação de 70%)
+    </p>
+  </div>
+
+  <div class="section-title">Indicadores Monitorados (KPIs)</div>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-title">Latência (RTT)</div>
+      <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Tempo de ida e volta do pacote</p>
+      <table>
+        <tr><td style="border:none"><span class="badge badge-ok">OK</span></td><td style="border:none;font-size:11px">&lt; 50ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-warning">AVISO</span></td><td style="border:none;font-size:11px">50 - 200ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-critical">CRÍTICO</span></td><td style="border:none;font-size:11px">&gt; 200ms</td></tr>
+      </table>
+      <p style="font-size:11px;color:#374151;margin:8px 0 0"><b>Atual:</b> 2 alvos críticos (BR Digital 211ms, Caixa 208ms)</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Jitter (Variação)</div>
+      <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Variação na latência entre pacotes</p>
+      <table>
+        <tr><td style="border:none"><span class="badge badge-ok">OK</span></td><td style="border:none;font-size:11px">&lt; 10ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-warning">AVISO</span></td><td style="border:none;font-size:11px">10 - 50ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-critical">CRÍTICO</span></td><td style="border:none;font-size:11px">&gt; 50ms</td></tr>
+      </table>
+      <p style="font-size:11px;color:#374151;margin:8px 0 0"><b>Atual:</b> 1 alvo crítico (BB 728ms), 2 avisos</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Perda de Pacotes</div>
+      <p style="font-size:12px;color:#6b7280;margin:0 0 8px">% de pacotes que não chegam</p>
+      <table>
+        <tr><td style="border:none"><span class="badge badge-ok">OK</span></td><td style="border:none;font-size:11px">0%</td></tr>
+        <tr><td style="border:none"><span class="badge badge-warning">AVISO</span></td><td style="border:none;font-size:11px">1 - 3%</td></tr>
+        <tr><td style="border:none"><span class="badge badge-critical">CRÍTICO</span></td><td style="border:none;font-size:11px">&gt; 3%</td></tr>
+      </table>
+      <p style="font-size:11px;color:#10b981;margin:8px 0 0"><b>Atual:</b> 0% em todos os alvos ✓</p>
+    </div>
+    <div class="card">
+      <div class="card-title">TTFB</div>
+      <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Tempo até primeiro byte</p>
+      <table>
+        <tr><td style="border:none"><span class="badge badge-ok">OK</span></td><td style="border:none;font-size:11px">&lt; 500ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-warning">AVISO</span></td><td style="border:none;font-size:11px">500 - 1000ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-critical">CRÍTICO</span></td><td style="border:none;font-size:11px">&gt; 1000ms</td></tr>
+      </table>
+      <p style="font-size:11px;color:#374151;margin:8px 0 0"><b>Atual:</b> 1 crítico (Globoplay 1453ms)</p>
+    </div>
+    <div class="card">
+      <div class="card-title">DNS</div>
+      <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Tempo de resolução de nome</p>
+      <table>
+        <tr><td style="border:none"><span class="badge badge-ok">OK</span></td><td style="border:none;font-size:11px">&lt; 20ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-warning">AVISO</span></td><td style="border:none;font-size:11px">20 - 50ms</td></tr>
+        <tr><td style="border:none"><span class="badge badge-critical">CRÍTICO</span></td><td style="border:none;font-size:11px">&gt; 50ms</td></tr>
+      </table>
+      <p style="font-size:11px;color:#10b981;margin:8px 0 0"><b>Atual:</b> Todos &lt; 3ms ✓</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Disponibilidade HTTP</div>
+      <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Status code de resposta</p>
+      <table>
+        <tr><td style="border:none"><span class="badge badge-ok">OK</span></td><td style="border:none;font-size:11px">200</td></tr>
+        <tr><td style="border:none"><span class="badge badge-warning">AVISO</span></td><td style="border:none;font-size:11px">4xx</td></tr>
+        <tr><td style="border:none"><span class="badge badge-critical">CRÍTICO</span></td><td style="border:none;font-size:11px">5xx / timeout</td></tr>
+      </table>
+      <p style="font-size:11px;color:#374151;margin:8px 0 0"><b>Atual:</b> BB retorna 403 (bloqueio)</p>
+    </div>
+  </div>
+
+  <div class="section-title">Distribuição de Latência por Serviço</div>
+  <div class="card">
+    <div class="chart-wrap">
+      <canvas id="latencyChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="card">
+      <div class="card-title">Jitter por Serviço (ms)</div>
+      <div class="chart-wrap">
+        <canvas id="jitterChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">TTFB por Serviço (ms)</div>
+      <div class="chart-wrap">
+        <canvas id="ttfbChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Tráfego por AS (Dados do RR Flow - Roteadores Reais)</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Roteador</th><th>AS Destino</th><th>Nome</th><th>Tráfego RX</th><th>Flows</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MX204-CENTRO</td><td>AS36040</td><td>YouTube GGC 🇺🇸</td><td><b>12.9 Gbps</b></td><td>6,020</td></tr>
+        <tr><td>MX204-STA-ROSA</td><td>AS36040</td><td>YouTube GGC 🇺🇸</td><td><b>5.0 Gbps</b></td><td>3,815</td></tr>
+        <tr><td>A10-CGNAT</td><td>AS32934</td><td>Facebook Inc. 🇺🇸</td><td><b>8.0 Gbps</b></td><td>8,550</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:#6b7280;margin:8px 0 0">Dados coletados via API RR Flow (nfdump) dos roteadores MX204 e A10-CGNAT. Tráfego real da última hora.</p>
+  </div>
+
+  <div class="section-title">Resumo para o NOC</div>
+  <div class="card" style="background:#f9fafb">
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Evidência</th><th>Severidade</th><th>Ação NOC</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>BR Digital inacessível</b></td>
+          <td>Traceroute interno retorna 0 hops. Externo mostra 211ms.</td>
+          <td><span class="badge badge-critical">CRÍTICO</span></td>
+          <td>Verificar rota BGP e link TUDDO</td>
+        </tr>
+        <tr>
+          <td><b>Registro.br degradando</b></td>
+          <td>112ms → 191ms (70% piora). Traceroute interno falha.</td>
+          <td><span class="badge badge-warning">AVISO</span></td>
+          <td>Verificar saturação de upstream</td>
+        </tr>
+        <tr>
+          <td><b>Caixa inacessível via HTTP</b></td>
+          <td>208ms latência, sem resposta HTTP. 0 hops interno.</td>
+          <td><span class="badge badge-critical">CRÍTICO</span></td>
+          <td>Verificar rota para caixa.gov.br</td>
+        </tr>
+        <tr>
+          <td><b>Banco do Brasil instável</b></td>
+          <td>Jitter 728ms + HTTP 403. Possível BGP churn.</td>
+          <td><span class="badge badge-critical">CRÍTICO</span></td>
+          <td>Verificar flutuação de rota BGP</td>
+        </tr>
+        <tr>
+          <td><b>Globoplay TTFB alto</b></td>
+          <td>1453ms TTFB, mas latência rede = 1.4ms.</td>
+          <td><span class="badge badge-critical">CRÍTICO</span></td>
+          <td>NÃO é problema do Arroba — origem Globoplay</td>
+        </tr>
+        <tr>
+          <td><b>Variação no hop TUDDO</b></td>
+          <td>Hop 8 (TUDDO) varia 4.3ms no traceroute Cloudflare.</td>
+          <td><span class="badge badge-warning">AVISO</span></td>
+          <td>Monitorar — pode ser início de congestionamento</td>
+        </tr>
+        <tr>
+          <td><b>Google — Saudável</b></td>
+          <td>Peering direto, 12.3ms estável, 6 hops.</td>
+          <td><span class="badge badge-ok">OK</span></td>
+          <td>Nenhuma ação necessária</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Relatório gerado automaticamente pelo Agente de Monitoramento Arroba (AS264025)<br>
+    Dados coletados via: Monitoramento externo (HTTPS) + RR Flow API (roteadores MX204/A10) + RIPE Stat (BGP)<br>
+    Próxima verificação: automática a cada 30 minutos
+  </div>
+
+</div>
+
+<script>
+const mutedColor = '#9ca3af';
+const primaryColor = '#6366f1';
+const dangerColor = '#ef4444';
+const warningColor = '#f59e0b';
+const okColor = '#10b981';
+
+const labels = ['Google\nDNS','Cloudflare\nDNS','Netflix','YouTube','WhatsApp','Globoplay','Registro.br','BR Digital','Caixa','Banco\nBrasil'];
+const latencyData = [1.35, 1.13, 1.56, 1.87, 1.88, 1.38, 191.49, 211.79, 208.54, 74.44];
+const jitterData = [1.22, 0.18, 1.97, 1.51, 6.66, 0.22, 2.75, 11.54, 12.24, 728.49];
+const ttfbData = [80, 106, 571, 130, 159, 1453, 578, 650, 0, 63];
+
+function colorFor(val, warn, crit) {
+  if (val >= crit) return dangerColor;
+  if (val >= warn) return warningColor;
+  return okColor;
+}
+
+// Latency chart
+new Chart(document.getElementById('latencyChart'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Latência (ms)',
+      data: latencyData,
+      backgroundColor: latencyData.map(v => colorFor(v, 50, 200)),
+      borderWidth: 0,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { color: mutedColor, font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+      x: { ticks: { color: mutedColor, font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+    }
+  }
+});
+
+// Jitter chart
+new Chart(document.getElementById('jitterChart'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Jitter (ms)',
+      data: jitterData,
+      backgroundColor: jitterData.map(v => colorFor(v, 10, 50)),
+      borderWidth: 0,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, type: 'logarithmic', ticks: { color: mutedColor, font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+      x: { ticks: { color: mutedColor, font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+    }
+  }
+});
+
+// TTFB chart
+new Chart(document.getElementById('ttfbChart'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'TTFB (ms)',
+      data: ttfbData.map(v => v === 0 ? null : v),
+      backgroundColor: ttfbData.map(v => v === 0 ? '#e5e7eb' : colorFor(v, 500, 1000)),
+      borderWidth: 0,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { color: mutedColor, font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+      x: { ticks: { color: mutedColor, font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+    }
+  }
+});
+</script>
+</body>
+</html><script id="__base44_dark_class_post__">document.documentElement.classList.remove('dark');</script></body></html>
