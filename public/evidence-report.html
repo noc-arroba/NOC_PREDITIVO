@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Evidência — NOC Arroba</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:4px}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
+.btn:disabled{opacity:.5;cursor:wait}
+.container{max-width:1300px;margin:0 auto;padding:20px}
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{text-align:center;padding:14px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827}
+.stat-value{font-size:28px;font-weight:800}
+.stat-label{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
+.section-title{font-size:15px;font-weight:700;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1e293b}
+.card{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:16px}
+.card-title{font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.method-box{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:16px;margin-bottom:20px}
+.method-box h3{margin-bottom:8px;font-size:14px;font-weight:700}
+.method-box p{font-size:12px;color:#64748b;margin:4px 0;line-height:1.5}
+.method-step{display:flex;gap:8px;align-items:start;margin:6px 0}
+.method-num{background:#6366f1;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.alert-box{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-box.critical{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-box.warning{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-icon{font-size:18px;line-height:1;flex-shrink:0}
+.alert-content{flex:1}
+.alert-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+.alert-desc b{color:#cbd5e1}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 6px;font-weight:600;color:#64748b;border-bottom:2px solid #1e293b;font-size:11px;text-transform:uppercase}
+td{padding:8px 6px;border-bottom:1px solid #111827;color:#cbd5e1}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+.badge-ok{background:#065f4622;color:#4ade80}
+.badge-warn{background:#92400e22;color:#fbbf24}
+.badge-crit{background:#991b1b22;color:#f87171}
+.badge-info{background:#1e40af22;color:#60a5fa}
+.chart-wrap{position:relative;height:220px}
+.loading{text-align:center;padding:40px;color:#64748b}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:768px){.kpi-grid{grid-template-columns:1fr}}
+.kpi-card{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:16px}
+.kpi-card .kpi-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.kpi-card .kpi-desc{font-size:11px;color:#64748b;line-height:1.5;margin-bottom:8px}
+.kpi-card table td{border:none;padding:3px 6px;font-size:11px}
+.footer{text-align:center;padding:16px;font-size:11px;color:#475569;margin-top:20px;border-top:1px solid #1e293b}
+.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.status-bar .ok{color:#22c55e}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔍 Relatório de Evidência</h1>
+    <div class="sub">NOC Arroba · AS264025 · Monitoramento de Qualidade de Conexão</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/"><button class="btn btn-ghost">← Dashboard</button></a>
+    <a href="network-monitor.html"><button class="btn btn-ghost">Net Monitor</button></a>
+    <a href="flow.html"><button class="btn btn-ghost">Flow</button></a>
+    <button class="btn btn-primary" id="btnRefresh" onclick="carregar()">Gerar Relatório</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="healthScore">--</div>
+    <div class="health-label" id="healthLabel">Health Score / 100 — Carregando...</div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-value" id="statCrit" style="color:#f87171">--</div><div class="stat-label">Alertas Críticos</div></div>
+    <div class="stat-card"><div class="stat-value" id="statWarn" style="color:#fbbf24">--</div><div class="stat-label">Avisos</div></div>
+    <div class="stat-card"><div class="stat-value" id="statTargets">--</div><div class="stat-label">Alvos Testados</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:#4ade80">2</div><div class="stat-label">Fontes Independentes</div></div>
+  </div>
+
+  <div class="method-box">
+    <h3>Metodologia de Evidência</h3>
+    <div class="method-step"><div class="method-num">1</div><p><b>Duas fontes independentes:</b> Monitoramento externo (servidor independente via HTTPS) e interno (roteadores MX204 via RR Flow API). Se ambas detectam o problema, a evidência é irrefutável.</p></div>
+    <div class="method-step"><div class="method-num">2</div><p><b>Traceroute hop-a-hop de dentro do Arroba:</b> Identifica exatamente em qual hop/AS está o gargalo de latência. Dados via API do RR Flow dos roteadores reais.</p></div>
+    <div class="method-step"><div class="method-num">3</div><p><b>Thresholds baseados em impacto ao cliente:</b> Latência >200ms = crítico, Jitter >50ms = crítico, Perda >3% = notável, TTFB >1000ms = páginas demoram.</p></div>
+    <div class="method-step"><div class="method-num">4</div><p><b>Correlação multi-serviço:</b> Quando múltiplos serviços degradam simultaneamente, indica problema de infraestrutura, não de serviço individual.</p></div>
+    <div class="method-step"><div class="method-num">5</div><p><b>Tendência histórica:</b> Comparação com medições anteriores detecta degradação gradual antes do cliente reclamar.</p></div>
+  </div>
+
+  <div class="section-title">Alertas Ativos (Prova de Impacto)</div>
+  <div id="alertsContainer"><div class="loading"><div class="spinner"></div><br>Coletando evidências...</div></div>
+
+  <div class="section-title">Comparação: Medição Externa vs Interna</div>
+  <div class="card" style="overflow-x:auto">
+    <div class="card-title">Tabela de Status por Serviço</div>
+    <table>
+      <thead><tr><th>Serviço</th><th>Categoria</th><th>Latência</th><th>Jitter</th><th>Perda</th><th>TTFB</th><th>HTTP</th><th>Probes</th><th>Status</th></tr></thead>
+      <tbody id="compTable"><tr><td colspan="9" style="text-align:center;color:#64748b;padding:20px"><div class="spinner"></div><br>Carregando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Indicadores Monitorados (KPIs)</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-title">Latência (RTT)</div><div class="kpi-desc">Tempo de ida e volta do pacote</div><table><tr><td><span class="badge badge-ok">OK</span></td><td>&lt; 50ms</td></tr><tr><td><span class="badge badge-warn">AVISO</span></td><td>50-200ms</td></tr><tr><td><span class="badge badge-crit">CRÍTICO</span></td><td>&gt; 200ms</td></tr></table></div>
+    <div class="kpi-card"><div class="kpi-title">Jitter (Variação)</div><div class="kpi-desc">Variação na latência entre pacotes</div><table><tr><td><span class="badge badge-ok">OK</span></td><td>&lt; 10ms</td></tr><tr><td><span class="badge badge-warn">AVISO</span></td><td>10-50ms</td></tr><tr><td><span class="badge badge-crit">CRÍTICO</span></td><td>&gt; 50ms</td></tr></table></div>
+    <div class="kpi-card"><div class="kpi-title">Perda de Pacotes</div><div class="kpi-desc">% de pacotes que não chegam</div><table><tr><td><span class="badge badge-ok">OK</span></td><td>0%</td></tr><tr><td><span class="badge badge-warn">AVISO</span></td><td>1-3%</td></tr><tr><td><span class="badge badge-crit">CRÍTICO</span></td><td>&gt; 3%</td></tr></table></div>
+    <div class="kpi-card"><div class="kpi-title">TTFB</div><div class="kpi-desc">Tempo até primeiro byte</div><table><tr><td><span class="badge badge-ok">OK</span></td><td>&lt; 500ms</td></tr><tr><td><span class="badge badge-warn">AVISO</span></td><td>500-1000ms</td></tr><tr><td><span class="badge badge-crit">CRÍTICO</span></td><td>&gt; 1000ms</td></tr></table></div>
+    <div class="kpi-card"><div class="kpi-title">DNS</div><div class="kpi-desc">Tempo de resolução de nome</div><table><tr><td><span class="badge badge-ok">OK</span></td><td>&lt; 20ms</td></tr><tr><td><span class="badge badge-warn">AVISO</span></td><td>20-50ms</td></tr><tr><td><span class="badge badge-crit">CRÍTICO</span></td><td>&gt; 50ms</td></tr></table></div>
+    <div class="kpi-card"><div class="kpi-title">Disponibilidade HTTP</div><div class="kpi-desc">Status code de resposta</div><table><tr><td><span class="badge badge-ok">OK</span></td><td>200</td></tr><tr><td><span class="badge badge-warn">AVISO</span></td><td>3xx/4xx</td></tr><tr><td><span class="badge badge-crit">CRÍTICO</span></td><td>5xx/timeout</td></tr></table></div>
+  </div>
+
+  <div class="section-title">Distribuição de Latência por Serviço</div>
+  <div class="card"><div class="chart-wrap"><canvas id="latencyChart"></canvas></div></div>
+
+  <div class="section-title">Tráfego por AS (Dados do RR Flow — Roteadores Reais)</div>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Roteador</th><th>AS Destino</th><th>Nome</th><th>Tráfego RX</th></tr></thead>
+      <tbody id="trafficTable"><tr><td colspan="4" style="color:#64748b;text-align:center">Carregando...</td></tr></tbody>
+    </table>
+    <p style="font-size:11px;color:#64748b;margin:8px 0 0">Dados coletados via API RR Flow (nfdump) dos roteadores MX204 e A10-CGNAT. Tráfego real da última hora.</p>
+  </div>
+
+  <div class="section-title">Resumo para o NOC</div>
+  <div class="card" style="background:#0f172a">
+    <table>
+      <thead><tr><th>Item</th><th>Evidência</th><th>Severidade</th><th>Ação NOC</th></tr></thead>
+      <tbody id="summaryTable"><tr><td colspan="4" style="color:#64748b;text-align:center">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Relatório gerado automaticamente pelo Agente OTIA — NOC Arroba (AS264025)<br>
+    Dados coletados via: Monitoramento externo (HTTPS) + RR Flow API (roteadores MX204/A10) + RIPE Stat (BGP)<br>
+    Próxima verificação: automática a cada 30 minutos
+  </div>
+
+  <div class="status-bar" id="statusBar">Aguardando dados...</div>
+</div>
+
+<script>
+const API = 'https://solene-4b7d7251.base44.app/functions/evidenceReport';
+let charts = {};
+
+function esc(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtBps(b){if(b>=1e9)return(b/1e9).toFixed(1)+' Gbps';if(b>=1e6)return(b/1e6).toFixed(1)+' Mbps';return(b/1e3).toFixed(0)+' Kbps'}
+
+function getStatus(m){
+  if(!m.ok||m.http===null) return {cls:'badge-crit',text:'CRÍTICO'};
+  if(m.lat>200||m.jitter>50) return {cls:'badge-crit',text:'CRÍTICO'};
+  if(m.lat>50||(m.ttfb&&m.ttfb>500)) return {cls:'badge-warn',text:'AVISO'};
+  return {cls:'badge-ok',text:'OK'};
+}
+
+function barColor(val,warn,crit){if(val>=crit)return'#ef4444';if(val>=warn)return'#f59e0b';return'#3b82f6'}
+
+async function carregar(){
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true; btn.textContent = 'Coletando...';
+
+  try {
+    const res = await fetch(API);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+
+    // Health Score
+    const hs = parseFloat(data.healthScore || 0);
+    document.getElementById('healthScore').textContent = hs.toFixed(1);
+    const hb = document.getElementById('healthBanner');
+    const hl = document.getElementById('healthLabel');
+    document.getElementById('healthScore').style.color = hs>=90?'#4ade80':hs>=70?'#fbbf24':'#f87171';
+    if(hs>=90){hb.className='health-banner ok';hl.textContent='Health Score / 100 — SAUDÁVEL';}
+    else if(hs>=70){hb.className='health-banner warn';hl.textContent='Health Score / 100 — ATENÇÃO';}
+    else{hb.className='health-banner crit';hl.textContent='Health Score / 100 — CRÍTICO';}
+
+    // Stats
+    document.getElementById('statCrit').textContent = data.stats.critical;
+    document.getElementById('statWarn').textContent = data.stats.warnings;
+    document.getElementById('statTargets').textContent = data.stats.targets;
+
+    // Alerts
+    const ac = document.getElementById('alertsContainer');
+    if(data.alerts.length === 0){
+      ac.innerHTML = '<div class="alert-box" style="background:#064e3b22;border-left:3px solid #10b981"><div class="alert-icon">✅</div><div class="alert-content"><div class="alert-title">Nenhum alerta ativo</div><div class="alert-desc">Todos os serviços estão dentro dos thresholds. Sem evidência de problema.</div></div></div>';
+    } else {
+      ac.innerHTML = data.alerts.map(a => 
+        '<div class="alert-box '+a.severity+'"><div class="alert-icon">'+a.icon+'</div><div class="alert-content"><div class="alert-title">'+esc(a.title)+'</div><div class="alert-desc">'+esc(a.desc)+'<br><b>Evidência:</b> '+esc(a.evidence)+'</div></div></div>'
+      ).join('');
+    }
+
+    // Comparison table
+    const tbody = document.getElementById('compTable');
+    tbody.innerHTML = data.results.map(m => {
+      const s = getStatus(m);
+      return '<tr><td style="font-weight:600">'+esc(m.label)+'</td>' +
+        '<td><span class="badge badge-info">'+m.cat+'</span></td>' +
+        '<td>'+(m.lat!==null?m.lat+'ms':'—')+'</td>' +
+        '<td>'+m.jitter+'ms</td>' +
+        '<td>'+(m.ok?'0%':'100%')+'</td>' +
+        '<td>'+(m.ttfb?m.ttfb+'ms':'—')+'</td>' +
+        '<td>'+(m.http?'<span class="badge '+(m.http<300?'badge-ok':m.http<500?'badge-warn':'badge-crit')+'">'+m.http+'</span>':'—')+'</td>' +
+        '<td>'+m.probes+'</td>' +
+        '<td><span class="badge '+s.cls+'">'+s.text+'</span></td></tr>';
+    }).join('');
+
+    // Charts
+    Object.values(charts).forEach(c=>c.destroy());
+    const labels = data.results.map(m=>m.label);
+    const latData = data.results.map(m=>m.lat||0);
+
+    charts.lat = new Chart(document.getElementById('latencyChart'),{
+      type:'bar',
+      data:{labels,datasets:[{data:latData,backgroundColor:latData.map(v=>barColor(v,50,200)),borderWidth:0,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+        y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#1e293b'}},
+        x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}}
+      }}
+    });
+
+    // Traffic table
+    const tt = document.getElementById('trafficTable');
+    let trafficRows = '';
+    if(data.traffic.centro_as){
+      data.traffic.centro_as.forEach(a => {
+        trafficRows += '<tr><td>MX204-CENTRO</td><td>'+esc(a.name.split(' ')[0])+'</td><td>'+esc(a.name)+'</td><td><b>'+fmtBps(a.bps)+'</b></td></tr>';
+      });
+    }
+    if(data.traffic.rosa_as){
+      data.traffic.rosa_as.forEach(a => {
+        trafficRows += '<tr><td>MX204-STA-ROSA</td><td>'+esc(a.name.split(' ')[0])+'</td><td>'+esc(a.name)+'</td><td><b>'+fmtBps(a.bps)+'</b></td></tr>';
+      });
+    }
+    tt.innerHTML = trafficRows || '<tr><td colspan="4" style="color:#64748b;text-align:center">Sem dados de Flow</td></tr>';
+
+    // Summary table
+    const st = document.getElementById('summaryTable');
+    st.innerHTML = data.alerts.map(a => {
+      const sev = a.severity === 'critical' ? 'badge-crit' : 'badge-warn';
+      const sevText = a.severity === 'critical' ? 'CRÍTICO' : 'AVISO';
+      return '<tr><td><b>'+esc(a.title.split('—')[0].trim())+'</b></td>' +
+        '<td>'+esc(a.evidence)+'</td>' +
+        '<td><span class="badge '+sev+'">'+sevText+'</span></td>' +
+        '<td>'+esc(a.desc.split('Ação NOC:')[1] || a.desc)+'</td></tr>';
+    }).join('') || '<tr><td colspan="4" style="color:#4ade80;text-align:center">✓ Nenhum problema detectado</td></tr>';
+
+    const agora = new Date().toLocaleString('pt-BR');
+    document.getElementById('statusBar').innerHTML = '<span><span class="ok">✓</span> Relatório gerado em '+agora+'</span><span>'+data.stats.targets+' alvos | '+data.stats.critical+' críticos | '+data.stats.warnings+' avisos</span>';
+  } catch(err){
+    document.getElementById('statusBar').textContent = 'Erro: '+err.message;
+    document.getElementById('alertsContainer').innerHTML = '<div class="alert-box critical"><div class="alert-icon">🔴</div><div class="alert-content"><div class="alert-title">Erro ao coletar dados</div><div class="alert-desc">'+esc(err.message)+'</div></div></div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Gerar Relatório';
+  }
+}
+
+carregar();
+</script>
+</body>
+</html>
