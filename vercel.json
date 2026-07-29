@@ -100,6 +100,10 @@
       "dest": "/public/network-monitor.html"
     },
     {
+      "src": "/evidence-report.html",
+      "dest": "/public/evidence-report.html"
+    },
+    {
       "src": "/cabos-pa-aurora.geojson",
       "dest": "/public/cabos-pa-aurora.geojson"
     },
