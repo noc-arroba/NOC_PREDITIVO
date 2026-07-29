@@ -96,6 +96,10 @@
       "dest": "/public/parque_aurora.geojson"
     },
     {
+      "src": "/network-monitor.html",
+      "dest": "/public/network-monitor.html"
+    },
+    {
       "src": "/cabos-pa-aurora.geojson",
       "dest": "/public/cabos-pa-aurora.geojson"
     },

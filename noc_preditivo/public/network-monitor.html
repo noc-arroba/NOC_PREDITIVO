@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Monitor — NOC Preditivo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:4px}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
+.btn:disabled{opacity:.5;cursor:wait}
+.container{max-width:1300px;margin:0 auto;padding:20px}
+.grid{display:grid;gap:16px;margin-bottom:20px}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:768px){.grid-4,.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px}
+.card.alert{border-color:#ef4444}
+.stat-value{font-size:32px;font-weight:700}
+.stat-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.stat-unit{font-size:14px;color:#475569;font-weight:500}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-ok{background:#16653422;color:#4ade80}
+.badge-warn{background:#854d0e22;color:#fbbf24}
+.badge-crit{background:#991b1b22;color:#f87171}
+.badge-info{background:#1e40af22;color:#60a5fa}
+.section-title{font-size:15px;font-weight:700;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1e293b}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 6px;border-bottom:2px solid #1e293b;font-weight:600;color:#64748b;font-size:10px;text-transform:uppercase}
+td{padding:8px 6px;border-bottom:1px solid #111827;color:#cbd5e1}
+tr:hover td{background:#0f172a}
+.chart-container{position:relative;height:200px}
+.loading{text-align:center;padding:40px;color:#64748b}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.status-bar .ok{color:#22c55e}
+.kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px;border-left:3px solid #3b82f6}
+.kpi-card .kpi-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.kpi-card .kpi-desc{font-size:11px;color:#64748b;line-height:1.5}
+.kpi-card .kpi-range{font-size:10px;margin-top:6px}
+.good{color:#4ade80}.warn{color:#fbbf24}.crit{color:#f87171}
+.route-box{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;margin-bottom:8px;font-family:monospace;font-size:11px}
+.hop-line{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px}
+.hop-num{width:24px;height:24px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#94a3b8}
+.hop-bar{height:6px;border-radius:3px;flex:1;max-width:200px}
+.health-ring{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 8px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📊 Network Monitor</h1>
+    <div class="sub">ASN 264025 · Arroba Banda Larga · Monitoramento externo + interno</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/"><button class="btn btn-ghost">← Dashboard</button></a>
+    <a href="flow.html"><button class="btn btn-ghost">Flow</button></a>
+    <a href="zabbix.html"><button class="btn btn-ghost">Zabbix</button></a>
+    <button class="btn btn-primary" id="btnRefresh" onclick="carregar()">Atualizar</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- HEALTH SCORE -->
+  <div class="section-title">🏥 Visão Geral da Saúde</div>
+  <div class="grid grid-4">
+    <div class="card" style="text-align:center;">
+      <div class="stat-label">Health Score</div>
+      <div class="stat-value" id="kpiHealth" style="color:#fbbf24">--</div>
+      <div class="stat-unit">/ 100</div>
+      <span class="badge badge-warn" id="badgeHealth">⚠ Carregando...</span>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat-label">Serviços OK</div>
+      <div class="stat-value" id="kpiServicesOk" style="color:#4ade80">--</div>
+      <div class="stat-unit" id="kpiServicesSub">de -- alvos</div>
+      <span class="badge badge-ok" id="badgeServices">✓ --</span>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat-label">Alertas Zabbix</div>
+      <div class="stat-value" id="kpiAlerts" style="color:#fbbf24">--</div>
+      <div class="stat-unit" id="kpiAlertsSub">-- críticos · -- avisos</div>
+      <span class="badge badge-warn" id="badgeAlerts">⚠ --</span>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="stat-label">Hosts Zabbix</div>
+      <div class="stat-value" id="kpiHosts" style="color:#60a5fa">--</div>
+      <div class="stat-unit" id="kpiHostsSub">-- OK · -- offline</div>
+      <span class="badge badge-info" id="badgeHosts">-- monitores</span>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-title">⏱ Latência por Serviço (sondagem em tempo real)</div>
+  <div class="grid grid-2">
+    <div class="card"><h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:#94a3b8">Latência (ms) — Tempo de Resposta</h3><div class="chart-container"><canvas id="latencyChart"></canvas></div></div>
+    <div class="card"><h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:#94a3b8">TTFB (ms) — Time to First Byte</h3><div class="chart-container"><canvas id="ttfbChart"></canvas></div></div>
+  </div>
+
+  <!-- SERVICE TABLE -->
+  <div class="section-title">📋 Status Detalhado por Serviço</div>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Serviço</th><th>Categoria</th><th>Latência</th><th>TTFB</th><th>HTTP</th><th>Status</th></tr></thead>
+      <tbody id="statusTable"><tr><td colspan="6" style="color:#64748b;text-align:center;padding:20px"><div class="spinner"></div><br>Carregando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- TRAFFIC BY AS -->
+  <div class="section-title">📡 Tráfego por AS — MX204-Centro (RR Flow NetFlow)</div>
+  <div class="card">
+    <h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:#94a3b8">Top 10 AS de Destino — Última hora</h3>
+    <div class="chart-container" style="height:250px"><canvas id="trafficChart"></canvas></div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="section-title">📐 Indicadores que Devemos Monitorar (KPIs)</div>
+  <div class="grid grid-3" id="kpiGrid">
+    <div class="kpi-card"><div class="kpi-title">1. Latência (RTT)</div><div class="kpi-desc">Tempo de ida e volta do pacote. Mede quão rápido o cliente acessa o serviço.</div><div class="kpi-range"><span class="good">✓ &lt;50ms</span> · <span class="warn">⚠ &lt;100ms</span> · <span class="crit">🔴 &gt;200ms</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">2. Jitter</div><div class="kpi-desc">Variação da latência entre pacotes. Afeta streaming, gaming e VoIP.</div><div class="kpi-range"><span class="good">✓ &lt;10ms</span> · <span class="warn">⚠ &lt;30ms</span> · <span class="crit">🔴 &gt;50ms</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">3. Perda de Pacotes</div><div class="kpi-desc">Pacotes que não chegaram. Causa retransmissões TCP e lentidão.</div><div class="kpi-range"><span class="good">✓ 0%</span> · <span class="warn">⚠ &gt;3%</span> · <span class="crit">🔴 &gt;10%</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">4. TTFB</div><div class="kpi-desc">Tempo até o primeiro byte. Cliente sente a página "demorando".</div><div class="kpi-range"><span class="good">✓ &lt;500ms</span> · <span class="warn">⚠ &lt;1000ms</span> · <span class="crit">🔴 &gt;2000ms</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">5. Resolução DNS</div><div class="kpi-desc">Tempo para resolver domínio. DNS lento afeta TODA a navegação.</div><div class="kpi-range"><span class="good">✓ &lt;20ms</span> · <span class="warn">⚠ &lt;50ms</span> · <span class="crit">🔴 &gt;100ms</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">6. Throughput</div><div class="kpi-desc">Taxa de download. Queda indica congestionamento no upstream.</div><div class="kpi-range"><span class="good">✓ &gt;80%</span> · <span class="warn">⚠ 50-80%</span> · <span class="crit">🔴 &lt;50%</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">7. Status HTTP</div><div class="kpi-desc">200=OK, 3xx=redirect, 403/417=acesso negado, 5xx=erro servidor.</div><div class="kpi-range"><span class="good">✓ 2xx</span> · <span class="warn">⚠ 3xx</span> · <span class="crit">🔴 4xx/5xx</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">8. AS Path BGP</div><div class="kpi-desc">Número de hops de AS até o destino. Mais hops = rota mais frágil.</div><div class="kpi-range"><span class="good">✓ 2-3 hops</span> · <span class="warn">⚠ 4-5</span> · <span class="crit">🔴 &gt;5</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">9. Tráfego por AS</div><div class="kpi-desc">Volume por destino. Mostra quais serviços consomem mais banda.</div><div class="kpi-range"><span class="good">✓ Balanceado</span> · <span class="warn">⚠ 1 AS &gt;50%</span> · <span class="crit">🔴 Saturação</span></div></div>
+    <div class="kpi-card"><div class="kpi-title">10. Disponibilidade</div><div class="kpi-desc">Percentual de testes bem-sucedidos. Meta de SLA do provedor.</div><div class="kpi-range"><span class="good">✓ 99.9%</span> · <span class="warn">⚠ 99%</span> · <span class="crit">🔴 &lt;99%</span></div></div>
+  </div>
+
+  <div class="status-bar" id="statusBar">Aguardando dados...</div>
+</div>
+
+<script>
+const API_URL = 'https://solene-4b7d7251.base44.app/functions/networkMonitor?action=all';
+let charts = {};
+
+function esc(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function getStatus(m){
+  if(!m.ok || m.http === null) return {cls:'badge-crit',text:'🔴 Offline'};
+  if(m.http >= 500) return {cls:'badge-crit',text:'🔴 Erro '+m.http};
+  if(m.lat > 200 || (m.ttfb && m.ttfb > 2000)) return {cls:'badge-crit',text:'🔴 Crítico'};
+  if(m.lat > 100 || (m.ttfb && m.ttfb > 1000)) return {cls:'badge-warn',text:'⚠ Atenção'};
+  return {cls:'badge-ok',text:'✓ OK'};
+}
+
+function barColor(val, warn, crit){
+  if(val >= crit) return '#ef4444';
+  if(val >= warn) return '#f59e0b';
+  return '#3b82f6';
+}
+
+async function carregar(){
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true; btn.textContent = 'Carregando...';
+
+  try {
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+
+    // Health Score
+    const hs = parseFloat(data.healthScore || 0);
+    document.getElementById('kpiHealth').textContent = hs.toFixed(1);
+    const hsEl = document.getElementById('kpiHealth');
+    const badgeH = document.getElementById('badgeHealth');
+    if(hs >= 90){ hsEl.style.color='#4ade80'; badgeH.className='badge badge-ok'; badgeH.textContent='✓ Saudável'; }
+    else if(hs >= 70){ hsEl.style.color='#fbbf24'; badgeH.className='badge badge-warn'; badgeH.textContent='⚠ Atenção'; }
+    else { hsEl.style.color='#f87171'; badgeH.className='badge badge-crit'; badgeH.textContent='🔴 Crítico'; }
+
+    // Services
+    const sv = data.services;
+    document.getElementById('kpiServicesOk').textContent = sv.ok;
+    document.getElementById('kpiServicesSub').textContent = 'de '+sv.total+' alvos';
+    document.getElementById('badgeServices').textContent = sv.crit > 0 ? '🔴 '+sv.crit+' críticos' : sv.warn > 0 ? '⚠ '+sv.warn+' avisos' : '✓ Saudável';
+    document.getElementById('badgeServices').className = sv.crit > 0 ? 'badge badge-crit' : sv.warn > 0 ? 'badge badge-warn' : 'badge badge-ok';
+
+    // Zabbix
+    if(data.zabbix){
+      const z = data.zabbix;
+      document.getElementById('kpiAlerts').textContent = z.totalTriggers;
+      const crit = (z.bySeverity[5]||0)+(z.bySeverity[4]||0);
+      const warn = (z.bySeverity[3]||0)+(z.bySeverity[2]||0);
+      document.getElementById('kpiAlertsSub').textContent = crit+' críticos · '+warn+' avisos';
+      document.getElementById('badgeAlerts').textContent = crit > 0 ? '🔴 '+crit+' críticos' : warn > 0 ? '⚠ '+warn+' avisos' : '✓ OK';
+      document.getElementById('badgeAlerts').className = crit > 0 ? 'badge badge-crit' : warn > 0 ? 'badge badge-warn' : 'badge badge-ok';
+
+      document.getElementById('kpiHosts').textContent = z.totalHosts;
+      document.getElementById('kpiHostsSub').textContent = z.hostsOk+' OK · '+z.hostsDown+' offline';
+      document.getElementById('badgeHosts').textContent = z.hostsDown > 0 ? '🔴 '+z.hostsDown+' down' : '✓ Todos online';
+      document.getElementById('badgeHosts').className = z.hostsDown > 0 ? 'badge badge-crit' : 'badge badge-ok';
+    }
+
+    // Service Table
+    const tbody = document.getElementById('statusTable');
+    tbody.innerHTML = sv.results.map(m => {
+      const s = getStatus(m);
+      return '<tr><td style="font-weight:600">'+esc(m.label)+'</td>' +
+        '<td><span class="badge badge-info">'+m.cat+'</span></td>' +
+        '<td>'+(m.lat !== null ? m.lat+'ms' : '—')+'</td>' +
+        '<td>'+(m.ttfb ? m.ttfb+'ms' : '—')+'</td>' +
+        '<td>'+(m.http ? '<span class="badge '+(m.http<300?'badge-ok':m.http<500?'badge-warn':'badge-crit')+'">'+m.http+'</span>' : '—')+'</td>' +
+        '<td><span class="badge '+s.cls+'">'+s.text+'</span></td></tr>';
+    }).join('');
+
+    // Charts
+    const labels = sv.results.map(m => m.label);
+    const latData = sv.results.map(m => m.lat || 0);
+    const ttfbData = sv.results.map(m => m.ttfb || 0);
+
+    Object.values(charts).forEach(c => c.destroy());
+    charts.latency = new Chart(document.getElementById('latencyChart'), {
+      type:'bar',
+      data:{labels,datasets:[{data:latData,backgroundColor:latData.map(v=>barColor(v,100,200)),borderWidth:0}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'ms'},ticks:{color:'#64748b'},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8'},grid:{color:'#1e293b'}}}}
+    });
+
+    charts.ttfb = new Chart(document.getElementById('ttfbChart'), {
+      type:'bar',
+      data:{labels,datasets:[{data:ttfbData,backgroundColor:ttfbData.map(v=>barColor(v,1000,2000)),borderWidth:0}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'ms'},ticks:{color:'#64748b'},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8'},grid:{color:'#1e293b'}}}}
+    });
+
+    // Traffic by AS
+    if(data.traffic && data.traffic.as){
+      const asLabels = data.traffic.as.map(a => a.name.split(' ').slice(0,2).join(' '));
+      const asData = data.traffic.as.map(a => a.bps / 1e9);
+      charts.traffic = new Chart(document.getElementById('trafficChart'), {
+        type:'bar',
+        data:{labels:asLabels,datasets:[{label:'RX (Gbps)',data:asData,backgroundColor:'#3b82f6',borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,scales:{y:{title:{display:true,text:'Gbps',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'#1e293b'}},x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}}},plugins:{legend:{labels:{color:'#94a3b8'}}}}
+      });
+    }
+
+    const agora = new Date().toLocaleString('pt-BR');
+    document.getElementById('statusBar').innerHTML = '<span><span class="ok">✓</span> Atualizado em '+agora+'</span><span>17 alvos | Flow + Zabbix + Probe</span>';
+  } catch(err){
+    document.getElementById('statusBar').textContent = 'Erro: '+err.message;
+    document.getElementById('statusTable').innerHTML = '<tr><td colspan="6" style="color:#f87171;text-align:center;padding:20px">Erro: '+esc(err.message)+'</td></tr>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Atualizar';
+  }
+}
+
+carregar();
+setInterval(carregar, 300000);
+</script>
+</body>
+</html>
