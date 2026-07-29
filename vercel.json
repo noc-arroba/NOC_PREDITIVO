@@ -56,6 +56,22 @@
       "dest": "/public/zabbix.html"
     },
     {
+      "src": "/flow.html",
+      "dest": "/public/flow.html"
+    },
+    {
+      "src": "/bgp-centro.html",
+      "dest": "/public/bgp-centro.html"
+    },
+    {
+      "src": "/vpn-l2tp.html",
+      "dest": "/public/vpn-l2tp.html"
+    },
+    {
+      "src": "/rb-cliente.html",
+      "dest": "/public/rb-cliente.html"
+    },
+    {
       "src": "/index.html",
       "dest": "/public/index.html"
     },
