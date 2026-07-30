@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zabbix Monitor — NOC Preditivo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:8px}
+.header .sub{font-size:12px;color:#64748b;margin-top:4px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;text-decoration:none}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}
+.btn-ghost:hover{color:#fff;border-color:#475569}
+.btn:disabled{opacity:.5;cursor:wait}
+.status-dot{display:inline-block;width:10px;height:10px;border-radius:50%}
+.dot-ok{background:#22c55e;box-shadow:0 0 8px #22c55e88}
+.dot-down{background:#ef4444;box-shadow:0 0 8px #ef444488}
+.dot-warn{background:#fbbf24;box-shadow:0 0 8px #fbbf2488}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+
+.health-banner{border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;border:1px solid #1e293b}
+.health-banner.ok{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warn{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.crit{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:48px;font-weight:800;line-height:1}
+.health-label{font-size:13px;color:#94a3b8;margin-top:8px}
+.alert-ev{border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:start}
+.alert-ev.crit{background:#7f1d1d22;border-left:3px solid #ef4444}
+.alert-ev.warn{background:#78350f22;border-left:3px solid #f59e0b}
+.alert-ev-icon{font-size:18px;flex-shrink:0}
+.alert-ev-title{font-weight:700;font-size:13px;margin-bottom:2px;color:#e2e8f0}
+.alert-ev-desc{font-size:12px;color:#94a3b8;margin:0;line-height:1.5}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.kpi-card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:16px;transition:all .2s}
+.kpi-card:hover{border-color:#334155;transform:translateY(-2px)}
+.kpi-card .label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600}
+.kpi-card .value{font-size:28px;font-weight:700;margin:8px 0 4px}
+.kpi-card .sub{font-size:11px;color:#475569}
+.kpi-card.alert{border-color:#ef4444;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
+.filter-bar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.filter-bar input{background:#111827;border:1px solid #1e293b;color:#e2e8f0;padding:8px 12px;border-radius:8px;font-size:13px}
+.sev-filter{display:flex;gap:6px;flex-wrap:wrap}
+.sev-btn{padding:6px 12px;border-radius:6px;border:1px solid #334155;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;background:transparent;color:#64748b}
+.sev-btn.active{color:#fff}
+.sev-btn[data-sev="5"].active{background:#dc2626;border-color:#dc2626}
+.sev-btn[data-sev="4"].active{background:#ef4444;border-color:#ef4444}
+.sev-btn[data-sev="3"].active{background:#f97316;border-color:#f97316}
+.sev-btn[data-sev="2"].active{background:#fbbf24;border-color:#fbbf24;color:#0a0e17}
+.sev-btn[data-sev="1"].active{background:#3b82f6;border-color:#3b82f6}
+.sev-btn[data-sev="all"].active{background:#475569;border-color:#475569}
+.trigger-table{width:100%;border-collapse:collapse}
+.trigger-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;font-weight:600;border-bottom:1px solid #1e293b;position:sticky;top:60px;background:#0a0e17;z-index:10}
+.trigger-table td{padding:10px 12px;border-bottom:1px solid #111827;font-size:13px}
+.trigger-table tr:hover td{background:#111827}
+.sev-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase}
+.host-name{font-weight:600;color:#cbd5e1}
+.trigger-desc{color:#94a3b8;font-size:12px}
+.age-recent{color:#ef4444;font-weight:600}
+.age-today{color:#fbbf24;font-weight:600}
+.age-old{color:#64748b}
+.loading{text-align:center;padding:40px;color:#64748b}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid #1e293b;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status-bar{margin-top:16px;padding:8px 16px;background:#111827;border-radius:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.status-bar .ok{color:#22c55e}
+.hosts-section{margin-top:24px}
+.section-title{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.host-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.host-card{background:#111827;border:1px solid #1e293b;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.host-card .name{font-size:12px;font-weight:600;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.host-card .ip{font-size:10px;color:#475569}
+.host-card.down{border-color:#ef4444}
+.host-card.down .name{color:#ef4444}
+.host-card .groups{font-size:9px;color:#334155;margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📊 Zabbix Monitor</h1>
+    <div class="sub">Arroba Banda Larga | AS264025 | Zabbix 7.0</div>
+  </div>
+  <div class="header-right">
+    <a href="/"><button class="btn btn-ghost">← Dashboard</button></a>
+    <button class="btn btn-ghost" id="btnHosts" onclick="toggleHosts()">Hosts</button>
+    <button class="btn btn-primary" id="btnRefresh" onclick="carregarDados()">Atualizar</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="health-banner" id="healthBanner">
+    <div class="health-score" id="zbxHealthScore" style="color:#fbbf24">--</div>
+    <div class="health-label" id="zbxHealthLabel">Health Score / 100 — Carregando...</div>
+  </div>
+  <div id="zbxAlerts"></div>
+  
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="label">Hosts Ativos</div><div class="value" id="kpiHosts">--</div><div class="sub" id="kpiHostsSub">--</div></div>
+    <div class="kpi-card"><div class="label">Hosts Offline</div><div class="value" id="kpiDown" style="color:#ef4444">--</div><div class="sub">Indisponíveis</div></div>
+    <div class="kpi-card" id="kpiDisasterCard"><div class="label">Desastre</div><div class="value" id="kpiDisaster" style="color:#dc2626">--</div><div class="sub">Sev 5</div></div>
+    <div class="kpi-card" id="kpiHighCard"><div class="label">Alto</div><div class="value" id="kpiHigh" style="color:#ef4444">--</div><div class="sub">Sev 4</div></div>
+    <div class="kpi-card"><div class="label">Médio</div><div class="value" id="kpiMedium" style="color:#f97316">--</div><div class="sub">Sev 3</div></div>
+    <div class="kpi-card"><div class="label">Avisos</div><div class="value" id="kpiWarn" style="color:#fbbf24">--</div><div class="sub">Sev 2</div></div>
+    <div class="kpi-card"><div class="label">Info</div><div class="value" id="kpiInfo" style="color:#3b82f6">--</div><div class="sub">Sev 1</div></div>
+    <div class="kpi-card"><div class="label">Total Alertas</div><div class="value" id="kpiTotalAlerts">--</div><div class="sub">Triggers ativos</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" id="searchHost" placeholder="Buscar host ou descrição..." oninput="renderTriggers()" style="width:250px">
+    <div class="sev-filter">
+      <button class="sev-btn active" data-sev="all" onclick="setSevFilter('all')">Todos</button>
+      <button class="sev-btn" data-sev="5" onclick="setSevFilter('5')">Disastre</button>
+      <button class="sev-btn" data-sev="4" onclick="setSevFilter('4')">Alto</button>
+      <button class="sev-btn" data-sev="3" onclick="setSevFilter('3')">Médio</button>
+      <button class="sev-btn" data-sev="2" onclick="setSevFilter('2')">Aviso</button>
+      <button class="sev-btn" data-sev="1" onclick="setSevFilter('1')">Info</button>
+    </div>
+  </div>
+
+  <table class="trigger-table">
+    <thead>
+      <tr>
+        <th style="width:60px">Sev</th>
+        <th style="width:250px">Host</th>
+        <th>Descrição</th>
+        <th style="width:100px">Tempo</th>
+      </tr>
+    </thead>
+    <tbody id="triggerBody">
+      <tr><td colspan="4"><div class="loading"><div class="spinner"></div><br>Carregando alertas do Zabbix...</div></td></tr>
+    </tbody>
+  </table>
+
+  <div class="hosts-section" id="hostsSection" style="display:none">
+    <div class="section-title">🖥️ Hosts Monitorados <span id="hostsCount" style="color:#64748b;font-size:13px"></span></div>
+    <div class="host-grid" id="hostGrid"></div>
+  </div>
+
+  <div class="status-bar" id="statusBar">Aguardando dados...</div>
+</div>
+
+<script>
+const ZABBIX_API = '/api/zabbix';
+const SEV_MAP = { 0:'NA', 1:'INFO', 2:'WARN', 3:'MED', 4:'HIGH', 5:'DISAS' };
+const SEV_COLOR = { 0:'#64748b', 1:'#3b82f6', 2:'#fbbf24', 3:'#f97316', 4:'#ef4444', 5:'#dc2626' };
+
+async function zabbixCall(action) {
+  const res = await fetch(ZABBIX_API + '?action=' + action);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.json();
+}
+
+let allTriggers = [];
+let allHosts = [];
+let sevFilter = 'all';
+let hostsVisible = false;
+let autoRefreshTimer = null;
+
+async function carregarDados() {
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true; btn.textContent = 'Carregando...';
+
+  try {
+    const data = await zabbixCall('overview');
+    const triggers = data.triggers || [];
+    const stats = data.stats || {};
+
+    // Stats direto do proxy
+    document.getElementById('kpiHosts').textContent = stats.totalHosts || 0;
+    document.getElementById('kpiHostsSub').textContent = (stats.hostsOk || 0) + ' OK / ' + (stats.hostsDown || 0) + ' offline';
+    document.getElementById('kpiDown').textContent = stats.hostsDown || 0;
+
+    const bySev = stats.bySeverity || {};
+
+    // Mapear triggers do proxy (já vêm formatados)
+    allTriggers = triggers.map(function(t) {
+      return {
+        triggerid: t.triggerid || '',
+        host: t.host || 'N/A',
+        hostid: t.hostid || null,
+        description: t.description || '',
+        severity: t.severity || 0,
+        severityName: SEV_MAP[t.severity] || '?',
+        severityColor: SEV_COLOR[t.severity] || '#64748b',
+        lastchange: t.lastchange || 0,
+        ageTxt: t.ageTxt || ''
+      };
+    });
+
+    document.getElementById('kpiDisaster').textContent = bySev['5'] || 0;
+    document.getElementById('kpiHigh').textContent = bySev['4'] || 0;
+    document.getElementById('kpiMedium').textContent = bySev['3'] || 0;
+    document.getElementById('kpiWarn').textContent = bySev['2'] || 0;
+    document.getElementById('kpiInfo').textContent = bySev['1'] || 0;
+    document.getElementById('kpiTotalAlerts').textContent = stats.totalTriggers || allTriggers.length;
+
+    const dc = document.getElementById('kpiDisasterCard');
+    const hc = document.getElementById('kpiHighCard');
+    if ((bySev['5']||0) > 0) dc.classList.add('alert'); else dc.classList.remove('alert');
+    if ((bySev['4']||0) > 0) hc.classList.add('alert'); else hc.classList.remove('alert');
+
+    // Health Score
+    updateZbxHealth(calcHealthZabbix(stats.totalHosts || 0, stats.hostsDown || 0, stats.totalTriggers || 0, bySev));
+    renderZbxAlerts(allTriggers);
+
+    renderTriggers();
+    if (hostsVisible) loadHosts();
+
+    const agora = new Date().toLocaleString('pt-BR');
+    document.getElementById('statusBar').innerHTML =
+      '<span><span class="ok">✓</span> Atualizado em ' + agora + '</span>' +
+      '<span>' + allTriggers.length + ' alertas ativos | ' + (stats.totalHosts || 0) + ' hosts monitorados</span>';
+
+  } catch (err) {
+    document.getElementById('triggerBody').innerHTML =
+      '<tr><td colspan="4" style="color:#ef4444;padding:20px;">Erro: ' + esc(err.message) + '</td></tr>';
+    document.getElementById('statusBar').textContent = 'Erro: ' + err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Atualizar';
+  }
+}
+
+function renderTriggers() {
+  const body = document.getElementById('triggerBody');
+  let filtered = allTriggers;
+  if (sevFilter !== 'all') filtered = filtered.filter(t => t.severity === parseInt(sevFilter));
+  const search = document.getElementById('searchHost').value.toLowerCase();
+  if (search) filtered = filtered.filter(t => t.host.toLowerCase().includes(search) || t.description.toLowerCase().includes(search));
+
+  if (!filtered.length) {
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#64748b;">Nenhum alerta encontrado</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(function(t) {
+    const c = t.severityColor;
+    const ageSec = (Date.now()/1000) - t.lastchange;
+    let ageCls = 'age-old';
+    if (ageSec < 3600) ageCls = 'age-recent';
+    else if (ageSec < 86400) ageCls = 'age-today';
+    return '<tr>' +
+      '<td><span class="sev-badge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'66">'+t.severityName+'</span></td>' +
+      '<td><div class="host-name">' + esc(t.host) + '</div></td>' +
+      '<td><div class="trigger-desc">' + esc(t.description) + '</div></td>' +
+      '<td><span class="'+ageCls+'">' + t.ageTxt + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function setSevFilter(sev) {
+  sevFilter = sev;
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.toggle('active', b.dataset.sev === sev));
+  renderTriggers();
+}
+
+function toggleHosts() {
+  hostsVisible = !hostsVisible;
+  document.getElementById('hostsSection').style.display = hostsVisible ? 'block' : 'none';
+  if (hostsVisible) renderHosts();
+}
+
+function renderHosts() {
+  const grid = document.getElementById('hostGrid');
+  document.getElementById('hostsCount').textContent = '(' + allHosts.length + ' hosts)';
+  grid.innerHTML = allHosts.map(function(h) {
+    const down = h.available === '2';
+    return '<div class="host-card' + (down ? ' down' : '') + '">' +
+      '<div><div class="name" title="' + esc(h.name) + '">' + esc(h.name) + '</div>' +
+      '<div class="ip">' + esc(h.ip) + '</div></div>' +
+      '<span class="status-dot ' + (down ? 'dot-down' : 'dot-ok') + '"></span>' +
+      '</div>';
+  }).join('');
+}
+
+
+// === HEALTH SCORE ZABBIX ===
+function calcHealthZabbix(totalHosts, hostsDown, totalTriggers, bySeverity) {
+  const crit = (bySeverity[5]||0) + (bySeverity[4]||0);
+  const warn = (bySeverity[3]||0) + (bySeverity[2]||0);
+  let score = 100 - (hostsDown * 5) - (crit * 3) - (warn * 1);
+  return Math.max(0, Math.min(100, score));
+}
+
+function updateZbxHealth(score) {
+  const hs = document.getElementById('zbxHealthScore');
+  const hb = document.getElementById('healthBanner');
+  const hl = document.getElementById('zbxHealthLabel');
+  hs.textContent = score.toFixed(1);
+  if(score >= 90){ hs.style.color='#4ade80'; hb.className='health-banner ok'; hl.textContent='Health Score / 100 — SAUDÁVEL'; }
+  else if(score >= 70){ hs.style.color='#fbbf24'; hb.className='health-banner warn'; hl.textContent='Health Score / 100 — ATENÇÃO'; }
+  else{ hs.style.color='#f87171'; hb.className='health-banner crit'; hl.textContent='Health Score / 100 — CRÍTICO'; }
+}
+
+function renderZbxAlerts(triggers) {
+  const container = document.getElementById('zbxAlerts');
+  const crit = triggers.filter(t => t.severity >= 4);
+  const warn = triggers.filter(t => t.severity >= 2 && t.severity < 4);
+  if(crit.length === 0 && warn.length === 0){
+    container.innerHTML = '<div class="alert-ev" style="background:#064e3b22;border-left:3px solid #10b981"><div class="alert-ev-icon">✅</div><div><div class="alert-ev-title">Nenhum alerta ativo</div><div class="alert-ev-desc">Todos os triggers estão em estado normal. Sem evidência de problema.</div></div></div>';
+    return;
+  }
+  let html = '';
+  crit.slice(0, 5).forEach(t => {
+    html += '<div class="alert-ev crit"><div class="alert-ev-icon">🔴</div><div><div class="alert-ev-title">' + esc(t.host) + ' — ' + esc(t.description) + '</div><div class="alert-ev-desc">Severidade: ' + t.severityName + '. Há ' + t.ageTxt + '. <b>Ação NOC:</b> Acionamento imediato.</div></div></div>';
+  });
+  warn.slice(0, 3).forEach(t => {
+    html += '<div class="alert-ev warn"><div class="alert-ev-icon">⚠️</div><div><div class="alert-ev-title">' + esc(t.host) + ' — ' + esc(t.description) + '</div><div class="alert-ev-desc">Severidade: ' + t.severityName + '. Há ' + t.ageTxt + '. <b>Ação NOC:</b> Investigar.</div></div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+carregarDados();
+autoRefreshTimer = setInterval(carregarDados, 60000);
+</script>
+</body>
+</html>

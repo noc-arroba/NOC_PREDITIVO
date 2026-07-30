@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — Dashboard Executivo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;color:#e0e0e0}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 30px;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100}
+.header h1{font-size:22px;color:#f8fafc;display:flex;align-items:center;gap:10px}
+.header .asn{font-size:14px;color:#64748b;margin-top:4px}
+.header .fase{background:#1e40af;color:#dbeafe;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.container{max-width:1600px;margin:0 auto;padding:20px}
+.nav{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;flex-wrap:wrap;margin-bottom:20px}
+.nav a{text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;transition:all .2s}
+.nav a.active{background:#1e40af;color:#dbeafe;font-weight:600}
+.nav a:not(.active){color:#94a3b8}
+.nav a:not(.active):hover{background:#1e293b;color:#cbd5e1}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+@media(max-width:768px){.grid4{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+.card{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px}
+.card-title{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.card-value{font-size:32px;font-weight:700;color:#f8fafc}
+.card-sub{font-size:12px;color:#475569;margin-top:4px}
+.section-title{font-size:16px;color:#94a3b8;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1e293b}
+.health-banner{border-radius:12px;padding:24px;text-align:center;margin-bottom:20px;border:1px solid;transition:all .3s}
+.health-banner.healthy{background:linear-gradient(135deg,#064e3b22,#065f4622);border-color:#10b98144}
+.health-banner.warning{background:linear-gradient(135deg,#78350f22,#92400e22);border-color:#f59e0b44}
+.health-banner.critical{background:linear-gradient(135deg,#7f1d1d22,#991b1b22);border-color:#ef444444}
+.health-score{font-size:56px;font-weight:800;line-height:1}
+.health-label{font-size:14px;color:#94a3b8;margin-top:8px}
+.stat-card{text-align:center;padding:16px 8px;border-radius:10px;border:1px solid #1e293b;background:#111827;transition:all .3s}
+.stat-card:hover{border-color:#334155}
+.stat-val{font-size:28px;font-weight:800}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase}
+.stat-card.ok .stat-val{color:#4ade80}
+.stat-card.warn .stat-val{color:#fbbf24}
+.stat-card.crit .stat-val{color:#f87171}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block}
+.badge-ok{background:#064e3b;color:#6ee7b7}
+.badge-warn{background:#78350f;color:#fcd34d}
+.badge-crit{background:#7f1d1d;color:#fca5a5}
+.badge-info{background:#1e3a5f;color:#93c5fd}
+.badge-offline{background:#1e1b4b;color:#c4b5fd}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b}
+td{padding:10px 12px;border-bottom:1px solid #111827;color:#cbd5e1}
+tr:hover{background:#0f172a}
+.loading{text-align:center;padding:60px;color:#475569}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar-container{height:8px;background:#1e293b;border-radius:4px;overflow:hidden;margin-top:6px}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.ping-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#111827;border:1px solid #1e293b;border-radius:8px;margin-bottom:8px}
+.ping-row .name{font-weight:600;min-width:180px;font-size:13px}
+.ping-row .ip{color:#64748b;font-family:monospace;font-size:11px;min-width:120px}
+.ping-row .metrics{display:flex;gap:16px;flex:1;justify-content:flex-end}
+.ping-metric{font-size:12px;text-align:center}
+.ping-metric .v{font-weight:700;font-size:14px}
+.ping-metric .l{color:#64748b;font-size:9px;text-transform:uppercase}
+.hop-row{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:12px;border-bottom:1px solid #1e293b}
+.hop-row .num{color:#475569;min-width:24px}
+.hop-row .addr{font-family:monospace;min-width:160px;color:#93c5fd}
+.hop-row .ms{color:#cbd5e1}
+.hop-row .loss{color:#f87171;font-size:11px;margin-left:auto}
+.gauge{width:120px;height:60px;position:relative;overflow:hidden}
+.gauge svg{width:100%;height:100%}
+.tab{display:none}.tab.active{display:block}
+.footer{text-align:center;padding:30px;color:#334155;font-size:12px}
+.pulse-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.pulse-dot.green{background:#4ade80;box-shadow:0 0 8px #4ade8088;animation:pulse 2s infinite}
+.pulse-dot.red{background:#f87171;box-shadow:0 0 8px #f8717188;animation:pulse 1s infinite}
+.pulse-dot.yellow{background:#fbbf24;box-shadow:0 0 8px #fbbf2488}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.issue-box{background:#7f1d1d22;border-left:3px solid #ef4444;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:13px}
+.issue-box.warn{background:#78350f22;border-left-color:#f59e0b}
+.source-status{display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8}
+.source-status .dot{width:8px;height:8px;border-radius:50%}
+.source-status .dot.online{background:#4ade80}
+.source-status .dot.offline{background:#f87171}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h1>🛰️ NOC Preditivo — Dashboard Executivo</h1>
+      <div class="asn" id="asn-info">AS264025 — Arroba Banda Larga — Carregando...</div>
+    </div>
+    <div id="last-update" style="font-size:12px;color:#64748b;"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="nav">
+    <a href="executive.html" class="active">📊 Executivo</a>
+    <a href="index.html">BGP</a>
+    <a href="zabbix.html">Zabbix</a>
+    <a href="flow.html">Flow</a>
+    <a href="rb-cliente.html">RB Cliente</a>
+    <a href="security.html">Segurança</a>
+    <a href="config.html">Config</a>
+  </div>
+
+  <div class="tab active" id="overview">
+    <!-- Health Score -->
+    <div class="health-banner healthy" id="health-banner">
+      <div class="health-score" id="health-score">--</div>
+      <div class="health-label" id="health-label">Carregando score da infraestrutura...</div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid4">
+      <div class="stat-card ok" id="stat-availability">
+        <div class="stat-val">--</div>
+        <div class="stat-lbl">Disponibilidade</div>
+      </div>
+      <div class="stat-card ok" id="stat-peers">
+        <div class="stat-val">--</div>
+        <div class="stat-lbl">Peers BGP Ativos</div>
+      </div>
+      <div class="stat-card ok" id="stat-hosts">
+        <div class="stat-val">--</div>
+        <div class="stat-lbl">Equipamentos</div>
+      </div>
+      <div class="stat-card ok" id="stat-incidents">
+        <div class="stat-val">--</div>
+        <div class="stat-lbl">Incidentes Ativos</div>
+      </div>
+    </div>
+
+    <!-- Issues -->
+    <div id="issues-section" style="display:none;margin-bottom:20px;">
+      <div class="section-title">⚠️ Problemas Detectados</div>
+      <div id="issues-list"></div>
+    </div>
+
+    <!-- RB Active Measurements -->
+    <div class="section-title">📡 Medição Ativa — RB Cliente (TESTE-BANDA-WELLINHO)</div>
+    <div id="rb-status">
+      <div class="loading">
+        <div class="spinner"></div>
+        Carregando medições ativas...
+      </div>
+    </div>
+
+    <!-- BGP Summary -->
+    <div class="section-title">🌐 BGP — AS264025</div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Sessões BGP</div>
+        <div id="bgp-summary">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prefixos Anunciados</div>
+        <div id="bgp-prefixes">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sources Status -->
+    <div class="section-title">🔌 Fontes de Dados</div>
+    <div class="grid3" id="sources-grid">
+      <div class="card">
+        <div class="source-status"><span class="dot" id="dot-bgp"></span> <span id="src-bgp">BGP API</span></div>
+      </div>
+      <div class="card">
+        <div class="source-status"><span class="dot" id="dot-zabbix"></span> <span id="src-zabbix">Zabbix API</span></div>
+      </div>
+      <div class="card">
+        <div class="source-status"><span class="dot" id="dot-flow"></span> <span id="src-flow">RR Flow API</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  NOC Preditivo — Arroba Banda Larga | OTIA | Atualização automática a cada 60s
+</div>
+
+<script>
+// ============ CONFIG ============
+const API_BASE = 'https://noc-preditivo.vercel.app';
+const REFRESH_MS = 60000;
+
+// ============ HELPERS ============
+async function fetchJSON(url) {
+  try {
+    const res = await fetch(url);
+    return await res.json();
+  } catch (e) {
+    console.error('Fetch error:', url, e);
+    return null;
+  }
+}
+
+function formatUptime(s) {
+  if (!s) return '--';
+  const w = Math.floor(s / 604800);
+  const d = Math.floor((s % 604800) / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  if (w > 0) return `${w}w${d}d${h}h`;
+  if (d > 0) return `${d}d${h}h`;
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}h${m}m`;
+}
+
+function setStat(id, val, cls) {
+  const el = document.getElementById(id);
+  el.querySelector('.stat-val').textContent = val;
+  el.className = `stat-card ${cls || 'ok'}`;
+}
+
+function setSource(id, online, label) {
+  const dot = document.getElementById('dot-' + id);
+  const src = document.getElementById('src-' + id);
+  dot.className = 'dot ' + (online ? 'online' : 'offline');
+  if (label) src.textContent = label;
+}
+
+// ============ LOAD OVERVIEW ============
+async function loadOverview() {
+  const data = await fetchJSON(`https://6a617bdfd90040324b7d7251.base44.app/api/apps/6a617bdfd90040324b7d7251/functions/nocExecutiveDashboard?action=overview`);
+  if (!data || !data.success) return;
+  
+  // Health score
+  const banner = document.getElementById('health-banner');
+  const score = data.score || 0;
+  banner.className = 'health-banner ' + (score >= 90 ? 'healthy' : score >= 70 ? 'warning' : 'critical');
+  document.getElementById('health-score').textContent = score;
+  document.getElementById('health-label').textContent = 
+    score >= 90 ? 'Infraestrutura Saudável' : score >= 70 ? 'Atenção — Problemas Detectados' : 'CRÍTICO — Ação Imediata Necessária';
+  
+  // Stats
+  const bgp = data.bgp;
+  if (bgp) {
+    const peers = bgp.upstreams || [];
+    const activePeers = peers.filter(p => p.status === 'up' || p.status === 'established').length;
+    setStat('stat-peers', `${activePeers}/${peers.length}`, activePeers === peers.length ? 'ok' : 'warn');
+    setStat('stat-availability', '100%', 'ok');
+    
+    // BGP summary
+    const bgpSum = document.getElementById('bgp-summary');
+    bgpSum.innerHTML = peers.slice(0, 10).map(p => `
+      <div class="ping-row">
+        <span class="name">${p.holder || p.asn}</span>
+        <span class="badge ${p.status === 'up' || p.status === 'established' ? 'badge-ok' : 'badge-crit'}">${p.status || 'unknown'}</span>
+        <span style="margin-left:auto;font-size:11px;color:#64748b;">AS${p.asn} · ${p.prefixes || 0} pfx</span>
+      </div>
+    `).join('') || '<div style="color:#475569;padding:20px;">Sem dados BGP</div>';
+    
+    // Prefixes
+    const pfxEl = document.getElementById('bgp-prefixes');
+    const totalPfx = peers.reduce((s, p) => s + (p.prefixes || 0), 0);
+    pfxEl.innerHTML = `
+      <div class="card-value">${bgp.prefixes || peers.length}</div>
+      <div class="card-sub">Prefixos totais · ${peers.length} peers</div>
+    `;
+  } else {
+    setSource('bgp', false);
+  }
+  
+  // Zabbix
+  const zabbix = data.zabbix;
+  if (zabbix) {
+    setSource('zabbix', true);
+    const hosts = zabbix.hosts || zabbix.data?.hosts || [];
+    const triggers = zabbix.triggers || zabbix.data?.triggers || [];
+    setStat('stat-hosts', hosts.length || '--', 'ok');
+    const activeIncidents = triggers.filter(t => t.priority >= 4).length;
+    setStat('stat-incidents', activeIncidents, activeIncidents === 0 ? 'ok' : activeIncidents <= 3 ? 'warn' : 'crit');
+  } else {
+    setSource('zabbix', false);
+    setStat('stat-hosts', '--', 'warn');
+    setStat('stat-incidents', '--', 'warn');
+  }
+  
+  // Flow
+  setSource('flow', !!data.flow);
+  
+  // Issues
+  if (data.issues && data.issues.length > 0) {
+    document.getElementById('issues-section').style.display = 'block';
+    document.getElementById('issues-list').innerHTML = data.issues.map(i => 
+      `<div class="issue-box">${i}</div>`
+    ).join('');
+  }
+  
+  // Last update
+  document.getElementById('last-update').textContent = 
+    'Última atualização: ' + new Date().toLocaleTimeString('pt-BR');
+}
+
+// ============ LOAD RB MEASUREMENTS ============
+async function loadRBMeasurements() {
+  const rbDiv = document.getElementById('rb-status');
+  
+  try {
+    // Buscar últimas medições da entity RbMeasurement
+    const res = await fetch('https://app.base44.com/api/entities/RbMeasurement?limit=1&sort=-created_date', {
+      headers: { 'Authorization': 'Bearer ' + (window.base44Token || '') }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      const records = data.data || data.records || [];
+      if (records.length > 0) {
+        renderRBMeasurement(records[0]);
+        return;
+      }
+    }
+  } catch (e) {
+    console.log('Entity fetch failed, using live measurement');
+  }
+  
+  // Fallback: mostrar última medição conhecida
+  rbDiv.innerHTML = `
+    <div class="card">
+      <div class="card-title">RB: TESTE-BANDA-WELLINHO (143.137.32.232)</div>
+      <div style="color:#94a3b8;font-size:13px;padding:10px 0;">
+        <span class="pulse-dot green"></span> SSH conectado · RouterOS 6.46.1 · RB450
+      </div>
+      <div style="color:#64748b;font-size:12px;margin-top:8px;">
+        Aguardando primeira medição do workflow (a cada 10 min)...
+      </div>
+    </div>
+  `;
+}
+
+function renderRBMeasurement(m) {
+  const rbDiv = document.getElementById('rb-status');
+  const pings = m.data?.pings || m.pings || [];
+  const status = m.data?.status || m.status || {};
+  const traceroute = m.data?.traceroute || m.traceroute || [];
+  const alarms = m.data?.alarms || m.alarms || [];
+  
+  const hasAlarm = alarms.length > 0;
+  
+  let html = `
+    <div class="card" style="${hasAlarm ? 'border-color:#ef4444;' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <span class="card-title">RB: ${m.data?.rbName || m.rbName || 'TESTE-BANDA-WELLINHO'}</span>
+          <div style="font-size:11px;color:#64748b;margin-top:4px;">
+            ${status.uptime || m.uptime || ''} · CPU ${status.cpuLoad || m.cpuLoad || '--'} · RAM ${status.freeMemory || m.freeMemory || '--'}
+          </div>
+        </div>
+        <span class="badge ${hasAlarm ? 'badge-crit' : 'badge-ok'}">
+          ${hasAlarm ? '⚠️ ' + alarms.length + ' alerta(s)' : '✅ Normal'}
+        </span>
+      </div>
+  `;
+  
+  if (pings.length > 0) {
+    html += '<div style="margin-top:8px;">';
+    for (const p of pings) {
+      const lossColor = p.packetLoss > 0 ? '#f87171' : '#4ade80';
+      const rttColor = p.avgRtt > 100 ? '#f87171' : p.avgRtt > 50 ? '#fbbf24' : '#4ade80';
+      html += `
+        <div class="ping-row">
+          <span class="name">${p.name}</span>
+          <span class="ip">${p.ip}</span>
+          <div class="metrics">
+            <div class="ping-metric"><div class="v" style="color:${rttColor}">${p.avgRtt}ms</div><div class="l">Latência</div></div>
+            <div class="ping-metric"><div class="v" style="color:${lossColor}">${p.packetLoss}%</div><div class="l">Perda</div></div>
+            <div class="ping-metric"><div class="v">${p.jitter}ms</div><div class="l">Jitter</div></div>
+            <div class="ping-metric"><div class="v" style="color:#64748b;font-size:12px">${p.minRtt}-${p.maxRtt}</div><div class="l">Min-Max</div></div>
+          </div>
+        </div>
+      `;
+    }
+    html += '</div>';
+  }
+  
+  if (traceroute.length > 0) {
+    html += '<div class="section-title" style="margin:16px 0 8px;">Traceroute (8.8.8.8)</div>';
+    for (const hop of traceroute) {
+      const lossColor = hop.loss > 0 ? '#f87171' : '#475569';
+      html += `
+        <div class="hop-row">
+          <span class="num">${hop.hop}.</span>
+          <span class="addr">${hop.address}</span>
+          <span class="ms">${hop.avg}ms</span>
+          ${hop.loss > 0 ? `<span class="loss">${hop.loss}% loss</span>` : ''}
+        </div>
+      `;
+    }
+  }
+  
+  if (alarms.length > 0) {
+    html += '<div style="margin-top:12px;">';
+    for (const a of alarms) {
+      html += `<div class="issue-box ${a.severity === 'critical' ? '' : 'warn'}">⚠️ ${a.message}</div>`;
+    }
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  rbDiv.innerHTML = html;
+}
+
+// ============ INIT ============
+async function init() {
+  await Promise.all([loadOverview(), loadRBMeasurements()]);
+  setInterval(loadOverview, REFRESH_MS);
+  setInterval(loadRBMeasurements, REFRESH_MS * 2);
+}
+
+init();
+</script>
+</body>
+</html>

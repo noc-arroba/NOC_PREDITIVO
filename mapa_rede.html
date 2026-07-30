@@ -1,243 +1,306 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mapa de Rede FTTH — NOC Arroba</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<title>Mapa de Rede FTTH — Arroba Banda Larga</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0b1120;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;font-size:14px}
-.header{background:#1e293b;padding:12px 20px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-.header h1{font-size:18px;font-weight:600;color:#f1f5f9}
-.header h1 span{color:#3b82f6}
-.header-right{display:flex;align-items:center;gap:10px}
-.badge{padding:4px 10px;border-radius:6px;font-weight:600;font-size:12px}
-.badge-blue{background:#1e3a5f;color:#60a5fa}
-.badge-green{background:#064e3b;color:#34d399}
-.badge-red{background:#7f1d1d;color:#f87171}
-.badge-yellow{background:#78350f;color:#fbbf24}
-.btn{padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;text-decoration:none}
-.btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}.btn-blue:disabled{opacity:.5;cursor:wait}
-.btn-gray{background:#334155;color:#cbd5e1}.btn-gray:hover{background:#475569}
-.subtitle{font-size:11px;color:#64748b;margin-top:2px}
-#map{height:calc(100vh - 120px);width:100%;background:#1a1a2e}
-.controls{padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#1e293b;border-bottom:1px solid #334155}
-.controls select,.controls input{padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px}
-.controls input{flex:1;max-width:300px}
-.controls input:focus{outline:none;border-color:#3b82f6}
-.filter-btn{padding:5px 12px;border:1px solid #334155;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px;font-weight:500}
-.filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
-.filter-btn.active.romp{background:#7f1d1d;color:#fca5a5;border-color:#7f1d1d}
-@keyframes pulseRomp{0%,100%{opacity:1;stroke-width:2.5px}50%{opacity:0.6;stroke-width:4px}}
-.marker-rompimento{animation:pulseRomp 1.2s ease-in-out infinite;}
-.filter-btn.active.red{background:#7f1d1d;color:#f87171;border-color:#7f1d1d}
-.filter-btn.active.yellow{background:#78350f;color:#fbbf24;border-color:#78350f}
-.legend{position:absolute;bottom:20px;right:20px;background:rgba(15,23,42,0.95);border:1px solid #334155;border-radius:8px;padding:12px;z-index:1000;font-size:12px}
-.legend .item{display:flex;align-items:center;gap:8px;margin:4px 0}
-.legend .dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.3)}
-.loading-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5000;background:rgba(15,23,42,0.95);border:1px solid #334155;border-radius:12px;padding:24px 40px;text-align:center}
-.loading-overlay .spinner{display:inline-block;width:32px;height:32px;border:3px solid #334155;border-top:3px solid #3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:8px}
+body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:14px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;color:#f8fafc}
+.header .sub{font-size:12px;color:#64748b;margin-top:2px}
+.nav-tabs{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;margin-top:10px;flex-wrap:wrap}
+.nav-tabs a{padding:5px 12px;border-radius:6px;font-size:12px;color:#94a3b8;text-decoration:none}
+.nav-tabs a:hover{color:#cbd5e1}
+.nav-tabs a.active{background:#7f1d1d;color:#fca5a5;font-weight:600}
+#map{height:calc(100vh - 100px);width:100%;background:#1a1a2e}
+.sidebar{position:absolute;top:100px;right:10px;width:280px;max-height:calc(100vh - 120px);background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px;z-index:1000;overflow-y:auto}
+.sidebar h3{font-size:14px;color:#93c5fd;margin-bottom:10px}
+.layer-toggle{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:#cbd5e1}
+.layer-toggle input{accent-color:#3b82f6}
+.stats-box{margin-top:12px;padding-top:12px;border-top:1px solid #1e293b}
+.stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:#94a3b8}
+.stat-row strong{color:#67e8f9}
+.legend-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:#94a3b8}
+.legend-color{width:16px;height:3px;border-radius:2px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.legend-area{width:16px;height:10px;border-radius:2px;opacity:.3}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111827;border:1px solid #1e293b;padding:20px;border-radius:10px;text-align:center;z-index:2000}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:32px;height:32px;animation:spin 1s linear infinite;margin:0 auto 10px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.popup-content{font-size:13px;line-height:1.6}
-.popup-content .title{font-weight:700;font-size:14px;color:#3b82f6;margin-bottom:4px}
-.popup-content .row{display:flex;justify-content:space-between;gap:12px;margin:2px 0}
-.popup-content .label{color:#94a3b8}
-.popup-content .value{font-weight:600}
-.popup-content .value.green{color:#34d399}
-.popup-content .value.red{color:#f87171}
-.popup-content .maps-btn{display:block;width:100%;margin-top:8px;padding:8px 12px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box}
-.popup-content .maps-btn:active{background:#1557b0}
-.popup-content .maps-btn:hover{background:#1557b0}
-.popup-content .client-btn{display:block;width:100%;margin-top:4px;padding:6px 12px;background:#334155;color:#e2e8f0;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box}
-.popup-content .value.yellow{color:#fbbf24}
-.stats-bar{padding:6px 20px;background:#1e293b;border-bottom:1px solid #334155;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#94a3b8}
-.stats-bar span{font-weight:600;color:#cbd5e1}
+.search-box{margin-top:10px;width:100%;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:13px}
+.search-box:focus{outline:none;border-color:#3b82f6}
+.popup-title{font-weight:600;color:#f1f5f9;font-size:14px;margin-bottom:4px}
+.popup-info{font-size:12px;color:#94a3b8;line-height:1.4}
+.popup-info strong{color:#67e8f9}
+@media(max-width:768px){.sidebar{width:200px;font-size:12px}}
 </style>
 </head>
 <body>
 <div class="header">
   <div>
-    <h1>Mapa de Rede <span>FTTH</span> — Arroba Banda Larga</h1>
-    <div class="subtitle">CTOs georreferenciadas | Coordenadas médias dos clientes | Fonte: IXC + radpop_radio_cliente_fibra</div>
+    <h1>🗺️ Mapa de Rede FTTH — InMap + CTOs ao vivo</h1>
+    <div class="sub">Cabos | Caixas de Emenda | Regiões de Cobertura | CTOs (IXC) | Rompimentos ativos</div>
   </div>
-  <div class="header-right">
-    <a href="https://manutencao-de-rede.vercel.app" class="btn btn-gray">← Dashboard</a>
-    <button class="btn btn-blue" id="btnRefresh" onclick="carregarDados(true)">Atualizar</button>
+  <div class="nav-tabs">
+    <a href="index.html">📊 BGP</a>
+    <a href="security.html">🛡️ Segurança</a>
+    <a href="config.html">⚙️ Config</a>
+    <a href="mapa-rede.html" class="active">🗺️ Mapa Rede</a>
   </div>
 </div>
-<div class="stats-bar" id="statsBar">
-  <div>CTOs no mapa: <span id="stCTOs">--</span></div>
-  <div>Clientes: <span id="stClientes">--</span></div>
-  <div>Online: <span style="color:#34d399;" id="stOnline">--</span></div>
-  <div>Offline: <span style="color:#f87171;" id="stOffline">--</span></div>
-  <div>Sinal Crítico: <span style="color:#f87171;" id="stSinalCrit">--</span></div>
-  <div style="margin-left:12px;">🚨 Rompimento: <span style="color:#fca5a5;font-weight:700;" id="stRomp">--</span></div>
+
+<div id="map">
+  <div class="sidebar">
+    <h3>📍 Camadas do Mapa</h3>
+    <label class="layer-toggle"><input type="checkbox" id="layer-cabos" checked> 🔴 Cabos (1.525)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-emendas" checked> 🟡 Caixas de Emenda (43)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-regioes" checked> 🔵 Regiões de Cobertura (565)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-ctos" checked> 🟢 CTOs ao vivo (IXC)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-romp" checked> 🚨 Rompimentos Ativos</label>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar CTO, área, bairro...">
+    
+    <div class="stats-box" id="statsBox">
+      <div class="stat-row">Cabos: <strong id="stat-cabos">0</strong></div>
+      <div class="stat-row">Emendas: <strong id="stat-emendas">0</strong></div>
+      <div class="stat-row">Regiões: <strong id="stat-regioes">0</strong></div>
+      <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
+      <div class="stat-row">Rompimentos: <strong id="stat-romp" style="color:#fca5a5">0</strong></div>
+    </div>
+    
+    <div class="stats-box">
+      <h3 style="font-size:12px;color:#64748b;margin-bottom:6px">LEGENDA</h3>
+      <div class="legend-item"><div class="legend-color" style="background:#ef4444"></div> Cabo de fibra</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Caixa de emenda</div>
+      <div class="legend-item"><div class="legend-area" style="background:#3b82f6"></div> Região de cobertura</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div> CTO online</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> CTO offline</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444;animation:pulse 2s infinite"></div> Rompimento</div>
+    </div>
+  </div>
+  
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Carregando dados do InMap e IXC...</div>
+  </div>
 </div>
-<div class="controls">
-  <input type="text" id="searchInput" placeholder="Buscar por CTO, bairro ou OLT..." oninput="aplicarFiltros()">
-  <select id="oltFilter" onchange="aplicarFiltros()">
-    <option value="">Todas as OLTs</option>
-  </select>
-  <button class="filter-btn active" data-filter="all" onclick="setFiltro('all')">Todas</button>
-  <button class="filter-btn" data-filter="offline" onclick="setFiltro('offline')">Com Offline</button>
-  <button class="filter-btn" data-filter="sinal" onclick="setFiltro('sinal')">Sinal Crítico</button>
-  <button class="filter-btn" data-filter="online" onclick="setFiltro('online')">100% Online</button>
-  <button class="filter-btn" data-filter="rompimento" onclick="setFiltro('rompimento')" id="btnRomp" style="border-color:#7f1d1d;color:#f87171;">🚨 Rompimento</button>
-</div>
-<div id="map"></div>
-<div class="legend">
-  <div class="item"><div class="dot" style="background:#34d399;"></div> 100% Online</div>
-  <div class="item"><div class="dot" style="background:#fbbf24;"></div> Com Offline (&lt;100%)</div>
-  <div class="item"><div class="dot" style="background:#f87171;"></div> Sinal Crítico</div>
-  <div class="item"><div class="dot" style="background:#dc2626;border:2px solid #fff;box-shadow:0 0 6px #dc2626;"></div> 🚨 Rompimento</div>
-  <div class="item"><div class="dot" style="background:#64748b;"></div> Sem dados de sinal</div>
-  <div style="margin-top:8px;font-size:10px;color:#64748b;">Tamanho = nº de clientes</div>
-</div>
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div><br>
-  Carregando CTOs do IXC...
-</div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-let map,dadosCTOs=[],filtroAtual='all',termoBusca='',oltSel='';
-let markerGroup=null;
-
-function carregarDados(force){
-  const btn=document.getElementById('btnRefresh');
-  btn.disabled=true;btn.textContent='Carregando...';
-  fetch('/api/rede'+(force?'?_t='+Date.now():''))
-    .then(r=>r.json()).then(data=>{
-      if(data.error)throw new Error(data.error);
-      dadosCTOs=data.ctos||[];
-      document.getElementById('loadingOverlay').style.display='none';
-      preencherDropdown(data);
-      atualizarStats(data);
-      aplicarFiltros();
-      btn.disabled=false;btn.textContent='Atualizar';
-    }).catch(err=>{
-      document.getElementById('loadingOverlay').innerHTML='<div style="color:#f87171;">Erro: '+err.message+'</div>';
-      btn.disabled=false;btn.textContent='Atualizar';
-    });
-}
-
-function preencherDropdown(data){
-  const sel=document.getElementById('oltFilter');
-  sel.innerHTML='<option value="">Todas as OLTs</option>';
-  const olts=new Map();
-  dadosCTOs.forEach(c=>{if(!olts.has(c.oltId))olts.set(c.oltId,c.oltNome);});
-  [...olts.entries()].sort((a,b)=>a[1].localeCompare(b[1])).forEach(([id,nome])=>{
-    const opt=document.createElement('option');
-    opt.value=id;opt.textContent=nome;
-    sel.appendChild(opt);
-  });
-}
-
-function atualizarStats(data){
-  const s=data.stats;
-  document.getElementById('stCTOs').textContent=dadosCTOs.length.toLocaleString('pt-BR');
-  document.getElementById('stClientes').textContent=s.totalClientes.toLocaleString('pt-BR');
-  document.getElementById('stOnline').textContent=s.online.toLocaleString('pt-BR');
-  document.getElementById('stOffline').textContent=s.offline.toLocaleString('pt-BR');
-  document.getElementById('stSinalCrit').textContent=(s.sinalCritico||0).toLocaleString('pt-BR');
-  // Contar CTOs com rompimento
-  const ctosRomp = dadosCTOs.filter(c=>c.rompimento).length;
-  const elRomp = document.getElementById('stRomp');
-  if(elRomp){
-    elRomp.textContent = ctosRomp > 0 ? ctosRomp + ' CTOs' : '0';
-    elRomp.style.color = ctosRomp > 0 ? '#f87171' : '#94a3b8';
-  }
-  // Atualizar badge do botão rompimento
-  const btnRomp = document.getElementById('btnRomp');
-  if(btnRomp && ctosRomp > 0) btnRomp.textContent = '🚨 Rompimento (' + ctosRomp + ')';
-}
-
-function getCorCTO(c){
-  if(c.rompimento) return '#dc2626';  // Vermelho escuro — rompimento confirmado
-  if(c.sinalCritico>0) return '#f87171';
-  if(c.offline>0) return '#fbbf24';
-  if(c.total>0 && c.online===c.total) return '#34d399';
-  return '#64748b';
-}
-
-function getRaio(c){
-  return Math.max(4, Math.min(20, Math.sqrt(c.total)*2));
-}
-
-function aplicarFiltros(){
-  termoBusca=document.getElementById('searchInput').value.toLowerCase().trim();
-  oltSel=document.getElementById('oltFilter').value;
-  if(markerGroup){map.removeLayer(markerGroup);}
-  markerGroup=L.layerGroup().addTo(map);
-  let visiveis=0;
-  dadosCTOs.forEach(c=>{
-    if(oltSel && c.oltId!==oltSel) return;
-    if(termoBusca){
-      const txt=(c.id+' '+c.bairro+' '+c.oltNome).toLowerCase();
-      if(!txt.includes(termoBusca)) return;
-    }
-    if(filtroAtual==='offline' && c.offline===0) return;
-    if(filtroAtual==='online' && c.online!==c.total) return;
-    if(filtroAtual==='sinal' && c.sinalCritico===0) return;
-    if(filtroAtual==='rompimento' && !c.rompimento) return;
-    const cor=getCorCTO(c);
-    const raio=getRaio(c);
-    // Rompimento: marcador especial maior com borda branca pulsante
-    const isRomp = !!c.rompimento;
-    const marker = isRomp
-      ? L.circleMarker([c.lat,c.lon],{
-          radius: Math.max(10, raio+4), fillColor:'#dc2626',
-          color:'#ffffff', weight:2.5, fillOpacity:0.95, className:'marker-rompimento'
-        })
-      : L.circleMarker([c.lat,c.lon],{
-          radius:raio, fillColor:cor, color:'rgba(255,255,255,0.3)', weight:1,
-          fillOpacity:0.8
-        });
-    const taxa=c.total>0?((c.online/c.total)*100).toFixed(0):0;
-    marker.bindPopup(`
-      <div class="popup-content">
-        <div class="title">CTO ${c.id}</div>
-        <div class="row"><span class="label">OLT</span><span class="value">${c.oltNome}</span></div>
-        ${c.bairro?`<div class="row"><span class="label">Bairro</span><span class="value">${c.bairro}</span></div>`:''}
-        <div class="row"><span class="label">Clientes</span><span class="value">${c.total}</span></div>
-        <div class="row"><span class="label">Online</span><span class="value green">${c.online}</span></div>
-        <div class="row"><span class="label">Offline</span><span class="value ${c.offline>0?'red':''}">${c.offline}</span></div>
-        <div class="row"><span class="label">Taxa</span><span class="value ${taxa<80?'red':'green'}">${taxa}%</span></div>
-        ${c.rompimento?`<div class="row" style="background:${c.rompimento.tipo==='falta_energia'?'#78350f':'#7f1d1d'};border-radius:4px;padding:4px;margin:4px 0;"><span class="label" style="color:${c.rompimento.tipo==='falta_energia'?'#fbbf24':'#fca5a5'};">${c.rompimento.tipo==='falta_energia'?'⚡ Falta de Energia':'🚨 Rompimento'}</span><span class="value red">${c.rompimento.nivel==='cto'?'CTO afetada':'PON afetada'} · ${c.rompimento.n_clientes} off · ${c.rompimento.inicio.substring(5,16)}</span></div>`:''}
-        ${c.rompimento&&c.rompimento.causa_classificada?`<div class="row"><span class="label">Causa ONU</span><span class="value ${c.rompimento.causa_classificada==='falta_energia'?'yellow':c.rompimento.causa_classificada==='rompimento'?'red':'yellow'}">${c.rompimento.causa_classificada==='falta_energia'?'⚡ Falta de Energia':c.rompimento.causa_classificada==='rompimento'?'🔌 Perda de Sinal (LOS)':c.rompimento.causa_classificada==='reboot'?'🔄 Reboot':'❓ Desconhecida'}</span></div>`:''}
-        ${c.sinalCritico>0?`<div class="row"><span class="label">Sinal Crítico</span><span class="value red">${c.sinalCritico} cliente(s)</span></div>`:''}
-        ${c.sinalAtencao>0?`<div class="row"><span class="label">Sinal Atenção</span><span class="value yellow">${c.sinalAtencao} cliente(s)</span></div>`:''}
-        <div class="row"><span class="label">Coord.</span><span class="value" style="font-family:monospace;font-size:10px;">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)} ${c.coordReal?'<span style="color:#34d399;font-weight:700;">✓ IXC</span>':''}</span></div>
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank" class="maps-btn">📍 Abrir no Google Maps</a>
-      </div>
-    `);
-    marker.addTo(markerGroup);
-    visiveis++;
-  });
-  document.getElementById('stCTOs').textContent=visiveis.toLocaleString('pt-BR');
-}
-
-function setFiltro(f){
-  filtroAtual=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active','red','yellow'));
-  const btn=document.querySelector(`[data-filter="${f}"]`);
-  if(btn){
-    btn.classList.add('active');
-    if(f==='sinal') btn.classList.add('red');
-    if(f==='offline') btn.classList.add('yellow');
-    if(f==='rompimento') btn.classList.add('romp');
-  }
-  aplicarFiltros();
-}
-
-// Inicializar mapa
-map=L.map('map',{zoomControl:true,attributionControl:true}).setView([-21.725,-41.305],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:20,attribution:'© OpenStreetMap'
+const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-21.75, -41.32], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap', maxZoom: 19
 }).addTo(map);
 
-carregarDados(false);
+let layerCabos, layerEmendas, layerRegioes, layerCTOs, layerRomp;
+let allCabos = [], allEmendas = [], allRegioes = [], allCTOs = [], allRomp = [];
+
+// Cores por tipo de cabo
+function cableColor(nome) {
+  if (nome.includes('12F') || nome.includes('24F')) return '#ef4444';
+  if (nome.includes('6F') || nome.includes('4F')) return '#f59e0b';
+  if (nome.includes('2F') || nome.includes('1F')) return '#3b82f6';
+  return '#ef4444';
+}
+
+function cableWeight(nome) {
+  if (nome.includes('48F') || nome.includes('72F') || nome.includes('96F')) return 4;
+  if (nome.includes('12F') || nome.includes('24F')) return 3;
+  return 2;
+}
+
+async function loadInMap() {
+  try {
+    const res = await fetch('/inmap.geojson');
+    const data = await res.json();
+    
+    // Cabos
+    const cabos = data.features.filter(f => f.properties.tipo === 'cabo');
+    const emendas = data.features.filter(f => f.properties.tipo === 'caixa_emenda');
+    const regioes = data.features.filter(f => f.properties.tipo === 'regiao_cobertura');
+    
+    // Layer cabos
+    layerCabos = L.layerGroup();
+    let totalKm = 0;
+    for (const c of cabos) {
+      const nome = c.properties.nome || '';
+      const cor = cableColor(nome);
+      const weight = cableWeight(nome);
+      const line = L.geoJSON(c, {
+        style: { color: cor, weight: weight, opacity: 0.7 }
+      });
+      line.bindPopup(`<div class="popup-title">🔴 ${nome}</div><div class="popup-info">Comprimento: <strong>${c.properties.comprimento || nome.split(' ')[0]}</strong><br>Descrição: ${c.properties.descricao || '-'}</div>`);
+      line.addTo(layerCabos);
+      
+      // Calcular comprimento aproximado
+      if (c.geometry.coordinates.length > 1) {
+        let dist = 0;
+        for (let i = 1; i < c.geometry.coordinates.length; i++) {
+          dist += L.latLng(c.geometry.coordinates[i-1][1], c.geometry.coordinates[i-1][0])
+                      .distanceTo(L.latLng(c.geometry.coordinates[i][1], c.geometry.coordinates[i][0]));
+        }
+        totalKm += dist;
+      }
+    }
+    
+    // Layer emendas
+    layerEmendas = L.layerGroup();
+    for (const e of emendas) {
+      const [lon, lat] = e.geometry.coordinates;
+      const m = L.circleMarker([lat, lon], {
+        radius: 6, fillColor: '#fbbf24', fillOpacity: 0.8, color: '#78350f', weight: 1
+      });
+      m.bindPopup(`<div class="popup-title">🟡 ${e.properties.nome}</div><div class="popup-info">Endereço: <strong>${e.properties.endereco || '-'}</strong><br>Descrição: ${e.properties.descricao || '-'}</div>`);
+      m.addTo(layerEmendas);
+    }
+    
+    // Layer regiões
+    layerRegioes = L.layerGroup();
+    for (const r of regioes) {
+      const poly = L.geoJSON(r, {
+        style: { color: '#3b82f6', weight: 1, opacity: 0.4, fillColor: '#3b82f6', fillOpacity: 0.1 }
+      });
+      poly.bindPopup(`<div class="popup-title">🔵 ${r.properties.nome}</div>`);
+      poly.addTo(layerRegioes);
+    }
+    
+    layerCabos.addTo(map);
+    layerEmendas.addTo(map);
+    layerRegioes.addTo(map);
+    
+    document.getElementById('stat-cabos').textContent = cabos.length;
+    document.getElementById('stat-emendas').textContent = emendas.length;
+    document.getElementById('stat-regioes').textContent = regioes.length;
+    
+    return { totalKm: (totalKm/1000).toFixed(1) };
+  } catch (e) {
+    console.error('Erro InMap:', e);
+    return { totalKm: 0 };
+  }
+}
+
+async function loadIXC() {
+  try {
+    const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede');
+    const data = await res.json();
+    
+    layerCTOs = L.layerGroup();
+    layerRomp = L.layerGroup();
+    
+    const ctos = data.ctos || [];
+    let ctosCount = 0, rompCount = 0;
+    
+    for (const cto of ctos) {
+      if (!cto.lat || !cto.lon) continue;
+      ctosCount++;
+      const hasRomp = cto.rompimento;
+      const cor = hasRomp ? '#ef4444' : cto.offline > cto.online ? '#f87171' : '#34d399';
+      const m = L.circleMarker([cto.lat, cto.lon], {
+        radius: hasRomp ? 7 : 4, fillColor: cor, fillOpacity: 0.7, color: cor, weight: 1
+      });
+      
+      let popup = `<div class="popup-title">CTO ${cto.id}</div>`;
+      popup += `<div class="popup-info">OLT: <strong>${cto.oltNome}</strong><br>`;
+      popup += `Clientes: <strong>${cto.total}</strong> (${cto.online} on / ${cto.offline} off)<br>`;
+      if (cto.bairro) popup += `Bairro: ${cto.bairro}<br>`;
+      if (hasRomp) {
+        rompCount++;
+        popup += `<br>🚨 <strong style="color:#ef4444">ROMPIMENTO DETECTADO</strong><br>`;
+        popup += `PON: ${cto.rompimento.pon}<br>`;
+        popup += `Início: ${cto.rompimento.inicio}<br>`;
+        popup += `Clientes afetados: ${cto.rompimento.n_clientes}<br>`;
+        popup += `Tipo: ${cto.rompimento.causa_classificada || 'desconhecido'}`;
+      }
+      popup += '</div>';
+      m.bindPopup(popup);
+      m.addTo(layerCTOs);
+      
+      if (hasRomp) {
+        const pulse = L.circleMarker([cto.lat, cto.lon], {
+          radius: 15, fillColor: '#ef4444', fillOpacity: 0.2, color: '#ef4444', weight: 2
+        });
+        pulse.bindPopup(popup);
+        pulse.addTo(layerRomp);
+      }
+    }
+    
+    layerCTOs.addTo(map);
+    layerRomp.addTo(map);
+    
+    document.getElementById('stat-ctos').textContent = ctosCount;
+    document.getElementById('stat-romp').textContent = rompCount;
+    
+    // Centralizar no primeiro rompimento
+    const romps = data.rompimentos || [];
+    if (romps.length > 0 && ctos.length > 0) {
+      const firstRompCto = ctos.find(c => c.rompimento);
+      if (firstRompCto) {
+        map.setView([firstRompCto.lat, firstRompCto.lon], 16);
+      }
+    }
+    
+    return data.stats;
+  } catch (e) {
+    console.error('Erro IXC:', e);
+    return null;
+  }
+}
+
+// Toggles
+function setupToggles() {
+  document.getElementById('layer-cabos').addEventListener('change', e => {
+    e.target.checked ? layerCabos.addTo(map) : map.removeLayer(layerCabos);
+  });
+  document.getElementById('layer-emendas').addEventListener('change', e => {
+    e.target.checked ? layerEmendas.addTo(map) : map.removeLayer(layerEmendas);
+  });
+  document.getElementById('layer-regioes').addEventListener('change', e => {
+    e.target.checked ? layerRegioes.addTo(map) : map.removeLayer(layerRegioes);
+  });
+  document.getElementById('layer-ctos').addEventListener('change', e => {
+    e.target.checked ? layerCTOs.addTo(map) : map.removeLayer(layerCTOs);
+  });
+  document.getElementById('layer-romp').addEventListener('change', e => {
+    e.target.checked ? layerRomp.addTo(map) : map.removeLayer(layerRomp);
+  });
+  
+  // Busca
+  document.getElementById('searchBox').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) return;
+    // Buscar CTOs
+    if (layerCTOs) {
+      layerCTOs.eachLayer(l => {
+        if (l.getPopup && l.getPopup().getContent().toLowerCase().includes(q)) {
+          const ll = l.getLatLng();
+          map.setView(ll, 17);
+          l.openPopup();
+        }
+      });
+    }
+  });
+}
+
+// Init
+(async () => {
+  const [inmapStats, ixcStats] = await Promise.all([loadInMap(), loadIXC()]);
+  setupToggles();
+  document.getElementById('loading').style.display = 'none';
+  
+  if (inmapStats && inmapStats.totalKm) {
+    const statsBox = document.getElementById('statsBox');
+    statsBox.innerHTML += `<div class="stat-row">Total cabos: <strong>${inmapStats.totalKm} km</strong></div>`;
+  }
+  if (ixcStats) {
+    const statsBox = document.getElementById('statsBox');
+    statsBox.innerHTML += `<div class="stat-row">Clientes: <strong>${ixcStats.totalClientes}</strong></div>`;
+    statsBox.innerHTML += `<div class="stat-row">Online: <strong style="color:#34d399">${ixcStats.online}</strong></div>`;
+    statsBox.innerHTML += `<div class="stat-row">Offline: <strong style="color:#f87171">${ixcStats.offline}</strong></div>`;
+  }
+})();
 </script>
 </body>
 </html>

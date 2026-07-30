@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OTDR Virtual — Mapa de Rede FTTH — Arroba</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:system-ui,sans-serif;overflow:hidden}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:12px 18px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header h1{font-size:17px;color:#f8fafc}
+.header .sub{font-size:11px;color:#64748b;margin-top:2px}
+.nav-tabs{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:3px;border:1px solid #1e293b;flex-wrap:wrap}
+.nav-tabs a{padding:4px 10px;border-radius:6px;font-size:11px;color:#94a3b8;text-decoration:none}
+.nav-tabs a:hover{color:#cbd5e1}
+.nav-tabs a.active{background:#7f1d1d;color:#fca5a5;font-weight:600}
+#map{height:calc(100vh - 52px);width:100%;background:#1a1a2e}
+.sidebar{position:absolute;top:62px;right:8px;width:300px;max-height:calc(100vh - 80px);background:#111827;border:1px solid #1e293b;border-radius:10px;padding:14px;z-index:1000;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.sidebar h3{font-size:13px;color:#93c5fd;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.sidebar h3.otdr{color:#fca5a5;border-top:1px solid #1e293b;padding-top:10px;margin-top:12px}
+.layer-toggle{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12px;color:#cbd5e1}
+.layer-toggle input{accent-color:#3b82f6}
+.stats-box{margin-top:10px;padding-top:10px;border-top:1px solid #1e293b}
+.stat-row{display:flex;justify-content:space-between;padding:2px 0;font-size:11px;color:#94a3b8}
+.stat-row strong{color:#67e8f9}
+.search-box{margin-top:8px;width:100%;padding:7px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:12px}
+.search-box:focus{outline:none;border-color:#3b82f6}
+.btn-otdr{width:100%;margin-top:8px;padding:8px;background:#7f1d1d;border:1px solid #991b1b;border-radius:6px;color:#fca5a5;font-size:12px;cursor:pointer;font-weight:600}
+.btn-otdr:hover{background:#991b1b;color:#fff}
+.otdr-result{margin-top:10px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;font-size:12px;line-height:1.5}
+.otdr-result .label{color:#64748b;font-size:10px;text-transform:uppercase}
+.otdr-result .val{color:#f1f5f9;font-weight:600}
+.otdr-result .alert{color:#f87171;font-weight:700}
+.otdr-result .ok{color:#34d399;font-weight:600}
+.legend-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;color:#94a3b8}
+.legend-color{width:14px;height:3px;border-radius:2px}
+.legend-dot{width:9px;height:9px;border-radius:50%}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111827;border:1px solid #1e293b;padding:20px;border-radius:10px;text-align:center;z-index:2000}
+.spinner{border:3px solid #1e293b;border-top:3px solid #3b82f6;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.leaflet-popup-content{font-size:12px;line-height:1.4}
+.popup-title{font-weight:700;color:#f1f5f9;font-size:13px;margin-bottom:4px}
+.popup-info{color:#94a3b8}
+.popup-info strong{color:#67e8f9}
+.popup-btn{margin-top:6px;padding:5px 10px;background:#7f1d1d;border:1px solid #991b1b;border-radius:4px;color:#fca5a5;font-size:11px;cursor:pointer;font-weight:600;display:inline-block}
+.popup-btn:hover{background:#991b1b;color:#fff}
+.popup-btn.green{background:#064e3b;border-color:#065f46;color:#34d399}
+.popup-btn.green:hover{background:#065f46;color:#fff}
+@media(max-width:768px){.sidebar{width:220px;font-size:11px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🔦 OTDR Virtual — Rede FTTH Arroba</h1>
+    <div class="sub">Localização de falhas por topologia de cabos + status CTO ao vivo | Click numa CTO → Analisar</div>
+  </div>
+  <div class="nav-tabs">
+    <a href="index.html">📊 BGP</a>
+    <a href="security.html">🛡️ Segurança</a>
+    <a href="config.html">⚙️ Config</a>
+    <a href="mapa-rede.html">🗺️ Mapa</a>
+    <a href="otdr-rede.html" class="active">🔦 OTDR</a>
+  </div>
+</div>
+
+<div id="map">
+  <div class="sidebar">
+    <h3>📍 Camadas</h3>
+    <label class="layer-toggle"><input type="checkbox" id="layer-cabos" checked> 🔴 Cabos (1525)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-emendas" checked> 🟡 Emendas (43)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-regioes"> 🔵 Regiões (565)</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-ctos" checked> 🟢 CTOs ao vivo</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-romp" checked> 🚨 Rompimentos</label>
+    <label class="layer-toggle"><input type="checkbox" id="layer-otdr" checked> 🔦 Zona OTDR</label>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar CTO, bairro...">
+    <button class="btn-otdr" id="btnAutoOtdr">🔦 Analisar todos os rompimentos</button>
+    
+    <div class="stats-box" id="statsBox">
+      <div class="stat-row">Cabos: <strong id="stat-cabos">0</strong></div>
+      <div class="stat-row">CTOs: <strong id="stat-ctos">0</strong></div>
+      <div class="stat-row">CTOs offline: <strong id="stat-ctos-off" style="color:#f87171">0</strong></div>
+      <div class="stat-row">Rompimentos: <strong id="stat-romp" style="color:#fca5a5">0</strong></div>
+    </div>
+    
+    <h3 class="otdr">🔦 OTDR Virtual</h3>
+    <div id="otdrPanel" style="font-size:11px;color:#64748b;padding:8px 0">
+      Clique numa CTO com clientes offline para iniciar a análise OTDR.
+      O sistema vai traçar a zona de ruptura e destacar os cabos afetados.
+    </div>
+  </div>
+  
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Carregando topologia InMap + CTOs IXC...</div>
+  </div>
+</div>
+
+<script>
+const map = L.map('map', { zoomControl: true }).setView([-21.75, -41.32], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap', maxZoom: 20
+}).addTo(map);
+
+let layerCabos, layerEmendas, layerRegioes, layerCTOs, layerRomp, layerOtdr;
+let allCabos = [], allCTOs = [], allRomp = [];
+let otdrActive = false;
+
+// Distance calc (haversine)
+function distM(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function cableColor(nome) {
+  if (nome.includes('12F')||nome.includes('24F')||nome.includes('48F')) return '#ef4444';
+  if (nome.includes('6F')||nome.includes('4F')) return '#f59e0b';
+  return '#3b82f6';
+}
+
+async function loadInMap() {
+  const res = await fetch('/inmap.geojson');
+  const data = await res.json();
+  
+  const cabos = data.features.filter(f => f.properties.tipo === 'cabo');
+  const emendas = data.features.filter(f => f.properties.tipo === 'caixa_emenda');
+  const regioes = data.features.filter(f => f.properties.tipo === 'regiao_cobertura');
+  allCabos = cabos;
+  
+  // Cabos
+  layerCabos = L.layerGroup();
+  for (const c of cabos) {
+    const nome = c.properties.nome || '';
+    const cor = cableColor(nome);
+    const weight = nome.includes('48F')||nome.includes('72F') ? 4 : nome.includes('12F')||nome.includes('24F') ? 3 : 2;
+    const line = L.geoJSON(c, { style: { color: cor, weight, opacity: 0.5 } });
+    line.bindPopup(`<div class="popup-title">🔴 ${nome}</div><div class="popup-info">Tipo: <strong>${nome.split(' - ')[1] || '?'}</strong></div>`);
+    line.addTo(layerCabos);
+  }
+  layerCabos.addTo(map);
+  
+  // Emendas
+  layerEmendas = L.layerGroup();
+  for (const e of emendas) {
+    const [lon, lat] = e.geometry.coordinates;
+    const m = L.circleMarker([lat, lon], { radius: 5, fillColor: '#fbbf24', fillOpacity: 0.8, color: '#78350f', weight: 1 });
+    m.bindPopup(`<div class="popup-title">🟡 ${e.properties.nome}</div>`);
+    m.addTo(layerEmendas);
+  }
+  layerEmendas.addTo(map);
+  
+  // Regiões
+  layerRegioes = L.layerGroup();
+  for (const r of regioes) {
+    const poly = L.geoJSON(r, { style: { color: '#3b82f6', weight: 1, opacity: 0.3, fillColor: '#3b82f6', fillOpacity: 0.05 } });
+    poly.bindPopup(`<div class="popup-title">🔵 ${r.properties.nome}</div>`);
+    poly.addTo(layerRegioes);
+  }
+  
+  document.getElementById('stat-cabos').textContent = cabos.length;
+  return { cabos, emendas, regioes };
+}
+
+async function loadIXC() {
+  const res = await fetch('https://manutencao-de-rede.vercel.app/api/rede');
+  const data = await res.json();
+  
+  layerCTOs = L.layerGroup();
+  layerRomp = L.layerGroup();
+  layerOtdr = L.layerGroup();
+  
+  const ctos = data.ctos || [];
+  allCTOs = ctos;
+  let ctosCount = 0, offCount = 0, rompCount = 0;
+  
+  for (const cto of ctos) {
+    if (!cto.lat || !cto.lon) continue;
+    ctosCount++;
+    const hasRomp = cto.rompimento;
+    const allOff = cto.offline > 0 && cto.online === 0;
+    const someOff = cto.offline > 0;
+    
+    let cor, radius;
+    if (hasRomp) { cor = '#ef4444'; radius = 7; rompCount++; }
+    else if (allOff) { cor = '#f87171'; radius = 5; offCount++; }
+    else if (someOff) { cor = '#fbbf24'; radius = 4; }
+    else { cor = '#34d399'; radius = 3; }
+    
+    const m = L.circleMarker([cto.lat, cto.lon], { radius, fillColor: cor, fillOpacity: 0.8, color: cor, weight: 1 });
+    
+    let popup = `<div class="popup-title">CTO ${cto.id}</div>`;
+    popup += `<div class="popup-info">OLT: <strong>${cto.oltNome}</strong><br>`;
+    popup += `Clientes: <strong>${cto.total}</strong> (${cto.online} on / ${cto.offline} off)<br>`;
+    if (cto.bairro) popup += `Bairro: ${cto.bairro}<br>`;
+    if (hasRomp) {
+      popup += `<br>🚨 <span class="alert">ROMPIMENTO</span><br>`;
+      popup += `PON: ${cto.rompimento.pon}<br>Início: ${cto.rompimento.inicio}<br>`;
+      popup += `Afetados: ${cto.rompimento.n_clientes}<br>`;
+      popup += `Causa: ${cto.rompimento.causa_classificada || 'desconhecido'}`;
+    }
+    popup += `</div>`;
+    if (someOff || hasRomp) {
+      popup += `<br><div class="popup-btn" onclick="runOtdr(${cto.id}, ${cto.lat}, ${cto.lon}, '${(cto.oltNome||'').replace(/'/g,'')}', '${(cto.oltId||'')}')">🔦 Analisar OTDR</div>`;
+    }
+    m.bindPopup(popup);
+    m.addTo(layerCTOs);
+    
+    if (hasRomp) {
+      const pulse = L.circleMarker([cto.lat, cto.lon], { radius: 14, fillColor: '#ef4444', fillOpacity: 0.15, color: '#ef4444', weight: 2 });
+      pulse.addTo(layerRomp);
+    }
+  }
+  
+  layerCTOs.addTo(map);
+  layerRomp.addTo(map);
+  layerOtdr.addTo(map);
+  
+  document.getElementById('stat-ctos').textContent = ctosCount;
+  document.getElementById('stat-ctos-off').textContent = offCount;
+  document.getElementById('stat-romp').textContent = rompCount;
+  
+  // Auto-zoom no primeiro rompimento
+  const romps = data.rompimentos || [];
+  if (romps.length > 0) {
+    const firstRompCto = ctos.find(c => c.rompimento);
+    if (firstRompCto) {
+      map.setView([firstRompCto.lat, firstRompCto.lon], 16);
+      setTimeout(() => autoOtdrAll(), 1000);
+    }
+  }
+  
+  return data;
+}
+
+// ===== OTDR VIRTUAL =====
+function runOtdr(ctoId, lat, lon, oltNome, oltId) {
+  map.closePopup();
+  const otdrPanel = document.getElementById('otdrPanel');
+  otdrPanel.innerHTML = '<div style="color:#3b82f6">🔦 Analisando... traçando topologia de fibra</div>';
+  
+  // Encontrar CTOs afetadas (mesma área, offline)
+  const afetadas = allCTOs.filter(c => 
+    c.lat && c.offline > 0 && distM(lat, lon, c.lat, c.lon) < 300
+  );
+  
+  // CTOs online próximas
+  const onlineProx = allCTOs.filter(c => 
+    c.lat && c.online > 0 && c.offline === 0 && 
+    str(c.oltId) === str(oltId) && distM(lat, lon, c.lat, c.lon) < 500
+  ).sort((a,b) => distM(lat,lon,a.lat,a.lon) - distM(lat,lon,b.lat,b.lon));
+  
+  // Limpar layer OTDR anterior
+  layerOtdr.clearLayers();
+  
+  let breakLat, breakLon, distRuptura;
+  
+  if (onlineProx.length > 0) {
+    const co = onlineProx[0];
+    const ca = afetadas.reduce((min, a) => 
+      distM(co.lat, co.lon, a.lat, a.lon) < distM(co.lat, co.lon, min.lat, min.lon) ? a : min, afetadas[0]);
+    breakLat = (co.lat + ca.lat) / 2;
+    breakLon = (co.lon + ca.lon) / 2;
+    distRuptura = distM(co.lat, co.lon, ca.lat, ca.lon);
+    
+    // Marcar CTO online (verde)
+    L.circleMarker([co.lat, co.lon], { radius: 8, fillColor: '#34d399', fillOpacity: 0.9, color: '#fff', weight: 2 })
+      .bindPopup(`<div class="popup-title">🟢 CTO ${co.id} — ONLINE</div><div class="popup-info">Referência OTDR<br>${co.online} clientes online</div>`)
+      .addTo(layerOtdr);
+    
+    // Marcar CTO offline (vermelho)
+    L.circleMarker([ca.lat, ca.lon], { radius: 8, fillColor: '#f87171', fillOpacity: 0.9, color: '#fff', weight: 2 })
+      .bindPopup(`<div class="popup-title">🔴 CTO ${ca.id} — OFFLINE</div><div class="popup-info">Ponto de falha<br>${ca.offline} clientes offline</div>`)
+      .addTo(layerOtdr);
+    
+    // Linha tracejada CTO online → CTO offline
+    L.polyline([[co.lat, co.lon], [ca.lat, ca.lon]], {
+      color: '#ef4444', weight: 3, dashArray: '10, 5', opacity: 0.8
+    }).addTo(layerOtdr);
+  } else {
+    breakLat = lat;
+    breakLon = lon;
+    distRuptura = 0;
+  }
+  
+  // Zona de ruptura (círculo vermelho pulsante)
+  L.circle([breakLat, breakLon], {
+    radius: 80, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15, weight: 2, dashArray: '5,5'
+  }).addTo(layerOtdr);
+  
+  L.circleMarker([breakLat, breakLon], {
+    radius: 10, fillColor: '#ef4444', fillOpacity: 0.3, color: '#ef4444', weight: 3
+  }).bindPopup(`<div class="popup-title">📍 Zona de Ruptura</div><div class="popup-info">Ponto provável da falha<br>CTO analisada: <strong>${ctoId}</strong></div>`).addTo(layerOtdr);
+  
+  // Destacar cabos próximos da zona de ruptura
+  let cabosAfetados = [];
+  for (const cabo of allCabos) {
+    const coords = cabo.geometry.coordinates;
+    let minD = Infinity;
+    for (const c of coords) {
+      const d = distM(breakLat, breakLon, c[1], c[0]);
+      if (d < minD) minD = d;
+    }
+    if (minD < 150) {
+      // Calcular comprimento
+      let len = 0;
+      for (let i = 1; i < coords.length; i++) {
+        len += distM(coords[i-1][1], coords[i-1][0], coords[i][1], coords[i][0]);
+      }
+      cabosAfetados.push({ nome: cabo.properties.nome, dist: minD, len, coords });
+      
+      // Desenhar cabo afetado em vermelho brilhante
+      const latlngs = coords.map(c => [c[1], c[0]]);
+      L.polyline(latlngs, {
+        color: '#ff0000', weight: 5, opacity: 0.9
+      }).bindPopup(`<div class="popup-title">🔴 CABO AFETADO</div><div class="popup-info">${cabo.properties.nome}<br>Comprimento: <strong>${len.toFixed(0)}m</strong><br>Distância da ruptura: ${minD.toFixed(0)}m</div>`).addTo(layerOtdr);
+    }
+  }
+  cabosAfetados.sort((a, b) => a.dist - b.dist);
+  
+  // CTOs afetadas na zona
+  let ctosOffline = 0, clientesAfetados = 0;
+  for (const a of afetadas) {
+    ctosOffline++;
+    clientesAfetados += a.offline;
+  }
+  
+  // Atualizar painel
+  let html = '<div class="otdr-result">';
+  html += `<div class="label">CTO Analisada</div><div class="val">${ctoId} — ${oltNome}</div>`;
+  html += `<div class="label" style="margin-top:6px">Zona de Ruptura</div><div class="val">${breakLat.toFixed(6)}, ${breakLon.toFixed(6)}</div>`;
+  if (distRuptura > 0) {
+    html += `<div class="label" style="margin-top:6px">Distância CTO on→off</div><div class="val">${distRuptura.toFixed(0)}m</div>`;
+  }
+  html += `<div class="label" style="margin-top:6px">CTOs afetadas (300m)</div><div class="alert">${ctosOffline} CTOs</div>`;
+  html += `<div class="label" style="margin-top:6px">Clientes offline</div><div class="alert">${clientesAfetados}</div>`;
+  html += `<div class="label" style="margin-top:6px">Cabos na zona (150m)</div>`;
+  if (cabosAfetados.length > 0) {
+    html += '<div style="margin-top:4px">';
+    for (const c of cabosAfetados.slice(0, 5)) {
+      html += `<div style="color:#f87171;font-size:11px;padding:1px 0">🔴 ${c.nome} | ${c.len.toFixed(0)}m | ${c.dist.toFixed(0)}m</div>`;
+    }
+    html += '</div>';
+  } else {
+    html += '<div style="color:#64748b">Nenhum cabo InMap na zona</div>';
+  }
+  html += `<div class="label" style="margin-top:8px">Status</div>`;
+  if (onlineProx.length > 0) {
+    html += `<div class="ok">✅ Rompimento localizado entre CTO ${onlineProx[0].id} (online) e CTO afetada</div>`;
+  } else {
+    html += `<div class="alert">⚠️ Área totalmente offline — possível falha de OLT ou POP</div>`;
+  }
+  html += '</div>';
+  
+  otdrPanel.innerHTML = html;
+  
+  // Centralizar na zona de ruptura
+  map.setView([breakLat, breakLon], 17);
+  
+  // Adicionar stats
+  const statsBox = document.getElementById('statsBox');
+  if (!document.getElementById('otdr-stats')) {
+    statsBox.innerHTML += `<div id="otdr-stats"><div class="stat-row">Cabos afetados: <strong style="color:#f87171">${cabosAfetados.length}</strong></div><div class="stat-row">Distância ruptura: <strong style="color:#fbbf24">${distRuptura.toFixed(0)}m</strong></div></div>`;
+  } else {
+    document.getElementById('otdr-stats').innerHTML = `<div class="stat-row">Cabos afetados: <strong style="color:#f87171">${cabosAfetados.length}</strong></div><div class="stat-row">Distância ruptura: <strong style="color:#fbbf24">${distRuptura.toFixed(0)}m</strong></div>`;
+  }
+}
+
+function str(v) { return String(v || ''); }
+
+function autoOtdrAll() {
+  const rompCTOs = allCTOs.filter(c => c.rompimento && c.lat);
+  if (rompCTOs.length === 0) return;
+  
+  // Analisar o primeiro rompimento
+  const cto = rompCTOs[0];
+  runOtdr(cto.id, cto.lat, cto.lon, cto.oltNome, cto.oltId);
+}
+
+// Toggles
+function setupToggles() {
+  const toggleMap = {
+    'layer-cabos': layerCabos, 'layer-emendas': layerEmendas,
+    'layer-regioes': layerRegioes, 'layer-ctos': layerCTOs,
+    'layer-romp': layerRomp, 'layer-otdr': layerOtdr
+  };
+  for (const [id, layer] of Object.entries(toggleMap)) {
+    document.getElementById(id).addEventListener('change', e => {
+      e.target.checked ? layer.addTo(map) : map.removeLayer(layer);
+    });
+  }
+  
+  document.getElementById('searchBox').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    if (q.length < 2) return;
+    if (layerCTOs) {
+      layerCTOs.eachLayer(l => {
+        if (l.getPopup && l.getPopup().getContent().toLowerCase().includes(q)) {
+          const ll = l.getLatLng();
+          map.setView(ll, 17);
+          l.openPopup();
+        }
+      });
+    }
+  });
+  
+  document.getElementById('btnAutoOtdr').addEventListener('click', autoOtdrAll);
+}
+
+// Init
+(async () => {
+  await Promise.all([loadInMap(), loadIXC()]);
+  setupToggles();
+  document.getElementById('loading').style.display = 'none';
+})();
+</script>
+</body>
+</html>
