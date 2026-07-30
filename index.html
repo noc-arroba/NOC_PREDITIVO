@@ -226,7 +226,7 @@ function setSource(id, online, label) {
 
 // ============ LOAD OVERVIEW ============
 async function loadOverview() {
-  const data = await fetchJSON(`https://6a617bdfd90040324b7d7251.base44.app/api/apps/6a617bdfd90040324b7d7251/functions/nocExecutiveDashboard?action=overview`);
+  const data = await fetchJSON(`https://6a617bdfd90040324b7d7251.base44.app/api/apps/6a617bdfd90040324b7d7251/functions/nocExecutive?action=overview`);
   if (!data || !data.success) return;
   
   // Health score
