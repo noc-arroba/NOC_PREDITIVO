@@ -1,0 +1,44 @@
+{
+  "name": "medicao-rb-cliente",
+  "description": "Medi\u00e7\u00e3o ativa via SSH na RB Cliente (TESTE-BANDA-WELLINHO) a cada 10 minutos. Coleta ping, traceroute, status do sistema e detecta anomalias.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/10 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Sao_Paulo",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "rb_active_measurement",
+      "namespace": "base44",
+      "version": "1.0"
+    },
+    "do": [
+      {
+        "measure": {
+          "call": "invoke_superagent_step",
+          "with": {
+            "message": "NOC PREDITIVO \u2014 Medi\u00e7\u00e3o Ativa RB Cliente (autom\u00e1tico)\n\nExecute a medi\u00e7\u00e3o ativa na RB Cliente via SSH e salve os resultados na entity RbMeasurement.\n\nPassos:\n1. Execute o script Python: python3 /app/scripts/rb_active_monitor.py\n2. Parse o output (status do sistema, pings para m\u00faltiplos alvos, traceroute)\n3. Salve os resultados na entity RbMeasurement usando create_entity_records com os campos:\n   - rbName: nome da RB\n   - status: overall status\n   - uptime, version, cpuLoad, freeMemory\n   - pings: array com {name, ip, role, avgRtt, minRtt, maxRtt, packetLoss, jitter}\n   - traceroute: array com {hop, address, avg, loss}\n   - alarms: array com alertas detectados\n4. Se detectar packetLoss > 0% ou avgRtt > 100ms ou jitter > 10ms em qualquer alvo, reporte o alerta.\n5. N\u00e3o envie mensagem ao usu\u00e1rio se tudo estiver normal (0% loss, lat\u00eancia ok). S\u00f3 reporte se houver anomalia."
+          },
+          "then": "end",
+          "x-base44": {
+            "description": "Ping, traceroute e status via SSH",
+            "title": "Medi\u00e7\u00e3o Ativa RB"
+          }
+        }
+      }
+    ]
+  }
+}
