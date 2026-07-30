@@ -84,6 +84,10 @@
       "dest": "/public/sla.html"
     },
     {
+      "src": "/executive.html",
+      "dest": "/public/executive.html"
+    },
+    {
       "src": "/index.html",
       "dest": "/public/index.html"
     },
@@ -121,7 +125,7 @@
     },
     {
       "src": "/",
-      "dest": "/public/index.html"
+      "dest": "/public/executive.html"
     }
   ]
 }
