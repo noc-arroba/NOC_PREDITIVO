@@ -186,7 +186,7 @@ tr:hover{background:#0f172a}
 
 <script>
 // ============ CONFIG ============
-const API_BASE = window.location.origin;
+const API_BASE = 'https://noc-preditivo.vercel.app';
 const REFRESH_MS = 60000;
 
 // ============ HELPERS ============
@@ -226,7 +226,7 @@ function setSource(id, online, label) {
 
 // ============ LOAD OVERVIEW ============
 async function loadOverview() {
-  const data = await fetchJSON(`${API_BASE}/api/executive.js?action=overview`);
+  const data = await fetchJSON(`https://6a617bdfd90040324b7d7251.base44.app/api/apps/6a617bdfd90040324b7d7251/functions/nocExecutiveDashboard?action=overview`);
   if (!data || !data.success) return;
   
   // Health score
