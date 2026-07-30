@@ -1,0 +1,7 @@
+name = "noc-preditivo"
+compatibility_date = "2024-09-23"
+main = "worker.js"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
