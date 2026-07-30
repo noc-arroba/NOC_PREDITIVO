@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Intelligence Center — Arroba Banda Larga</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:#111827;--border:#1e293b;--text:#e0e0e0;--muted:#64748b;--blue:#3b82f6;--green:#22c55e;--yellow:#f59e0b;--red:#dc2626;--purple:#8b5cf6;--cyan:#06b6d4}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+/* Header */
+.hdr{background:linear-gradient(135deg,#0f172a,#1e293b);padding:16px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.hdr h1{font-size:20px;display:flex;align-items:center;gap:10px}
+.hdr .score-badge{font-size:28px;font-weight:800;padding:4px 16px;border-radius:12px}
+.hdr .meta{display:flex;gap:16px;font-size:12px;color:var(--muted)}
+.hdr .meta span{color:var(--text)}
+/* Nav */
+.nav{display:flex;gap:2px;background:#0f172a;padding:4px;border-bottom:1px solid var(--border);overflow-x:auto;flex-wrap:nowrap}
+.nav button{background:none;border:none;color:var(--muted);padding:8px 14px;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s}
+.nav button:hover{background:#1e293b;color:#cbd5e1}
+.nav button.active{background:var(--blue);color:#fff;font-weight:600}
+/* Layout */
+.wrap{max-width:1800px;margin:0 auto;padding:16px}
+.tab{display:none}
+.tab.active{display:block}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1024px){.g2,.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative}
+.card h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.big-num{font-size:42px;font-weight:800;line-height:1}
+.sub{font-size:12px;color:var(--muted);margin-top:6px}
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.pill.ok{background:rgba(34,197,94,.15);color:var(--green)}
+.pill.warn{background:rgba(245,158,11,.15);color:var(--yellow)}
+.pill.crit{background:rgba(220,38,38,.15);color:var(--red)}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase}
+td{padding:10px 12px;border-bottom:1px solid rgba(30,41,59,.5)}
+tr:hover td{background:rgba(30,41,59,.3)}
+/* Timeline */
+.timeline{position:relative;padding-left:24px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:16px;padding:12px 16px;background:rgba(30,41,59,.3);border-radius:8px;border-left:3px solid}
+.tl-item::before{content:'';position:absolute;left:-20px;top:14px;width:12px;height:12px;border-radius:50%}
+.tl-time{font-size:11px;color:var(--muted);margin-bottom:4px}
+.tl-title{font-size:14px;font-weight:600}
+.tl-corr{font-size:12px;color:var(--cyan);margin-top:4px;font-style:italic}
+/* Map */
+.map-svg{width:100%;height:500px;background:#0f172a;border-radius:8px}
+.map-node{cursor:pointer;transition:.3s}
+.map-node:hover{transform:scale(1.3)}
+.map-link{stroke-width:2;fill:none;opacity:.6}
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--muted)}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* AI box */
+.ai-box{background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(139,92,246,.1));border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:16px;margin-bottom:16px}
+.ai-box .ai-label{font-size:11px;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.ai-box .ai-content{font-size:14px;line-height:1.6}
+.ai-rec{font-size:13px;padding:6px 0;border-bottom:1px solid rgba(30,41,59,.5)}
+.ai-rec:last-child{border:none}
+/* Heatmap */
+.heat-cell{display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:11px;font-weight:600;min-height:40px;transition:.3s}
+.heat-cell:hover{transform:scale(1.05)}
+/* Bar */
+.bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar-fill{height:100%;border-radius:4px;transition:.5s}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🛰️ NOC Intelligence Center <span class="pill" id="hdr-status">—</span></h1>
+  <div class="score-badge" id="hdr-score">--</div>
+  <div class="meta">
+    <div>AS<span>264025</span></div>
+    <div>Arroba Banda Larga</div>
+    <div id="hdr-time">--:--</div>
+  </div>
+</div>
+
+<div class="nav" id="nav">
+  <button class="active" data-tab="overview">📊 Visão Geral</button>
+  <button data-tab="health">❤️ Health Index</button>
+  <button data-tab="network">🗺️ Mapa Rede</button>
+  <button data-tab="heatmap">🔥 Heat Map</button>
+  <button data-tab="timeline">⏱️ Timeline</button>
+  <button data-tab="prediction">🔮 Previsões</button>
+  <button data-tab="traffic">🚦 Eng. Tráfego</button>
+  <button data-tab="customers">👥 Clientes</button>
+  <button data-tab="capacity">📈 Capacidade</button>
+  <button data-tab="rca">🔍 Causa Raiz</button>
+  <button data-tab="executive">📋 Executivo</button>
+  <button data-tab="noc">🖥️ Operacional</button>
+  <button data-tab="security">🔒 Segurança</button>
+  <button data-tab="assistant">🤖 Assistente IA</button>
+</div>
+
+<div class="wrap">
+
+<!-- TAB: OVERVIEW -->
+<div class="tab active" id="tab-overview">
+  <div class="ai-box" id="overview-ai"><div class="ai-label">🤖 Análise IA</div><div class="ai-content" id="overview-ai-text">Carregando análise...</div></div>
+  <div class="grid g4" id="overview-cards"></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Alarmes Ativos (Top 10)</h3>
+      <div id="overview-alarms" class="loading"><div class="spinner"></div></div>
+    </div>
+    <div class="card">
+      <h3>Status das Fontes</h3>
+      <div id="overview-sources"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: HEALTH -->
+<div class="tab" id="tab-health">
+  <div class="card" style="margin-bottom:16px">
+    <h3>Índice de Saúde da Rede</h3>
+    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+      <div class="big-num" id="health-score" style="font-size:72px">--</div>
+      <div>
+        <div class="pill" id="health-status">Carregando</div>
+        <div class="sub" id="health-summary" style="margin-top:8px;font-size:14px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Fatores de Pontuação</h3>
+      <div id="health-factors" class="loading"><div class="spinner"></div></div>
+    </div>
+    <div class="card">
+      <h3>O que reduziu a pontuação</h3>
+      <div id="health-reductions"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🤖 Recomendações da IA</h3>
+    <div id="health-recs"></div>
+  </div>
+</div>
+
+<!-- TAB: NETWORK MAP -->
+<div class="tab" id="tab-network">
+  <div class="grid g3" id="net-stats" style="margin-bottom:16px"></div>
+  <div class="card">
+    <h3>Mapa Inteligente da Rede</h3>
+    <svg class="map-svg" id="netmap-svg"></svg>
+    <div id="netmap-detail" style="margin-top:12px;padding:12px;background:rgba(30,41,59,.3);border-radius:8px;font-size:13px;color:var(--muted)">Clique em um equipamento para ver detalhes.</div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Legenda</h3><div id="netmap-legend"></div></div>
+    <div class="card"><h3>Equipamentos por Status</h3><div id="netmap-status"></div></div>
+  </div>
+</div>
+
+<!-- TAB: HEATMAP -->
+<div class="tab" id="tab-heatmap">
+  <div class="card" style="margin-bottom:16px">
+    <h3>Mapa de Calor — Alarmes por Equipamento</h3>
+    <div id="heatmap-grid" class="loading"><div class="spinner"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>OLTs Mais Críticas</h3><div id="heat-olts"></div></div>
+    <div class="card"><h3>Links Mais Congestionados</h3><div id="heat-links"></div></div>
+  </div>
+</div>
+
+<!-- TAB: TIMELINE -->
+<div class="tab" id="tab-timeline">
+  <div class="ai-box"><div class="ai-label">🤖 Correlação de Eventos</div><div class="ai-content" id="tl-ai">Carregando...</div></div>
+  <div class="card">
+    <h3>Linha do Tempo — Últimas 24h</h3>
+    <div class="timeline" id="timeline-list" class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- TAB: PREDICTION -->
+<div class="tab" id="tab-prediction">
+  <div class="ai-box"><div class="ai-label">🤖 Análise Preditiva</div><div class="ai-content" id="pred-ai">Carregando...</div></div>
+  <div class="card">
+    <h3>Previsão de Falhas por Equipamento</h3>
+    <div id="pred-list" class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- TAB: TRAFFIC -->
+<div class="tab" id="tab-traffic">
+  <div class="grid g3" id="traffic-cards" style="margin-bottom:16px"></div>
+  <div class="card">
+    <h3>Sessões BGP e Peers</h3>
+    <div id="traffic-peers" class="loading"><div class="spinner"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Engenharia de Tráfego — Recomendações</h3>
+    <div id="traffic-recs" class="ai-content">Carregando recomendações...</div>
+  </div>
+</div>
+
+<!-- TAB: CUSTOMERS -->
+<div class="tab" id="tab-customers">
+  <div class="card">
+    <h3>Clientes com Alta Reincidência (30 dias)</h3>
+    <div id="cust-list" class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- TAB: CAPACITY -->
+<div class="tab" id="tab-capacity">
+  <div class="ai-box"><div class="ai-label">🤖 Projeção de Capacidade</div><div class="ai-content" id="cap-ai">Carregando...</div></div>
+  <div class="grid g4" id="cap-cards"></div>
+</div>
+
+<!-- TAB: RCA -->
+<div class="tab" id="tab-rca">
+  <div class="ai-box"><div class="ai-label">🤖 Análise de Causa Raiz</div><div class="ai-content" id="rca-ai">Carregando...</div></div>
+  <div class="card">
+    <h3>Incidentes Ativos</h3>
+    <div id="rca-list" class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- TAB: EXECUTIVE -->
+<div class="tab" id="tab-executive">
+  <div class="grid g4" id="exec-cards" style="margin-bottom:16px"></div>
+  <div class="grid g2">
+    <div class="card"><h3>SLA de Rompimentos (Hoje)</h3><div id="exec-sla" class="loading"><div class="spinner"></div></div></div>
+    <div class="card"><h3>Equipamentos Mais Problemáticos</h3><div id="exec-problem"></div></div>
+  </div>
+</div>
+
+<!-- TAB: NOC -->
+<div class="tab" id="tab-noc">
+  <div class="grid g5" id="noc-cards" style="margin-bottom:16px"></div>
+  <div class="card">
+    <h3>Alarmes Ativos — Operação</h3>
+    <div id="noc-alarms" class="loading"><div class="spinner"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🤖 Recomendações do OTIA</h3>
+    <div id="noc-recs"></div>
+  </div>
+</div>
+
+<!-- TAB: SECURITY -->
+<div class="tab" id="tab-security">
+  <div class="grid g3" id="sec-cards" style="margin-bottom:16px"></div>
+  <div class="card"><h3>Monitoramento de Segurança</h3><div id="sec-detail" class="loading"><div class="spinner"></div></div></div>
+</div>
+
+<!-- TAB: ASSISTANT -->
+<div class="tab" id="tab-assistant">
+  <div class="ai-box">
+    <div class="ai-label">🤖 Assistente Inteligente — OTIA</div>
+    <div class="ai-content">
+      <p style="margin-bottom:12px">O OTIA responde perguntas operacionais em tempo real com base nos dados do NOC.</p>
+      <p style="margin-bottom:8px"><strong>Perguntas que posso responder:</strong></p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+        <div>• O que está acontecendo agora?</div>
+        <div>• Qual o maior risco da rede?</div>
+        <div>• Qual POP está mais saturado?</div>
+        <div>• Qual enlace precisa upgrade?</div>
+        <div>• Qual equipamento trocar primeiro?</div>
+        <div>• Quais clientes com degradação?</div>
+        <div>• O que mudou nas últimas 24h?</div>
+        <div>• Existe tendência preocupante?</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="assistant-response">
+    <h3>Resposta Atual</h3>
+    <div id="assistant-answer" style="font-size:14px;line-height:1.8"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = window.location.origin + '/api/';
+let cache = {};
+
+async function fetchJSON(url) {
+  try {
+    const res = await fetch(url);
+    return await res.json();
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+function pill(status) {
+  const map = { healthy: 'ok', ok: 'ok', warning: 'warn', warn: 'warn', critical: 'crit', down: 'crit', offline: 'crit', online: 'ok', up: 'ok' };
+  const cls = map[status] || 'warn';
+  const text = status.charAt(0).toUpperCase() + status.slice(1);
+  return `<span class="pill ${cls}">${text}</span>`;
+}
+
+function colorForScore(s) {
+  if (s >= 85) return '#22c55e';
+  if (s >= 60) return '#f59e0b';
+  return '#dc2626';
+}
+
+// Tab navigation
+document.querySelectorAll('.nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    loadTab(btn.dataset.tab);
+  });
+});
+
+function loadTab(tab) {
+  switch(tab) {
+    case 'overview': loadOverview(); break;
+    case 'health': loadHealth(); break;
+    case 'network': loadNetworkMap(); break;
+    case 'heatmap': loadHeatmap(); break;
+    case 'timeline': loadTimeline(); break;
+    case 'prediction': loadPrediction(); break;
+    case 'traffic': loadTraffic(); break;
+    case 'customers': loadCustomers(); break;
+    case 'capacity': loadCapacity(); break;
+    case 'rca': loadRCA(); break;
+    case 'executive': loadExecutive(); break;
+    case 'noc': loadNOC(); break;
+    case 'security': loadSecurity(); break;
+    case 'assistant': loadAssistant(); break;
+  }
+}
+
+// ===== OVERVIEW =====
+async function loadOverview() {
+  const [health, exec] = await Promise.all([
+    fetchJSON(API + 'health'),
+    fetchJSON(API + 'executive?action=overview'),
+  ]);
+
+  // Header
+  const score = health.score || 0;
+  document.getElementById('hdr-score').textContent = score;
+  document.getElementById('hdr-score').style.color = colorForScore(score);
+  document.getElementById('hdr-status').textContent = health.status || '—';
+  document.getElementById('hdr-status').className = 'pill ' + (health.status === 'healthy' ? 'ok' : health.status === 'warning' ? 'warn' : 'crit');
+
+  // AI
+  document.getElementById('overview-ai-text').innerHTML = health.summary + '<br><br>' + (health.recommendations || []).slice(0,3).map(r => '• ' + r).join('<br>');
+
+  // Cards
+  const z = exec.zabbix || {};
+  const b = exec.bgp || {};
+  const cards = [
+    { title: 'Health Score', value: score, sub: health.status, color: colorForScore(score) },
+    { title: 'Equipamentos', value: z.totalHosts || 0, sub: `${z.hostsDown || 0} offline`, color: z.hostsDown > 0 ? '#dc2626' : '#22c55e' },
+    { title: 'Alarmes Ativos', value: z.totalTriggers || 0, sub: `${(z.bySeverity?.['4']||0)+(z.bySeverity?.['5']||0)} alta severidade`, color: '#f59e0b' },
+    { title: 'BGP Peers', value: b.bgpPeers || 0, sub: `${b.announcedPrefixes || 0} prefixos`, color: '#3b82f6' },
+  ];
+  document.getElementById('overview-cards').innerHTML = cards.map(c => `
+    <div class="card">
+      <h3>${c.title}</h3>
+      <div class="big-num" style="color:${c.color}">${c.value}</div>
+      <div class="sub">${c.sub}</div>
+    </div>
+  `).join('');
+
+  // Alarms
+  if (z.topTriggers) {
+    document.getElementById('overview-alarms').innerHTML = `
+      <table><thead><tr><th>Host</th><th>Alarme</th><th>Sev</th><th>Idade</th></tr></thead>
+      <tbody>${z.topTriggers.map(t => `
+        <tr>
+          <td>${t.host}</td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${t.description}</td>
+          <td>${pill(t.severityName?.toLowerCase())}</td>
+          <td>${t.age}</td>
+        </tr>
+      `).join('')}</tbody></table>
+    `;
+  }
+
+  // Sources
+  const sources = exec.sources || {};
+  document.getElementById('overview-sources').innerHTML = Object.entries(sources).map(([k,v]) => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(30,41,59,.5)">
+      <span style="text-transform:capitalize">${k}</span>
+      ${pill(v)}
+    </div>
+  `).join('');
+}
+
+// ===== HEALTH =====
+async function loadHealth() {
+  const data = await fetchJSON(API + 'health');
+  const score = data.score || 0;
+  document.getElementById('health-score').textContent = score;
+  document.getElementById('health-score').style.color = colorForScore(score);
+  document.getElementById('health-status').textContent = data.status;
+  document.getElementById('health-status').className = 'pill ' + (data.status === 'healthy' ? 'ok' : data.status === 'warning' ? 'warn' : 'crit');
+  document.getElementById('health-summary').textContent = data.summary || '';
+
+  // Factors
+  if (data.factors) {
+    document.getElementById('health-factors').innerHTML = data.factors.map(f => `
+      <div style="padding:10px 0;border-bottom:1px solid rgba(30,41,59,.5)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600">${f.area} <span style="color:var(--muted);font-size:11px">${f.weight||''}</span></span>
+          <span class="pill ${f.status === 'ok' ? 'ok' : f.status === 'warn' ? 'warn' : 'crit'}">${f.score}/100</span>
+        </div>
+        ${f.detail ? `<div class="sub">${f.detail}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // Reductions
+  if (data.reductions && data.reductions.length > 0) {
+    document.getElementById('health-reductions').innerHTML = data.reductions.map(r => `
+      <div style="padding:8px 0;border-bottom:1px solid rgba(30,41,59,.5)">
+        <span style="color:#dc2626;font-weight:600">${r.impact.toFixed(1)} pts</span> — ${r.area}: ${r.detail}
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('health-reductions').innerHTML = '<div style="color:var(--green);padding:20px 0">✅ Nenhum fator reduziu a pontuação. Rede saudável.</div>';
+  }
+
+  // Recs
+  document.getElementById('health-recs').innerHTML = (data.recommendations || []).map(r => {
+    const cls = r.startsWith('[CRÍTICO]') ? 'crit' : r.startsWith('[DISASTER]') ? 'crit' : r.startsWith('[ATENÇÃO]') ? 'warn' : 'ok';
+    return `<div class="ai-rec"><span class="pill ${cls}">${r.split(']')[0]}]</span> ${r.split(']')[1]?.trim() || r}</div>`;
+  }).join('');
+}
+
+// ===== NETWORK MAP =====
+async function loadNetworkMap() {
+  const data = await fetchJSON(API + 'network-map');
+  if (!data.nodes) return;
+
+  // Stats
+  const counts = { ok: 0, warn: 0, critical: 0 };
+  data.nodes.forEach(n => counts[n.health] = (counts[n.health] || 0) + 1);
+  document.getElementById('net-stats').innerHTML = [
+    { t: 'Total', v: data.nodes.length, c: '#3b82f6' },
+    { t: 'Saudáveis', v: counts.ok, c: '#22c55e' },
+    { t: 'Atenção', v: counts.warn, c: '#f59e0b' },
+    { t: 'Críticos', v: counts.critical, c: '#dc2626' },
+  ].map(s => `<div class="card"><h3>${s.t}</h3><div class="big-num" style="color:${s.c}">${s.v}</div></div>`).join('');
+
+  // SVG Map
+  const svg = document.getElementById('netmap-svg');
+  const colors = { ok: '#22c55e', warn: '#f59e0b', critical: '#dc2626' };
+  const typeColors = data.legend || {};
+  const iconMap = { pop: '◆', olt: '▢', router: '○', ix: '★', transit: '↑', rb: '◻' };
+
+  let links = '';
+  data.links.forEach(l => {
+    const from = data.nodes.find(n => n.id === l.from);
+    const to = data.nodes.find(n => n.id === l.to);
+    if (from && to) {
+      const color = l.health === 'warn' ? '#f59e0b' : l.health === 'critical' ? '#dc2626' : '#3b82f6';
+      links += `<line class="map-link" x1="${from.x}%" y1="${from.y}%" x2="${to.x}%" y2="${to.y}%" stroke="${color}" />`;
+    }
+  });
+
+  let nodes = '';
+  data.nodes.forEach(n => {
+    const c = colors[n.health] || '#64748b';
+    const tc = typeColors[n.type] || '#64748b';
+    nodes += `
+      <g class="map-node" data-id="${n.id}" onclick="showNodeDetail('${n.id}')" transform="translate(${n.x * 8},${n.y * 5})">
+        <circle r="14" fill="${tc}" opacity="0.3" stroke="${c}" stroke-width="2"/>
+        <text text-anchor="middle" dy="5" font-size="12" fill="${c}">${iconMap[n.type] || '●'}</text>
+        <text text-anchor="middle" dy="30" font-size="9" fill="#94a3b8">${n.name}</text>
+      </g>
+    `;
+  });
+
+  svg.innerHTML = links + nodes;
+
+  // Legend
+  document.getElementById('netmap-legend').innerHTML = Object.entries(typeColors).map(([k,v]) => 
+    `<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="width:14px;height:14px;border-radius:50%;background:${v};display:inline-block"></span> ${k.toUpperCase()}</div>`
+  ).join('') + '<div style="margin-top:8px"><span style="color:#22c55e">●</span> OK &nbsp; <span style="color:#f59e0b">●</span> Atenção &nbsp; <span style="color:#dc2626">●</span> Crítico</div>';
+
+  // Status
+  document.getElementById('netmap-status').innerHTML = Object.entries(counts).map(([k,v]) => 
+    `<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${k}</span><span style="color:${colors[k]}">${v}</span></div>`
+  ).join('');
+
+  // Store for detail
+  window._netmapData = data;
+}
+
+function showNodeDetail(id) {
+  const n = window._netmapData?.nodes.find(x => x.id === id);
+  if (!n) return;
+  const links = window._netmapData?.links.filter(l => l.from === id || l.to === id);
+  const colors = { ok: '#22c55e', warn: '#f59e0b', critical: '#dc2626' };
+  document.getElementById('netmap-detail').innerHTML = `
+    <div style="color:${colors[n.health]};font-size:16px;font-weight:700">${n.name}</div>
+    <div style="margin-top:4px">Tipo: ${n.type.toUpperCase()} | IP: ${n.ip || 'N/A'} | Status: ${pill(n.health)}</div>
+    <div style="margin-top:8px"><strong>Links conectados:</strong> ${links?.length || 0}</div>
+    <div style="margin-top:8px;color:var(--cyan)"><em>🤖 Recomendação: ${n.health === 'ok' ? 'Equipamento operando normalmente.' : n.health === 'warn' ? 'Monitorar degradação. Verificar logs.' : 'Acionamento imediato necessário. Verificar fisicamente.'}</em></div>
+  `;
+}
+
+// ===== HEATMAP =====
+async function loadHeatmap() {
+  const data = await fetchJSON(API + 'zabbix?action=overview');
+  if (!data.topTriggers) return;
+
+  // Group by host
+  const byHost = {};
+  data.topTriggers.forEach(t => { byHost[t.host] = (byHost[t.host] || 0) + 1; });
+  const hosts = Object.entries(byHost).sort((a,b) => b[1] - a[1]);
+
+  const heatColors = ['#22c55e', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#dc2626'];
+  
+  document.getElementById('heatmap-grid').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+    ${hosts.map(([host, count]) => {
+      const intensity = Math.min(count, 5);
+      const color = heatColors[intensity];
+      return `<div class="heat-cell" style="background:${color}33;border:1px solid ${color}" title="${host}: ${count} alarmes">${host.split('-')[0]}<br><small>${count} alarme(s)</small></div>`;
+    }).join('')}
+    </div>
+  `;
+
+  // OLTs
+  const olts = hosts.filter(([h]) => h.includes('OLT')).slice(0, 5);
+  document.getElementById('heat-olts').innerHTML = olts.map(([h,c]) => 
+    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,41,59,.5)"><span>${h}</span><span class="pill ${c > 3 ? 'crit' : 'warn'}">${c} alarmes</span></div>`
+  ).join('') || '<div class="sub">Nenhum alarme em OLTs</div>';
+
+  // Links
+  document.getElementById('heat-links').innerHTML = '<div class="sub">Requer dados de Flow API para análise de congestionamento</div>';
+}
+
+// ===== TIMELINE =====
+async function loadTimeline() {
+  const data = await fetchJSON(API + 'events?hours=24');
+  
+  document.getElementById('tl-ai').innerHTML = data.aiAnalysis || 'Sem eventos para correlacionar.';
+
+  if (data.events && data.events.length > 0) {
+    document.getElementById('timeline-list').innerHTML = data.events.map(e => `
+      <div class="tl-item" style="border-left-color:${e.color}">
+        <div style="position:absolute;left:-24px;top:14px;width:12px;height:12px;border-radius:50%;background:${e.color}"></div>
+        <div class="tl-time">${e.time} • ${e.source} • ${pill(e.severityName?.toLowerCase())}</div>
+        <div class="tl-title">${e.title}</div>
+        ${e.correlation ? `<div class="tl-corr">🤖 ${e.correlation}</div>` : ''}
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('timeline-list').innerHTML = '<div style="padding:20px;color:var(--green)">✅ Nenhum evento nas últimas 24h</div>';
+  }
+}
+
+// ===== PREDICTION =====
+async function loadPrediction() {
+  const data = await fetchJSON(API + 'prediction');
+  
+  document.getElementById('pred-ai').innerHTML = `${data.totalPredictions} equipamentos com risco de falha identificado. ${data.highRisk} em alto risco.`;
+
+  if (data.predictions && data.predictions.length > 0) {
+    document.getElementById('pred-list').innerHTML = `
+      <table><thead><tr><th>Equipamento</th><th>Probabilidade</th><th>ETA</th><th>Problema</th><th>Ação</th></tr></thead>
+      <tbody>${data.predictions.map(p => `
+        <tr>
+          <td style="font-weight:600">${p.host}</td>
+          <td><span class="pill ${parseInt(p.probability) >= 60 ? 'crit' : 'warn'}">${p.probability}</span></td>
+          <td>${p.eta}</td>
+          <td style="max-width:250px;font-size:12px">${p.issue}</td>
+          <td style="font-size:12px;color:var(--cyan)">${p.reason}</td>
+        </tr>
+      `).join('')}</tbody></table>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted)">${data.disclaimer}</div>
+    `;
+  } else {
+    document.getElementById('pred-list').innerHTML = '<div style="padding:20px;color:var(--green)">✅ Nenhum equipamento com risco elevado de falha</div>';
+  }
+}
+
+// ===== TRAFFIC =====
+async function loadTraffic() {
+  const [bgp, exec] = await Promise.all([
+    fetchJSON(API + 'bgp'),
+    fetchJSON(API + 'executive?action=overview'),
+  ]);
+
+  document.getElementById('traffic-cards').innerHTML = [
+    { t: 'Prefixos Anunciados', v: bgp.overview?.announced_prefixes || 0, s: 'de 256 max' },
+    { t: 'Peers BGP', v: bgp.overview?.bgp_peers || 0, s: `${bgp.stats?.peers_upstream || 0} upstream` },
+    { t: 'Hosts Zabbix', v: exec.zabbix?.totalHosts || 0, s: `${exec.zabbix?.hostsDown || 0} down` },
+  ].map(c => `<div class="card"><h3>${c.t}</h3><div class="big-num">${c.v}</div><div class="sub">${c.s}</div></div>`).join('');
+
+  if (bgp.peers) {
+    document.getElementById('traffic-peers').innerHTML = `
+      <table><thead><tr><th>Peer</th><th>ASN</th><th>Status</th></tr></thead>
+      <tbody>${bgp.peers.map(p => `<tr><td>${p.name}</td><td>AS${p.asn}</td><td>${pill(p.status)}</td></tr>`).join('')}</tbody></table>
+    `;
+  }
+
+  document.getElementById('traffic-recs').innerHTML = `
+    • Validação BGP HE: ${bgp.overview?.announced_prefixes || 0} prefixos anunciados, score ${bgp.score_bgp}/100<br>
+    • Balanceamento: Monitorar assimetria de tráfego entre POPs<br>
+    • Convergência: Configurar coleta contínua para medir tempo de recuperação<br>
+    • Caminhos alternativos: Validar rotas backup via IX-BR e transit<br>
+    • Recomendação: Implementar RPKI ROV para segurança de rota
+  `;
+}
+
+// ===== CUSTOMERS =====
+async function loadCustomers() {
+  const data = await fetchJSON(API + 'customers?action=reincidence');
+  if (data.highReincidence) {
+    document.getElementById('cust-list').innerHTML = `
+      <div style="margin-bottom:12px">
+        <strong>${data.totalOs}</strong> OS nos últimos 30 dias | 
+        <strong>${data.uniqueClients}</strong> clientes únicos | 
+        <strong>${data.highReincidence.length}</strong> com alta reincidência
+      </div>
+      <table><thead><tr><th>Cliente</th><th>Bairro</th><th>OS (30d)</th><th>Risco</th></tr></thead>
+      <tbody>${data.highReincidence.map(c => `
+        <tr>
+          <td>${c.nome}</td>
+          <td>${c.bairro}</td>
+          <td><strong>${c.count}</strong></td>
+          <td><span class="pill ${c.count >= 5 ? 'crit' : 'warn'}">${c.count >= 5 ? 'Alto' : 'Médio'}</span></td>
+        </tr>
+      `).join('')}</tbody></table>
+    `;
+  } else {
+    document.getElementById('cust-list').innerHTML = '<div class="sub">Carregando dados de reincidência...</div>';
+  }
+}
+
+// ===== CAPACITY =====
+async function loadCapacity() {
+  const data = await fetchJSON(API + 'capacity');
+  document.getElementById('cap-ai').innerHTML = data.aiProjection || 'Carregando projeção...';
+  
+  const cards = [
+    { t: 'Prefixos BGP', v: data.bgp?.prefixes || 0, s: `${data.bgp?.utilization || '0%'} (max 256)`, c: '#3b82f6' },
+    { t: 'Hosts Monitorados', v: data.hosts?.total || 0, s: `${data.hosts?.active || 0} ativos`, c: '#22c55e' },
+    { t: 'OLTs Ativas', v: data.olts?.active || 0, s: `${data.olts?.ponPorts || 0} portas PON`, c: '#8b5cf6' },
+    { t: 'Projeção', v: 'IA', s: 'Em desenvolvimento', c: '#06b6d4' },
+  ];
+  document.getElementById('cap-cards').innerHTML = cards.map(c => 
+    `<div class="card"><h3>${c.t}</h3><div class="big-num" style="color:${c.c}">${c.v}</div><div class="sub">${c.s}</div></div>`
+  ).join('');
+}
+
+// ===== RCA =====
+async function loadRCA() {
+  const data = await fetchJSON(API + 'rca');
+  document.getElementById('rca-ai').innerHTML = data.aiSummary || 'Carregando...';
+  
+  if (data.incidents && data.incidents.length > 0) {
+    document.getElementById('rca-list').innerHTML = data.incidents.map(inc => `
+      <div style="padding:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;border-left:3px solid ${inc.severity >= 5 ? '#dc2626' : '#f59e0b'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:15px">${inc.host}</strong>
+          <span class="pill ${inc.severity >= 5 ? 'crit' : 'warn'}">${inc.severityName || 'HIGH'}</span>
+        </div>
+        <div style="font-size:13px;margin-bottom:8px">${inc.description}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">⏱ ${inc.age} | 🎯 ${inc.impact}</div>
+        <div style="font-size:13px;color:var(--cyan);margin-bottom:4px"><strong>Causa provável:</strong> ${inc.rootCause}</div>
+        <div style="font-size:13px;color:var(--green)"><strong>Ação:</strong> ${inc.recommendedAction}</div>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('rca-list').innerHTML = '<div style="padding:20px;color:var(--green)">✅ Nenhum incidente crítico ativo</div>';
+  }
+}
+
+// ===== EXECUTIVE =====
+async function loadExecutive() {
+  const [exec, sla] = await Promise.all([
+    fetchJSON(API + 'executive?action=overview'),
+    fetchJSON(API + 'sla'),
+  ]);
+
+  const z = exec.zabbix || {};
+  const b = exec.bgp || {};
+  
+  document.getElementById('exec-cards').innerHTML = [
+    { t: 'Health Score', v: exec.score || 0, s: exec.status, c: colorForScore(exec.score || 0) },
+    { t: 'Disponibilidade', v: z.hostsOk ? Math.round((z.hostsOk/z.totalHosts)*100) + '%' : '--', s: `${z.hostsDown || 0} offline`, c: '#22c55e' },
+    { t: 'Alarmes', v: z.totalTriggers || 0, s: `${(z.bySeverity?.['4']||0)+(z.bySeverity?.['5']||0)} críticos`, c: '#f59e0b' },
+    { t: 'Prefixos BGP', v: b.announcedPrefixes || 0, s: `${b.bgpPeers || 0} peers`, c: '#3b82f6' },
+  ].map(c => `<div class="card"><h3>${c.t}</h3><div class="big-num" style="color:${c.c}">${c.v}</div><div class="sub">${c.s}</div></div>`).join('');
+
+  if (sla.success) {
+    const causas = sla.causas || {};
+    document.getElementById('exec-sla').innerHTML = `
+      <div style="margin-bottom:12px">
+        <strong>${sla.validos}</strong> OS válidas | <strong>${sla.filtrados}</strong> filtradas (energia/conexão subiu)
+      </div>
+      <div style="margin-bottom:8px"><strong>Causas de Rompimento:</strong></div>
+      ${Object.entries(causas).map(([c,n]) => `<span class="pill warn" style="margin:2px">${c}: ${n}</span>`).join('')}
+    `;
+  }
+
+  // Problem equipment
+  if (z.topTriggers) {
+    const byHost = {};
+    z.topTriggers.forEach(t => { byHost[t.host] = (byHost[t.host] || 0) + 1; });
+    const top = Object.entries(byHost).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    document.getElementById('exec-problem').innerHTML = top.map(([h,c]) => 
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,41,59,.5)"><span>${h}</span><span class="pill ${c > 2 ? 'crit' : 'warn'}">${c} alarmes</span></div>`
+    ).join('');
+  }
+}
+
+// ===== NOC =====
+async function loadNOC() {
+  const [exec, health] = await Promise.all([
+    fetchJSON(API + 'executive?action=overview'),
+    fetchJSON(API + 'health'),
+  ]);
+
+  const z = exec.zabbix || {};
+  document.getElementById('noc-cards').innerHTML = [
+    { t: 'Alarmes Ativos', v: z.totalTriggers || 0, c: '#f59e0b' },
+    { t: 'Equipamentos Down', v: z.hostsDown || 0, c: '#dc2626' },
+    { t: 'DISASTER', v: z.bySeverity?.['5'] || 0, c: '#dc2626' },
+    { t: 'HIGH', v: z.bySeverity?.['4'] || 0, c: '#ea580c' },
+    { t: 'Health', v: health.score || 0, c: colorForScore(health.score || 0) },
+  ].map(c => `<div class="card"><h3>${c.t}</h3><div class="big-num" style="color:${c.c};font-size:28px">${c.v}</div></div>`).join('');
+
+  if (z.topTriggers) {
+    document.getElementById('noc-alarms').innerHTML = `
+      <table><thead><tr><th>Sev</th><th>Host</th><th>Alarme</th><th>Idade</th></tr></thead>
+      <tbody>${z.topTriggers.map(t => `
+        <tr>
+          <td><span class="pill ${t.severity >= 5 ? 'crit' : t.severity >= 4 ? 'crit' : 'warn'}">${t.severityName}</span></td>
+          <td>${t.host}</td>
+          <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis">${t.description}</td>
+          <td>${t.age}</td>
+        </tr>
+      `).join('')}</tbody></table>
+    `;
+  }
+
+  document.getElementById('noc-recs').innerHTML = (health.recommendations || []).map(r => 
+    `<div class="ai-rec">${r}</div>`
+  ).join('');
+}
+
+// ===== SECURITY =====
+async function loadSecurity() {
+  const data = await fetchJSON(API + 'security');
+  if (!data.hosts) return;
+
+  document.getElementById('sec-cards').innerHTML = [
+    { t: 'Hosts Ativos', v: data.hosts.active, c: '#22c55e' },
+    { t: 'Hosts Inativos', v: data.hosts.inactive, c: '#dc2626' },
+    { t: 'Blocos /22', v: data.blocks?.length || 0, c: '#3b82f6' },
+  ].map(c => `<div class="card"><h3>${c.t}</h3><div class="big-num" style="color:${c.c}">${c.v}</div></div>`).join('');
+
+  document.getElementById('sec-detail').innerHTML = `
+    <div style="margin-bottom:12px"><strong>Blocos monitorados:</strong> ${data.blocks?.join(', ') || ''}</div>
+    <div style="margin-bottom:12px"><strong>Portas críticas:</strong> ${data.scan?.ports?.join(', ') || ''}</div>
+    <div style="margin-bottom:12px"><strong>BGP Security:</strong> ${data.bgpSecurity?.recommendation || 'Implementar RPKI'}</div>
+    <div style="margin-bottom:12px"><strong>SSL IXC:</strong> ${data.ssl?.ixc?.status || 'monitoring'}</div>
+    <div style="font-size:13px;color:var(--cyan);margin-top:12px"><strong>🤖 Recomendações:</strong><br>
+    1. Implementar RPKI ROV para prevenção de prefix hijack<br>
+    2. Monitorar certificados SSL do IXC<br>
+    3. Configurar alertas de tentativas de acesso SSH<br>
+    4. Verificar backups de configuração dos equipamentos<br>
+    5. Implementar logs centralizados (SIEM)
+    </div>
+  `;
+}
+
+// ===== ASSISTANT =====
+async function loadAssistant() {
+  const [health, exec] = await Promise.all([
+    fetchJSON(API + 'health'),
+    fetchJSON(API + 'executive?action=overview'),
+  ]);
+
+  const z = exec.zabbix || {};
+  const topAlarm = z.topTriggers?.[0];
+  const highRisk = z.topTriggers?.filter(t => t.severity >= 4).length || 0;
+
+  document.getElementById('assistant-answer').innerHTML = `
+    <p><strong>O que está acontecendo agora?</strong><br>
+    Health Score: ${health.score}/100 (${health.status}). ${z.totalTriggers || 0} alarmes ativos, ${highRisk} de alta severidade.
+    ${z.hostsDown > 0 ? `${z.hostsDown} equipamento(s) offline.` : 'Todos os equipamentos monitorados estão online.'}</p>
+
+    <p><strong>Qual é o maior risco da rede neste momento?</strong><br>
+    ${topAlarm ? `Maior risco: ${topAlarm.host} — ${topAlarm.description} (${topAlarm.severityName}, ${topAlarm.age})` : 'Nenhum risco crítico identificado.'}</p>
+
+    <p><strong>Recomendações priorizadas:</strong><br>
+    ${(health.recommendations || []).slice(0, 5).map((r,i) => `${i+1}. ${r}`).join('<br>')}</p>
+
+    <p><strong>Equipamentos mais problemáticos:</strong><br>
+    ${z.topTriggers?.slice(0, 3).map(t => `• ${t.host}: ${t.description.substring(0,60)}...`).join('<br>') || 'Nenhum'}</p>
+
+    <p style="margin-top:16px;color:var(--muted);font-size:12px">Análise gerada em ${new Date().toLocaleString('pt-BR')} | Dados: Zabbix + BGP + IXC</p>
+  `;
+}
+
+// ===== INIT =====
+function updateTime() {
+  document.getElementById('hdr-time').textContent = new Date().toLocaleTimeString('pt-BR');
+}
+setInterval(updateTime, 1000);
+updateTime();
+loadOverview();
+
+// Auto-refresh a cada 60s
+setInterval(() => {
+  const active = document.querySelector('.nav button.active')?.dataset.tab;
+  if (active === 'overview') loadOverview();
+}, 60000);
+</script>
+</body>
+</html>
