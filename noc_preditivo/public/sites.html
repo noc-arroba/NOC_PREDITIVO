@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — Monitoramento de Sites</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;color:#e0e0e0}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 30px;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header h1{font-size:22px;color:#f8fafc}
+.header .asn{font-size:14px;color:#64748b;margin-top:4px}
+.clock{font-size:20px;color:#e2e8f0;font-variant-numeric:tabular-nums}
+.container{max-width:1600px;margin:0 auto;padding:20px}
+.nav{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;flex-wrap:wrap;margin-bottom:20px}
+.nav a{text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;color:#94a3b8}
+.nav a.active{background:#1e40af;color:#dbeafe;font-weight:600}
+.nav a:not(.active):hover{background:#1e293b;color:#cbd5e1}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px 16px}
+.kpi .v{font-size:28px;font-weight:700;color:#f8fafc}
+.kpi .l{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.kpi.ok .v{color:#4ade80}.kpi.warn .v{color:#fbbf24}.kpi.bad .v{color:#f87171}
+.layout{display:grid;grid-template-columns:220px 1fr 280px;gap:16px}
+.panel{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px}
+.panel h3{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.cat{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:#94a3b8;margin-bottom:4px}
+.cat:hover,.cat.on{background:#1e293b;color:#e2e8f0}
+.cat b{color:#4ade80}.cat b.w{color:#fbbf24}.cat b.r{color:#f87171}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:160px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:13px}
+.toolbar select{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px;color:#e2e8f0;font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.site{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;border-left:3px solid #4ade80}
+.site.warn{border-left-color:#fbbf24}.site.bad{border-left-color:#f87171}.site.nodata{border-left-color:#475569}
+.site .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.site .nm{font-size:13px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.site .ms{font-size:16px;font-weight:700;color:#4ade80}
+.site.warn .ms{color:#fbbf24}.site.bad .ms{color:#f87171}.site.nodata .ms{color:#64748b}
+.site .sub{font-size:10px;color:#64748b;text-transform:uppercase}
+.site .met{display:flex;gap:10px;font-size:11px;color:#94a3b8;margin-top:4px}
+.site svg{width:100%;height:28px;margin-top:6px;display:block}
+.row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #1e293b;color:#cbd5e1}
+.row span:last-child{color:#fbbf24}.row span.r{color:#f87171}
+.seal{display:inline-block;background:#064e3b;color:#6ee7b7;border:1px solid #10b98155;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600}
+.foot{text-align:center;color:#334155;font-size:12px;padding:24px}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1>🌐 Monitoramento de Sites</h1><div class="asn">AS264025 — Arroba Banda Larga · medido da NETWATCH <span class="seal" id="seal">Real</span></div></div>
+  <div class="clock" id="clock">--:--:--</div>
+</div>
+<div class="container">
+  <div class="nav">
+    <a href="index.html">📊 Executivo</a><a href="bgp-centro.html">BGP</a><a href="zabbix.html">Zabbix</a>
+    <a href="flow.html">Flow</a><a href="sites.html" class="active">🌐 Sites</a><a href="rb-cliente.html">RB Cliente</a>
+    <a href="security.html">Segurança</a><a href="config.html">Config</a>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="layout">
+    <div class="panel"><h3>Categorias</h3><div id="cats"></div></div>
+    <div class="panel">
+      <div class="toolbar">
+        <input id="q" placeholder="Buscar site...">
+        <select id="ord"><option value="pior">Pior primeiro</option><option value="nome">Nome</option><option value="lat">Latência</option></select>
+      </div>
+      <div class="cards" id="cards"><div style="color:#64748b;padding:20px">Carregando...</div></div>
+    </div>
+    <div class="panel"><h3>Mais instáveis</h3><div id="unstable"></div>
+      <h3 style="margin-top:18px">Sem resposta ICMP</h3><div id="noicmp"></div></div>
+  </div>
+  <div class="foot" id="foot">Atualização automática a cada 60s</div>
+</div>
+<script>
+const API='https://valen-a789b7cc.base44.app/functions/sitesMonitor';
+const CATN={streaming:'Streaming',general:'Serviços e Bancos',cdn:'CDN e Portais',dns:'DNS Públicos',speedtest:'Speedtest',custom:'Outros'};
+let DATA=null,CAT='todos';
+function status(s){const l=s.last;if(!l)return'nodata';
+  if(l.avg==null) return (l.loss>=100)?'warn':'nodata';
+  if(l.loss>=10||l.avg>200)return'bad';if(l.loss>=3||l.avg>100||(l.jitter||0)>30)return'warn';return'ok';}
+function spark(s){const v=s.series.map(x=>x.avg).filter(x=>x!=null);
+  if(v.length<2)return'<svg viewBox="0 0 100 28"><line x1="0" y1="24" x2="100" y2="24" stroke="#1e293b"/></svg>';
+  const mx=Math.max(...v),mn=Math.min(...v),r=(mx-mn)||1;
+  const pts=v.map((y,i)=>`${(i/(v.length-1)*100).toFixed(1)},${(26-((y-mn)/r)*22).toFixed(1)}`).join(' ');
+  return`<svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline fill="none" stroke="#4ade80" stroke-width="1.5" points="${pts}"/></svg>`;}
+function render(){
+  if(!DATA)return;const q=document.getElementById('q').value.toLowerCase(),ord=document.getElementById('ord').value;
+  let all=DATA.sites.map(s=>({...s,st:status(s)}));
+  const cnt={ok:0,warn:0,bad:0,nodata:0};all.forEach(s=>cnt[s.st]++);
+  const lat=all.map(s=>s.last&&s.last.avg).filter(x=>x!=null).sort((a,b)=>a-b);
+  const med=lat.length?lat[Math.floor(lat.length/2)]:null;
+  const loss=all.filter(s=>s.last&&s.last.loss>0&&s.last.avg!=null).length;
+  const medidos=all.filter(s=>s.last);const avail=medidos.length?(100*medidos.filter(s=>s.last.avg!=null).length/medidos.length).toFixed(1):'--';
+  document.getElementById('kpis').innerHTML=
+   `<div class="kpi ok"><div class="v">${cnt.ok}</div><div class="l">Na faixa ideal</div></div>`+
+   `<div class="kpi warn"><div class="v">${cnt.warn}</div><div class="l">Atenção</div></div>`+
+   `<div class="kpi ${loss?'warn':'ok'}"><div class="v">${loss}</div><div class="l">Com perda</div></div>`+
+   `<div class="kpi ${cnt.bad?'bad':'ok'}"><div class="v">${cnt.bad}</div><div class="l">Críticos</div></div>`+
+   `<div class="kpi"><div class="v">${med!=null?med.toFixed(0)+' ms':'--'}</div><div class="l">Latência mediana</div></div>`+
+   `<div class="kpi ok"><div class="v">${avail}%</div><div class="l">Respondendo ICMP</div></div>`;
+  const cats={};all.forEach(s=>{const c=s.category||'custom';(cats[c]=cats[c]||{n:0,b:0,w:0}).n++;if(s.st==='bad')cats[c].b++;if(s.st==='warn')cats[c].w++;});
+  let ch=`<div class="cat ${CAT==='todos'?'on':''}" data-c="todos">Todos <b>${all.length}</b></div>`;
+  for(const c in cats){const k=cats[c];ch+=`<div class="cat ${CAT===c?'on':''}" data-c="${c}">${CATN[c]||c} <b class="${k.b?'r':k.w?'w':''}">${k.n}</b></div>`;}
+  document.getElementById('cats').innerHTML=ch;
+  document.querySelectorAll('.cat').forEach(e=>e.onclick=()=>{CAT=e.dataset.c;render();});
+  let list=all.filter(s=>(CAT==='todos'||s.category===CAT)&&s.label.toLowerCase().includes(q));
+  const rank={bad:0,warn:1,ok:2,nodata:3};
+  if(ord==='pior')list.sort((a,b)=>rank[a.st]-rank[b.st]);else if(ord==='nome')list.sort((a,b)=>a.label.localeCompare(b.label));
+  else list.sort((a,b)=>((b.last&&b.last.avg)||0)-((a.last&&a.last.avg)||0));
+  document.getElementById('cards').innerHTML=list.map(s=>{const l=s.last||{};
+    return`<div class="site ${s.st}"><div class="top"><span class="nm">${s.label}</span><span class="ms">${l.avg!=null?l.avg.toFixed(0)+' ms':(s.last?'s/ICMP':'—')}</span></div>
+    <div class="sub">${CATN[s.category]||s.category}</div>${spark(s)}
+    <div class="met"><span>perda ${l.loss!=null?l.loss+'%':'--'}</span><span>jitter ${l.jitter!=null?l.jitter+' ms':'--'}</span><span>dns ${l.dns!=null?l.dns.toFixed(0)+' ms':'--'}</span></div></div>`}).join('')||'<div style="color:#64748b">Nenhum site.</div>';
+  const un=all.filter(s=>s.last&&s.last.avg!=null).sort((a,b)=>((b.last.loss||0)*5+(b.last.jitter||0))-((a.last.loss||0)*5+(a.last.jitter||0))).slice(0,6);
+  document.getElementById('unstable').innerHTML=un.map(s=>`<div class="row"><span>${s.label}</span><span class="${s.last.loss>=10?'r':''}">${s.last.loss}% · ${s.last.jitter} ms</span></div>`).join('');
+  const ni=all.filter(s=>s.last&&s.last.avg==null&&s.last.loss>=100);
+  document.getElementById('noicmp').innerHTML=ni.map(s=>`<div class="row"><span>${s.label}</span><span>100% perda</span></div>`).join('')||'<div style="color:#64748b;font-size:12px">Nenhum</div>';
+  const t=new Date(DATA.generated_at);document.getElementById('foot').textContent=`Última leitura: ${t.toLocaleString('pt-BR')} · ${DATA.source} · Atualização a cada 60s`;
+}
+async function load(){try{const r=await fetch(API);DATA=await r.json();render();}catch(e){document.getElementById('foot').textContent='Falha ao carregar dados: '+e;}}
+document.getElementById('q').oninput=render;document.getElementById('ord').onchange=render;
+setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR'),1000);
+load();setInterval(load,60000);
+</script>
+</body>
+</html>
