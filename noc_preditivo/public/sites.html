@@ -74,7 +74,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;
         <span class="chip" id="vw">Tabela</span><span class="chip" id="tvb">Modo TV</span>
       </div>
       <div id="main"><div style="color:var(--mu);padding:20px">Carregando...</div></div>
-      <div class="leg"><span><i class="dot"></i>OK</span><span><i class="dot wn"></i>Atenção (perda ≥3% / &gt;100 ms / jitter &gt;30)</span><span><i class="dot bad"></i>Crítico (perda ≥10% / &gt;200 ms)</span><span><i class="dot nd"></i>Sem resposta ICMP</span></div>
+      <div class="leg"><span><i class="dot"></i>OK</span><span><i class="dot wn"></i>Atenção (perda média ≥3% / &gt;100 ms / jitter &gt;30)</span><span><i class="dot bad"></i>Crítico (perda média ≥10% nas últimas 3 leituras / &gt;200 ms)</span><span><i class="dot nd"></i>Sem resposta ICMP</span></div>
     </div>
     <div class="side">
       <div class="panel"><h3>Diagnóstico</h3><div id="diag"></div></div>
@@ -92,7 +92,12 @@ let DATA=null,CAT='todos',ST='todos',VIEW='cards';
 const $=id=>document.getElementById(id);
 function status(s){const l=s.last;if(!l)return'nd';
   if(l.avg==null)return'nd';
-  if(l.loss>=10||l.avg>200)return'bad';if(l.loss>=3||l.avg>100||(l.jitter||0)>30)return'wn';return'ok';}
+  // perda sustentada: media das ultimas 3 leituras (evita falso alarme de uma rodada isolada)
+  const ult=s.series.slice(-3).map(x=>x.loss).filter(x=>x!=null);
+  const perda=ult.length?ult.reduce((a,b)=>a+b,0)/ult.length:(l.loss||0);
+  const amostra=ult.length>=3;
+  if(l.avg>200||(amostra&&perda>=10))return'bad';
+  if(l.avg>100||(l.jitter||0)>30||perda>=3)return'wn';return'ok';}
 function spark(s,st){const v=s.series.map(x=>x.avg).filter(x=>x!=null);const col=st==='bad'?'#ef4444':st==='wn'?'#f59e0b':'#22c55e';
   if(v.length<2)return'<svg viewBox="0 0 100 30"><line x1="0" y1="26" x2="100" y2="26" stroke="#16233f"/></svg>';
   const mx=Math.max(...v),mn=Math.min(...v),r=(mx-mn)||1;
