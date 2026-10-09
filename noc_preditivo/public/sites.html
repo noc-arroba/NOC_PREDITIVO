@@ -6,44 +6,49 @@
 <title>NOC Preditivo — Monitoramento de Sites</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;color:#e0e0e0}
-.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:20px 30px;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.header h1{font-size:22px;color:#f8fafc}
-.header .asn{font-size:14px;color:#64748b;margin-top:4px}
-.clock{font-size:20px;color:#e2e8f0;font-variant-numeric:tabular-nums}
-.container{max-width:1600px;margin:0 auto;padding:20px}
-.nav{display:flex;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #1e293b;flex-wrap:wrap;margin-bottom:20px}
-.nav a{text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;color:#94a3b8}
-.nav a.active{background:#1e40af;color:#dbeafe;font-weight:600}
-.nav a:not(.active):hover{background:#1e293b;color:#cbd5e1}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
-.kpi{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px 16px}
-.kpi .v{font-size:28px;font-weight:700;color:#f8fafc}
-.kpi .l{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
-.kpi.ok .v{color:#4ade80}.kpi.warn .v{color:#fbbf24}.kpi.bad .v{color:#f87171}
-.layout{display:grid;grid-template-columns:220px 1fr 280px;gap:16px}
-.panel{background:#111827;border:1px solid #1e293b;border-radius:12px;padding:14px}
-.panel h3{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.cat{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:#94a3b8;margin-bottom:4px}
-.cat:hover,.cat.on{background:#1e293b;color:#e2e8f0}
-.cat b{color:#4ade80}.cat b.w{color:#fbbf24}.cat b.r{color:#f87171}
-.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.toolbar input{flex:1;min-width:160px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:13px}
-.toolbar select{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px;color:#e2e8f0;font-size:13px}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
-.site{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;border-left:3px solid #4ade80}
-.site.warn{border-left-color:#fbbf24}.site.bad{border-left-color:#f87171}.site.nodata{border-left-color:#475569}
-.site .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
-.site .nm{font-size:13px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.site .ms{font-size:16px;font-weight:700;color:#4ade80}
-.site.warn .ms{color:#fbbf24}.site.bad .ms{color:#f87171}.site.nodata .ms{color:#64748b}
-.site .sub{font-size:10px;color:#64748b;text-transform:uppercase}
-.site .met{display:flex;gap:10px;font-size:11px;color:#94a3b8;margin-top:4px}
-.site svg{width:100%;height:28px;margin-top:6px;display:block}
-.row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #1e293b;color:#cbd5e1}
-.row span:last-child{color:#fbbf24}.row span.r{color:#f87171}
-.seal{display:inline-block;background:#064e3b;color:#6ee7b7;border:1px solid #10b98155;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600}
-.foot{text-align:center;color:#334155;font-size:12px;padding:24px}
+:root{--bg:#060b18;--pn:#0b1224;--pn2:#0d1730;--bd:#16233f;--tx:#e2e8f0;--mu:#64748b;--ok:#22c55e;--wn:#f59e0b;--bad:#ef4444;--nd:#475569;--ac:#38bdf8}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:13px}
+body.tv .side,body.tv .nav,body.tv .toolbar,body.tv .kpis{display:none}
+body.tv .layout{grid-template-columns:1fr}
+.header{background:linear-gradient(135deg,#0a1226,#0f1c3a);padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.header h1{font-size:18px;color:#f8fafc}.header .asn{font-size:11px;color:var(--mu);margin-top:2px}
+.clock{font-size:20px;font-variant-numeric:tabular-nums;color:#e2e8f0}
+.seal{display:inline-block;background:#064e3b;color:#6ee7b7;border:1px solid #10b98155;border-radius:20px;padding:1px 9px;font-size:10px;font-weight:600}
+.wrap{max-width:1900px;margin:0 auto;padding:14px}
+.nav{display:flex;gap:4px;background:var(--pn);border-radius:8px;padding:4px;border:1px solid var(--bd);flex-wrap:wrap;margin-bottom:12px;width:fit-content}
+.nav a{text-decoration:none;padding:5px 12px;border-radius:6px;font-size:12px;color:#94a3b8}
+.nav a.active{background:#1e40af;color:#dbeafe;font-weight:600}.nav a:not(.active):hover{background:#16233f}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}
+.kpi{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:10px 14px}
+.kpi .v{font-size:26px;font-weight:700}.kpi .l{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.kpi.ok .v{color:var(--ok)}.kpi.wn .v{color:var(--wn)}.kpi.bad .v{color:var(--bad)}
+.layout{display:grid;grid-template-columns:210px 1fr 270px;gap:12px;align-items:start}
+.panel{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:12px}
+.panel h3{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.cat{display:flex;justify-content:space-between;padding:7px 9px;border-radius:7px;cursor:pointer;color:#94a3b8;margin-bottom:3px;font-size:12px}
+.cat:hover,.cat.on{background:#16233f;color:#e2e8f0}.cat b{color:var(--ok)}.cat b.w{color:var(--wn)}.cat b.r{color:var(--bad)}
+.toolbar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.toolbar input{flex:1;min-width:150px;background:var(--pn2);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;color:var(--tx);font-size:12px}
+.chip{background:var(--pn2);border:1px solid var(--bd);border-radius:20px;padding:4px 11px;font-size:11px;color:#94a3b8;cursor:pointer}
+.chip.on{background:#1e3a8a;color:#dbeafe;border-color:#1e40af}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:8px}
+.site{background:var(--pn2);border:1px solid var(--bd);border-left:3px solid var(--ok);border-radius:8px;padding:8px 10px;min-height:92px}
+.site.wn{border-left-color:var(--wn)}.site.bad{border-left-color:var(--bad)}.site.nd{border-left-color:var(--nd)}
+.site .top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.site .nm{font-size:12px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.site .ms{font-size:15px;font-weight:700;color:var(--ok);white-space:nowrap}
+.site.wn .ms{color:var(--wn)}.site.bad .ms{color:var(--bad)}.site.nd .ms{color:var(--mu);font-size:11px}
+.site .sub{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px}
+.site svg{width:100%;height:30px;margin-top:4px;display:block}
+.site .met{display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:3px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);font-size:12px}th{color:var(--mu);font-size:10px;text-transform:uppercase}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--ok)}.dot.wn{background:var(--wn)}.dot.bad{background:var(--bad)}.dot.nd{background:var(--nd)}
+.row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--bd);color:#cbd5e1;gap:6px}
+.row span:last-child{color:var(--wn);white-space:nowrap}.row span.r{color:var(--bad)}
+.diag{padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:12px;line-height:1.4;background:var(--pn2);border-left:3px solid var(--ok)}
+.diag.wn{border-left-color:var(--wn)}.diag.bad{border-left-color:var(--bad)}
+.foot{text-align:center;color:#334155;font-size:11px;padding:16px}
+.leg{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--mu);margin-top:10px}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -52,7 +57,7 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
   <div><h1>🌐 Monitoramento de Sites</h1><div class="asn">AS264025 — Arroba Banda Larga · medido da NETWATCH <span class="seal" id="seal">Real</span></div></div>
   <div class="clock" id="clock">--:--:--</div>
 </div>
-<div class="container">
+<div class="wrap">
   <div class="nav">
     <a href="index.html">📊 Executivo</a><a href="bgp-centro.html">BGP</a><a href="zabbix.html">Zabbix</a>
     <a href="flow.html">Flow</a><a href="sites.html" class="active">🌐 Sites</a><a href="rb-cliente.html">RB Cliente</a>
@@ -60,69 +65,98 @@ body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e1a;c
   </div>
   <div class="kpis" id="kpis"></div>
   <div class="layout">
-    <div class="panel"><h3>Categorias</h3><div id="cats"></div></div>
+    <div class="side"><div class="panel"><h3>Categorias</h3><div id="cats"></div></div>
+      <div class="panel" style="margin-top:10px"><h3>DNS públicos</h3><div id="dnsbox"></div></div></div>
     <div class="panel">
       <div class="toolbar">
+        <span class="chip on" data-s="todos">Todos</span><span class="chip" data-s="ok">OK</span><span class="chip" data-s="wn">Atenção</span><span class="chip" data-s="bad">Crítico</span><span class="chip" data-s="nd">Sem ICMP</span>
         <input id="q" placeholder="Buscar site...">
-        <select id="ord"><option value="pior">Pior primeiro</option><option value="nome">Nome</option><option value="lat">Latência</option></select>
+        <span class="chip" id="vw">Tabela</span><span class="chip" id="tvb">Modo TV</span>
       </div>
-      <div class="cards" id="cards"><div style="color:#64748b;padding:20px">Carregando...</div></div>
+      <div id="main"><div style="color:var(--mu);padding:20px">Carregando...</div></div>
+      <div class="leg"><span><i class="dot"></i>OK</span><span><i class="dot wn"></i>Atenção (perda ≥3% / &gt;100 ms / jitter &gt;30)</span><span><i class="dot bad"></i>Crítico (perda ≥10% / &gt;200 ms)</span><span><i class="dot nd"></i>Sem resposta ICMP</span></div>
     </div>
-    <div class="panel"><h3>Mais instáveis</h3><div id="unstable"></div>
-      <h3 style="margin-top:18px">Sem resposta ICMP</h3><div id="noicmp"></div></div>
+    <div class="side">
+      <div class="panel"><h3>Diagnóstico</h3><div id="diag"></div></div>
+      <div class="panel" style="margin-top:10px"><h3>Mais instáveis</h3><div id="unstable"></div></div>
+      <div class="panel" style="margin-top:10px"><h3>Maior latência</h3><div id="slow"></div></div>
+      <div class="panel" style="margin-top:10px"><h3>Sem resposta ICMP</h3><div id="noicmp"></div></div>
+    </div>
   </div>
   <div class="foot" id="foot">Atualização automática a cada 60s</div>
 </div>
 <script>
 const API='https://valen-a789b7cc.base44.app/functions/sitesMonitor';
-const CATN={streaming:'Streaming',general:'Serviços e Bancos',cdn:'CDN e Portais',dns:'DNS Públicos',speedtest:'Speedtest',custom:'Outros'};
-let DATA=null,CAT='todos';
-function status(s){const l=s.last;if(!l)return'nodata';
-  if(l.avg==null) return (l.loss>=100)?'warn':'nodata';
-  if(l.loss>=10||l.avg>200)return'bad';if(l.loss>=3||l.avg>100||(l.jitter||0)>30)return'warn';return'ok';}
-function spark(s){const v=s.series.map(x=>x.avg).filter(x=>x!=null);
-  if(v.length<2)return'<svg viewBox="0 0 100 28"><line x1="0" y1="24" x2="100" y2="24" stroke="#1e293b"/></svg>';
+const CATN={financeiro:'Financeiro',redes:'Redes sociais',tv:'TV e streaming',streaming:'Streaming',noticias:'Notícias',jogos:'Jogos',comercio:'Comércio',corporativo:'Corporativo',general:'Serviços gerais',cdn:'CDN e portais',dns:'DNS públicos',speedtest:'Speedtest',custom:'Outros'};
+let DATA=null,CAT='todos',ST='todos',VIEW='cards';
+const $=id=>document.getElementById(id);
+function status(s){const l=s.last;if(!l)return'nd';
+  if(l.avg==null)return'nd';
+  if(l.loss>=10||l.avg>200)return'bad';if(l.loss>=3||l.avg>100||(l.jitter||0)>30)return'wn';return'ok';}
+function spark(s,st){const v=s.series.map(x=>x.avg).filter(x=>x!=null);const col=st==='bad'?'#ef4444':st==='wn'?'#f59e0b':'#22c55e';
+  if(v.length<2)return'<svg viewBox="0 0 100 30"><line x1="0" y1="26" x2="100" y2="26" stroke="#16233f"/></svg>';
   const mx=Math.max(...v),mn=Math.min(...v),r=(mx-mn)||1;
-  const pts=v.map((y,i)=>`${(i/(v.length-1)*100).toFixed(1)},${(26-((y-mn)/r)*22).toFixed(1)}`).join(' ');
-  return`<svg viewBox="0 0 100 28" preserveAspectRatio="none"><polyline fill="none" stroke="#4ade80" stroke-width="1.5" points="${pts}"/></svg>`;}
+  const pts=v.map((y,i)=>`${(i/(v.length-1)*100).toFixed(1)},${(27-((y-mn)/r)*23).toFixed(1)}`).join(' ');
+  return`<svg viewBox="0 0 100 30" preserveAspectRatio="none"><polygon fill="${col}22" points="0,30 ${pts} 100,30"/><polyline fill="none" stroke="${col}" stroke-width="1.4" points="${pts}"/></svg>`;}
+const f=(x,d=0)=>x==null?'--':Number(x).toFixed(d);
 function render(){
-  if(!DATA)return;const q=document.getElementById('q').value.toLowerCase(),ord=document.getElementById('ord').value;
-  let all=DATA.sites.map(s=>({...s,st:status(s)}));
-  const cnt={ok:0,warn:0,bad:0,nodata:0};all.forEach(s=>cnt[s.st]++);
+  if(!DATA)return;const q=$('q').value.toLowerCase();
+  const all=DATA.sites.map(s=>({...s,st:status(s)}));
+  const cnt={ok:0,wn:0,bad:0,nd:0};all.forEach(s=>cnt[s.st]++);
   const lat=all.map(s=>s.last&&s.last.avg).filter(x=>x!=null).sort((a,b)=>a-b);
   const med=lat.length?lat[Math.floor(lat.length/2)]:null;
-  const loss=all.filter(s=>s.last&&s.last.loss>0&&s.last.avg!=null).length;
-  const medidos=all.filter(s=>s.last);const avail=medidos.length?(100*medidos.filter(s=>s.last.avg!=null).length/medidos.length).toFixed(1):'--';
-  document.getElementById('kpis').innerHTML=
+  const comPerda=all.filter(s=>s.last&&s.last.loss>0&&s.last.avg!=null).length;
+  const medidos=all.filter(s=>s.last);const disp=medidos.length?(100*medidos.filter(s=>s.last.avg!=null).length/medidos.length).toFixed(1):'--';
+  $('kpis').innerHTML=
    `<div class="kpi ok"><div class="v">${cnt.ok}</div><div class="l">Na faixa ideal</div></div>`+
-   `<div class="kpi warn"><div class="v">${cnt.warn}</div><div class="l">Atenção</div></div>`+
-   `<div class="kpi ${loss?'warn':'ok'}"><div class="v">${loss}</div><div class="l">Com perda</div></div>`+
+   `<div class="kpi ${cnt.wn?'wn':'ok'}"><div class="v">${cnt.wn}</div><div class="l">Atenção</div></div>`+
+   `<div class="kpi ${comPerda?'wn':'ok'}"><div class="v">${comPerda}</div><div class="l">Com perda parcial</div></div>`+
    `<div class="kpi ${cnt.bad?'bad':'ok'}"><div class="v">${cnt.bad}</div><div class="l">Críticos</div></div>`+
-   `<div class="kpi"><div class="v">${med!=null?med.toFixed(0)+' ms':'--'}</div><div class="l">Latência mediana</div></div>`+
-   `<div class="kpi ok"><div class="v">${avail}%</div><div class="l">Respondendo ICMP</div></div>`;
-  const cats={};all.forEach(s=>{const c=s.category||'custom';(cats[c]=cats[c]||{n:0,b:0,w:0}).n++;if(s.st==='bad')cats[c].b++;if(s.st==='warn')cats[c].w++;});
+   `<div class="kpi"><div class="v">${med!=null?f(med)+' ms':'--'}</div><div class="l">Latência mediana</div></div>`+
+   `<div class="kpi ok"><div class="v">${disp}%</div><div class="l">Respondendo ICMP</div></div>`;
+  const cats={};all.forEach(s=>{const c=s.category||'custom';(cats[c]=cats[c]||{n:0,b:0,w:0}).n++;if(s.st==='bad')cats[c].b++;if(s.st==='wn')cats[c].w++;});
   let ch=`<div class="cat ${CAT==='todos'?'on':''}" data-c="todos">Todos <b>${all.length}</b></div>`;
-  for(const c in cats){const k=cats[c];ch+=`<div class="cat ${CAT===c?'on':''}" data-c="${c}">${CATN[c]||c} <b class="${k.b?'r':k.w?'w':''}">${k.n}</b></div>`;}
-  document.getElementById('cats').innerHTML=ch;
-  document.querySelectorAll('.cat').forEach(e=>e.onclick=()=>{CAT=e.dataset.c;render();});
-  let list=all.filter(s=>(CAT==='todos'||s.category===CAT)&&s.label.toLowerCase().includes(q));
-  const rank={bad:0,warn:1,ok:2,nodata:3};
-  if(ord==='pior')list.sort((a,b)=>rank[a.st]-rank[b.st]);else if(ord==='nome')list.sort((a,b)=>a.label.localeCompare(b.label));
-  else list.sort((a,b)=>((b.last&&b.last.avg)||0)-((a.last&&a.last.avg)||0));
-  document.getElementById('cards').innerHTML=list.map(s=>{const l=s.last||{};
-    return`<div class="site ${s.st}"><div class="top"><span class="nm">${s.label}</span><span class="ms">${l.avg!=null?l.avg.toFixed(0)+' ms':(s.last?'s/ICMP':'—')}</span></div>
-    <div class="sub">${CATN[s.category]||s.category}</div>${spark(s)}
-    <div class="met"><span>perda ${l.loss!=null?l.loss+'%':'--'}</span><span>jitter ${l.jitter!=null?l.jitter+' ms':'--'}</span><span>dns ${l.dns!=null?l.dns.toFixed(0)+' ms':'--'}</span></div></div>`}).join('')||'<div style="color:#64748b">Nenhum site.</div>';
-  const un=all.filter(s=>s.last&&s.last.avg!=null).sort((a,b)=>((b.last.loss||0)*5+(b.last.jitter||0))-((a.last.loss||0)*5+(a.last.jitter||0))).slice(0,6);
-  document.getElementById('unstable').innerHTML=un.map(s=>`<div class="row"><span>${s.label}</span><span class="${s.last.loss>=10?'r':''}">${s.last.loss}% · ${s.last.jitter} ms</span></div>`).join('');
-  const ni=all.filter(s=>s.last&&s.last.avg==null&&s.last.loss>=100);
-  document.getElementById('noicmp').innerHTML=ni.map(s=>`<div class="row"><span>${s.label}</span><span>100% perda</span></div>`).join('')||'<div style="color:#64748b;font-size:12px">Nenhum</div>';
-  const t=new Date(DATA.generated_at);document.getElementById('foot').textContent=`Última leitura: ${t.toLocaleString('pt-BR')} · ${DATA.source} · Atualização a cada 60s`;
+  Object.keys(cats).sort((a,b)=>cats[b].n-cats[a].n).forEach(c=>{const k=cats[c];ch+=`<div class="cat ${CAT===c?'on':''}" data-c="${c}">${CATN[c]||c} <b class="${k.b?'r':k.w?'w':''}">${k.n}</b></div>`;});
+  $('cats').innerHTML=ch;document.querySelectorAll('.cat').forEach(e=>e.onclick=()=>{CAT=e.dataset.c;render();});
+  $('dnsbox').innerHTML=all.filter(s=>s.category==='dns').sort((a,b)=>((a.last&&a.last.avg)||999)-((b.last&&b.last.avg)||999)).map(s=>`<div class="row"><span><i class="dot ${s.st}"></i>${s.label}</span><span style="color:#cbd5e1">${s.last&&s.last.avg!=null?f(s.last.avg,1)+' ms':'--'}</span></div>`).join('');
+  document.querySelectorAll('.chip[data-s]').forEach(e=>e.classList.toggle('on',e.dataset.s===ST));
+  let list=all.filter(s=>(CAT==='todos'||s.category===CAT)&&(ST==='todos'||s.st===ST)&&(s.label.toLowerCase().includes(q)||(s.hostname||'').toLowerCase().includes(q)));
+  const rank={bad:0,wn:1,nd:2,ok:3};list.sort((a,b)=>rank[a.st]-rank[b.st]||a.label.localeCompare(b.label));
+  if(VIEW==='cards'){
+    $('main').innerHTML='<div class="cards">'+(list.map(s=>{const l=s.last||{};
+      return`<div class="site ${s.st}"><div class="top"><span class="nm" title="${s.hostname||''}">${s.label}</span><span class="ms">${l.avg!=null?f(l.avg,l.avg<10?1:0)+' ms':(s.last?'s/ICMP':'—')}</span></div>
+      <div class="sub">${CATN[s.category]||s.category}</div>${spark(s,s.st)}
+      <div class="met"><span>perda ${l.loss!=null?l.loss+'%':'--'}</span><span>jit ${f(l.jitter,1)}</span><span>${s.series.length} pts</span></div></div>`}).join('')||'<div style="color:var(--mu)">Nenhum site.</div>')+'</div>';
+  }else{
+    $('main').innerHTML='<table><tr><th></th><th>Site</th><th>Categoria</th><th>Média</th><th>Mín</th><th>Máx</th><th>Jitter</th><th>Perda</th></tr>'+list.map(s=>{const l=s.last||{};
+      return`<tr><td><i class="dot ${s.st}"></i></td><td>${s.label}</td><td>${CATN[s.category]||s.category}</td><td>${f(l.avg,1)}</td><td>${f(l.min,1)}</td><td>${f(l.max,1)}</td><td>${f(l.jitter,1)}</td><td>${l.loss!=null?l.loss+'%':'--'}</td></tr>`}).join('')+'</table>';
+  }
+  const un=all.filter(s=>s.last&&s.last.avg!=null).sort((a,b)=>((b.last.loss||0)*5+(b.last.jitter||0))-((a.last.loss||0)*5+(a.last.jitter||0))).slice(0,7);
+  $('unstable').innerHTML=un.map(s=>`<div class="row"><span>${s.label}</span><span class="${s.last.loss>=10?'r':''}">${s.last.loss}% · ${f(s.last.jitter,1)} ms</span></div>`).join('');
+  $('slow').innerHTML=all.filter(s=>s.last&&s.last.avg!=null).sort((a,b)=>b.last.avg-a.last.avg).slice(0,5).map(s=>`<div class="row"><span>${s.label}</span><span>${f(s.last.avg)} ms</span></div>`).join('');
+  const ni=all.filter(s=>s.st==='nd'&&s.last);
+  $('noicmp').innerHTML=ni.map(s=>`<div class="row"><span>${s.label}</span><span>100% perda</span></div>`).join('')||'<div style="color:var(--mu);font-size:12px">Nenhum</div>';
+  // diagnostico (so fatos medidos)
+  const d=[];
+  d.push(`<div class="diag ${cnt.bad?'bad':cnt.wn?'wn':''}"><b>${cnt.ok}</b> de ${all.length} alvos na faixa ideal; latência mediana <b>${f(med)} ms</b>.</div>`);
+  const perda=all.filter(s=>s.last&&s.last.avg!=null&&s.last.loss>=10);
+  if(perda.length)d.push(`<div class="diag wn"><b>${perda.length}</b> alvo(s) com perda ≥10%: ${perda.slice(0,4).map(s=>s.label).join(', ')}${perda.length>4?'…':''}.</div>`);
+  if(ni.length)d.push(`<div class="diag">${ni.length} alvo(s) sem resposta ICMP (pode ser bloqueio de ping no destino): ${ni.slice(0,4).map(s=>s.label).join(', ')}${ni.length>4?'…':''}.</div>`);
+  $('diag').innerHTML=d.join('');
+  const t=new Date(DATA.generated_at);
+  const ult=all.map(s=>s.last&&s.last.t).filter(Boolean).sort().pop();
+  const idade=ult?Math.round((Date.now()-new Date(ult))/60000):null;
+  $('seal').textContent=idade!=null&&idade>15?'Desatualizado':'Real';
+  $('seal').style.cssText=idade!=null&&idade>15?'background:#78350f;color:#fcd34d;border-color:#f59e0b55':'';
+  $('foot').textContent=`Última leitura: ${ult?new Date(ult).toLocaleString('pt-BR'):'--'}${idade!=null?' ('+idade+' min atrás)':''} · ${DATA.source} · ${all.length} alvos · atualiza a cada 60s`;
 }
-async function load(){try{const r=await fetch(API);DATA=await r.json();render();}catch(e){document.getElementById('foot').textContent='Falha ao carregar dados: '+e;}}
-document.getElementById('q').oninput=render;document.getElementById('ord').onchange=render;
-setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString('pt-BR'),1000);
-load();setInterval(load,60000);
+async function load(){try{const r=await fetch(API);DATA=await r.json();render();}catch(e){$('foot').textContent='Falha ao carregar dados: '+e;}}
+$('q').oninput=render;
+document.querySelectorAll('.chip[data-s]').forEach(e=>e.onclick=()=>{ST=e.dataset.s;render();});
+$('vw').onclick=()=>{VIEW=VIEW==='cards'?'tabela':'cards';$('vw').textContent=VIEW==='cards'?'Tabela':'Cards';render();};
+$('tvb').onclick=()=>{document.body.classList.toggle('tv');$('tvb').classList.toggle('on');};
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('pt-BR');},1000);
+setInterval(load,60000);load();
 </script>
 </body>
 </html>
