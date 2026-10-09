@@ -50,6 +50,16 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;
 .foot{text-align:center;color:#334155;font-size:11px;padding:16px}
 .leg{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--mu);margin-top:10px}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+
+.mdl{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.mdl.on{display:flex}
+.mbox{background:var(--pn);border:1px solid var(--bd,#334155);border-radius:12px;max-width:760px;width:100%;max-height:88vh;overflow:auto;padding:16px}
+.mbox h3{margin:0 0 4px;font-size:16px}.mbox .x{float:right;cursor:pointer;color:var(--mu);font-size:20px;line-height:1}
+.vd{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;margin:4px 0 8px}
+.vd.ok{background:#14532d;color:#86efac}.vd.icmp_limitado{background:#78350f;color:#fcd34d}.vd.perda_real{background:#7f1d1d;color:#fca5a5}.vd.sem_resposta{background:#334155;color:#cbd5e1}
+.ht{width:100%;border-collapse:collapse;font-size:12px}.ht th{text-align:left;color:var(--mu);font-weight:500;padding:4px 6px}.ht td{padding:4px 6px;border-top:1px solid #1e293b}
+.ht tr.lp td{background:#7f1d1d33}.ht tr.mu td{color:var(--mu)}
+.site,tr{cursor:pointer}
 </style>
 </head>
 <body>
@@ -85,6 +95,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;
   </div>
   <div class="foot" id="foot">Atualização automática a cada 60s</div>
 </div>
+<div class="mdl" id="mdl"><div class="mbox"><span class="x" id="mx">&times;</span><div id="mbody"></div></div></div>
 <script>
 const API='https://valen-a789b7cc.base44.app/functions/sitesMonitor';
 const CATN={financeiro:'Financeiro',redes:'Redes sociais',tv:'TV e streaming',streaming:'Streaming',noticias:'Notícias',jogos:'Jogos',comercio:'Comércio',corporativo:'Corporativo',general:'Serviços gerais',cdn:'CDN e portais',dns:'DNS públicos',speedtest:'Speedtest',custom:'Outros'};
@@ -155,7 +166,28 @@ function render(){
   $('seal').style.cssText=idade!=null&&idade>15?'background:#78350f;color:#fcd34d;border-color:#f59e0b55':'';
   $('foot').textContent=`Última leitura: ${ult?new Date(ult).toLocaleString('pt-BR'):'--'}${idade!=null?' ('+idade+' min atrás)':''} · ${DATA.source} · ${all.length} alvos · atualiza a cada 60s`;
 }
-async function load(){try{const r=await fetch(API);DATA=await r.json();render();}catch(e){$('foot').textContent='Falha ao carregar dados: '+e;}}
+
+const TAPI='https://valen-a789b7cc.base44.app/functions/traceMonitor';let TR={};
+const VN={ok:'Caminho sem perda',icmp_limitado:'Perda em hop intermediário (provável limitação de ICMP do roteador)',perda_real:'Perda sustentada até o destino',sem_resposta:'Destino não responde ICMP'};
+async function loadTr(){try{const r=await fetch(TAPI);const d=await r.json();TR=d.traces||{};}catch(e){}}
+function abrirMtr(label){
+  const t=TR[label];const s=DATA.sites.find(x=>x.label===label)||{};
+  let h=`<span class="x" id="mx2">&times;</span><h3>${label}</h3><div style="color:var(--mu);font-size:12px">${s.hostname||''}</div>`;
+  if(!t){h+='<p style="color:var(--mu)">Ainda sem MTR para este alvo. O rodízio cobre todos os alvos a cada 15 min.</p>';}
+  else{
+    const idade=Math.round((Date.now()-new Date(t.t))/60000);
+    h+=`<div><span class="vd ${t.verdict}">${VN[t.verdict]||t.verdict}</span> <span style="color:var(--mu);font-size:11px">MTR há ${idade} min · ${t.hop_count} hops · origem NETWATCH (CCR1009) · selo Real</span></div>`;
+    if(t.verdict==='perda_real')h+=`<div class="diag bad">Perda de <b>${t.worst_loss_pct}%</b> começa no hop <b>${t.worst_loss_hop}</b> e continua até o destino.</div>`;
+    else if(t.verdict==='icmp_limitado')h+=`<div class="diag wn">Hop <b>${t.worst_loss_hop}</b> perde ${t.worst_loss_pct}%, mas os hops seguintes e o destino estão limpos. Normalmente é o roteador limitando respostas ICMP, não perda real de tráfego.</div>`;
+    h+='<table class="ht"><tr><th>#</th><th>IP</th><th>Perda</th><th>Médio</th><th>Melhor</th><th>Pior</th></tr>'+
+      t.hops.map(x=>{const mu=x.ip==='*';const lp=!mu&&x.loss>=10;return`<tr class="${mu?'mu':lp?'lp':''}"><td>${x.n}</td><td>${mu?'sem resposta':x.ip}</td><td>${mu?'--':x.loss+'%'}</td><td>${x.avg!=null?f(x.avg,1):'--'}</td><td>${x.best!=null?f(x.best,1):'--'}</td><td>${x.worst!=null?f(x.worst,1):'--'}</td></tr>`}).join('')+'</table>';
+    if(t.history&&t.history.length>1)h+='<div style="margin-top:8px;color:var(--mu);font-size:11px">Últimos MTRs: '+t.history.map(x=>x.verdict==='perda_real'?'perda real':x.verdict==='icmp_limitado'?'icmp limitado':x.verdict==='sem_resposta'?'sem resp.':'ok').join(' · ')+'</div>';
+  }
+  $('mbody').innerHTML=h;$('mdl').classList.add('on');const x2=$('mx2');if(x2)x2.onclick=()=>$('mdl').classList.remove('on');
+}
+$('mx').onclick=()=>$('mdl').classList.remove('on');$('mdl').onclick=e=>{if(e.target.id==='mdl')$('mdl').classList.remove('on');};
+document.addEventListener('click',e=>{const c=e.target.closest('.site');if(c){abrirMtr(c.querySelector('.nm').textContent);return;}const r=e.target.closest('tr');if(r&&r.children.length>2&&r.children[1]&&r.parentElement.tagName!=='THEAD'&&r.querySelector('td')){abrirMtr(r.children[1].textContent);}});
+async function load(){try{const r=await fetch(API);DATA=await r.json();await loadTr();render();}catch(e){$('foot').textContent='Falha ao carregar dados: '+e;}}
 $('q').oninput=render;
 document.querySelectorAll('.chip[data-s]').forEach(e=>e.onclick=()=>{ST=e.dataset.s;render();});
 $('vw').onclick=()=>{VIEW=VIEW==='cards'?'tabela':'cards';$('vw').textContent=VIEW==='cards'?'Tabela':'Cards';render();};
