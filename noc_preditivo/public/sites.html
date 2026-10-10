@@ -176,11 +176,12 @@ function abrirMtr(label){
   if(!t){h+='<p style="color:var(--mu)">Ainda sem MTR para este alvo. O rodízio cobre todos os alvos a cada 15 min.</p>';}
   else{
     const idade=Math.round((Date.now()-new Date(t.t))/60000);
-    h+=`<div><span class="vd ${t.verdict}">${VN[t.verdict]||t.verdict}</span> <span style="color:var(--mu);font-size:11px">MTR há ${idade} min · ${t.hop_count} hops · origem NETWATCH (CCR1009) · selo Real</span></div>`;
+    h+=`<div><span class="vd ${t.verdict}">${VN[t.verdict]||t.verdict}</span> <span style="color:var(--mu);font-size:11px">MTR há ${idade} min · ${t.hop_count} hops · origem NETWATCH (CCR1009) · ${idade>15?'<b style="color:#fcd34d">selo Desatualizado</b>':'selo Real'}</span></div>`;
     if(t.verdict==='perda_real')h+=`<div class="diag bad">Perda de <b>${t.worst_loss_pct}%</b> começa no hop <b>${t.worst_loss_hop}</b> e continua até o destino.</div>`;
     else if(t.verdict==='icmp_limitado')h+=`<div class="diag wn">Hop <b>${t.worst_loss_hop}</b> perde ${t.worst_loss_pct}%, mas os hops seguintes e o destino estão limpos. Normalmente é o roteador limitando respostas ICMP, não perda real de tráfego.</div>`;
-    h+='<table class="ht"><tr><th>#</th><th>IP</th><th>Perda</th><th>Médio</th><th>Melhor</th><th>Pior</th></tr>'+
-      t.hops.map(x=>{const mu=x.ip==='*';const lp=!mu&&x.loss>=10;return`<tr class="${mu?'mu':lp?'lp':''}"><td>${x.n}</td><td>${mu?'sem resposta':x.ip}</td><td>${mu?'--':x.loss+'%'}</td><td>${x.avg!=null?f(x.avg,1):'--'}</td><td>${x.best!=null?f(x.best,1):'--'}</td><td>${x.worst!=null?f(x.worst,1):'--'}</td></tr>`}).join('')+'</table>';
+    {const u=t.hops[t.hops.length-1];const sn=parseInt(u&&u.sent)||0;if(sn&&u.ip!=='*'){const rc=Math.round(sn*(1-(u.loss||0)/100));h+=`<div class="diag ${u.loss>=10?'bad':u.loss>0?'wn':''}">Fim a fim (hop ${u.n}): <b>${sn}</b> enviados, <b>${rc}</b> recebidos, <b>${u.loss}%</b> de perda.</div>`;}}
+    h+='<table class="ht"><tr><th>#</th><th>IP</th><th>Enviados</th><th>Recebidos</th><th>Perda</th><th>Médio</th><th>Melhor</th><th>Pior</th></tr>'+
+      t.hops.map(x=>{const mu=x.ip==='*';const lp=!mu&&x.loss>=10;const sn=parseInt(x.sent)||0;const rc=sn?Math.round(sn*(1-(x.loss||0)/100)):null;return`<tr class="${mu?'mu':lp?'lp':''}"><td>${x.n}</td><td>${mu?'sem resposta':x.ip}</td><td>${sn||'--'}</td><td>${mu?(sn?0:'--'):(rc!=null?rc:'--')}</td><td>${mu?'--':x.loss+'%'}</td><td>${x.avg!=null?f(x.avg,1):'--'}</td><td>${x.best!=null?f(x.best,1):'--'}</td><td>${x.worst!=null?f(x.worst,1):'--'}</td></tr>`}).join('')+'</table>';
     if(t.history&&t.history.length>1)h+='<div style="margin-top:8px;color:var(--mu);font-size:11px">Últimos MTRs: '+t.history.map(x=>x.verdict==='perda_real'?'perda real':x.verdict==='icmp_limitado'?'icmp limitado':x.verdict==='sem_resposta'?'sem resp.':'ok').join(' · ')+'</div>';
   }
   $('mbody').innerHTML=h;$('mdl').classList.add('on');const x2=$('mx2');if(x2)x2.onclick=()=>$('mdl').classList.remove('on');
