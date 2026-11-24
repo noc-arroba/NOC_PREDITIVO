@@ -46,21 +46,21 @@ body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:var(
 .sel.Real,.sel.Confirmado{background:rgba(34,245,160,.12);color:#7dffc8;border-color:rgba(34,245,160,.45)}.sel.Inferido{background:rgba(255,176,32,.12);color:#ffd27a;border-color:rgba(255,176,32,.45)}
 .sel.Simulado{background:rgba(100,116,139,.2)}.sel.Desatualizado{background:rgba(255,77,109,.15);color:#ffb3c0;border-color:rgba(255,77,109,.5)}
 .racks{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
-.rackbox{background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:500px;flex:0 1 500px;backdrop-filter:blur(8px)}
-.rackbox h3{font-size:15px;margin-bottom:2px;letter-spacing:.3px}.rackbox .sub{font-size:11px;color:var(--mu);margin-bottom:10px}
+.rackbox{background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:12px;width:100%;max-width:380px;flex:0 1 380px;backdrop-filter:blur(8px)}
+.rackbox h3{font-size:14px;margin-bottom:2px;letter-spacing:.3px}.rackbox .sub{font-size:11px;color:var(--mu);margin-bottom:10px}
 /* gabinete */
-.cab{position:relative;padding:10px 14px;border-radius:8px;background:linear-gradient(90deg,#0a0f1d,#111a30 8%,#111a30 92%,#0a0f1d);border:1px solid #25365a;box-shadow:0 0 0 1px #000 inset,0 12px 40px rgba(0,0,0,.55),0 0 38px rgba(56,225,255,.08)}
+.cab{position:relative;padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,#0a0f1d,#111a30 8%,#111a30 92%,#0a0f1d);border:1px solid #25365a;box-shadow:0 0 0 1px #000 inset,0 12px 40px rgba(0,0,0,.55),0 0 38px rgba(56,225,255,.08)}
 .cab:before,.cab:after{content:"";position:absolute;top:8px;bottom:8px;width:8px;background:repeating-linear-gradient(180deg,#1b2a48 0 9px,#0a1124 9px 17px);border-radius:2px;opacity:.9}
 .cab:before{left:3px}.cab:after{right:3px}
 .rack{background:#03060d;border:1px solid #1a2744;border-radius:3px;box-shadow:0 0 0 1px #000 inset}
-.u{display:flex;height:22px;border-bottom:1px solid rgba(56,225,255,.06);font-size:10px;align-items:stretch}
+.u{display:flex;height:15px;border-bottom:1px solid rgba(56,225,255,.06);font-size:10px;align-items:stretch}
 .u:nth-child(odd){background:rgba(255,255,255,.012)}
-.u .no{width:26px;color:#3f5578;text-align:right;padding-right:6px;line-height:22px;font-family:Consolas,monospace;font-size:10px;user-select:none}
+.u .no{width:26px;color:#3f5578;text-align:right;padding-right:6px;line-height:15px;font-family:Consolas,monospace;font-size:9px;user-select:none}
 .u .sl{flex:1;position:relative}
-.dev{position:absolute;left:2px;right:2px;border-radius:3px;padding:0 10px 0 22px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:600;cursor:pointer;z-index:2;color:#fff;text-shadow:0 1px 2px #000a;
+.dev{position:absolute;left:2px;right:2px;border-radius:3px;padding:0 8px 0 18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:10px;font-weight:600;cursor:pointer;z-index:2;color:#fff;text-shadow:0 1px 2px #000a;
  border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -2px 6px rgba(0,0,0,.45),0 1px 6px rgba(0,0,0,.6);transition:.15s}
 .dev:hover{filter:brightness(1.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 18px rgba(56,225,255,.55);z-index:5}
-.dev:before{content:"";position:absolute;left:7px;top:50%;margin-top:-3px;width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok),0 0 2px #fff;animation:pulse 2.2s infinite}
+.dev:before{content:"";position:absolute;left:6px;top:50%;margin-top:-2px;width:5px;height:5px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok),0 0 2px #fff;animation:pulse 2.2s infinite}
 .dev:after{content:"";position:absolute;right:6px;top:3px;bottom:3px;width:46px;opacity:.28;background:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 5px);border-radius:1px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .r-Router{background:linear-gradient(180deg,#0f9bbf,#0a5f7d)}.r-OLT{background:linear-gradient(180deg,#8452f0,#4c2a9e)}.r-Switch{background:linear-gradient(180deg,#19b36a,#0d6b40)}
@@ -134,7 +134,7 @@ function dcView(){let h=`<div class="panel" style="margin-top:0"><h3>${esc(DC.na
 function rackHtml(r){const n=r.size_u||44;const bs=!!r.back_side;let lin='';
   const devs=r.devices.filter(d=>d.rack_position_u>0&&d.rack_size_u>0);
   for(let i=n;i>=1;i--){const d=devs.find(x=>x.rack_position_u===i);
-    lin+=`<div class="u"><div class="no">${i}</div><div class="sl">${d?`<div class="dev ${cls(d)}" data-as="${d.id}" style="top:${-(d.rack_size_u-1)*22+1}px;height:${d.rack_size_u*22-3}px;line-height:${d.rack_size_u*22-3}px" title="${esc(d.name)} (${d.rack_size_u}U)">${esc(d.name)}${d.ip_address?' · '+esc(d.ip_address):''}</div>`:''}</div></div>`;}
+    lin+=`<div class="u"><div class="no">${i}</div><div class="sl">${d?`<div class="dev ${cls(d)}" data-as="${d.id}" style="top:${-(d.rack_size_u-1)*15+1}px;height:${d.rack_size_u*15-3}px;line-height:${d.rack_size_u*15-3}px" title="${esc(d.name)} (${d.rack_size_u}U)">${esc(d.name)}${d.ip_address?' · '+esc(d.ip_address):''}</div>`:''}</div></div>`;}
   const sem=r.devices.filter(d=>!(d.rack_position_u>0&&d.rack_size_u>0));
   return`<div class="rackbox" data-rk="${r.id}" style="cursor:pointer"><h3>${esc(r.name)} ${sel(r.data_source)}</h3><div class="sub">${n} U · ${r.devices.length} equipamento(s)${bs?' · numeração do verso':''} ${r.description?'· '+esc(r.description):''}</div><div class="cab"><div class="rack">${lin}</div></div>${sem.length?`<div class="alert" style="margin-top:8px">${sem.length} equipamento(s) sem posição definida: ${sem.map(d=>esc(d.name)).join(', ')}</div>`:''}<div class="leg"><span><i class="r-Router"></i>Roteador</span><span><i class="r-OLT"></i>OLT</span><span><i class="r-Switch"></i>Switch</span><span><i class="r-Org"></i>Organizador</span><span><i class="r-Outro"></i>Outro</span></div></div>`;}
 function rackView(){let h=`<div class="racks">${rackHtml(RK)}</div><div class="panel"><h3>Equipamentos do rack</h3><table><tr><th>U</th><th>Nome</th><th>IP</th><th>Função</th><th>Fabricante / modelo</th><th>Selo</th></tr>${RK.devices.slice().sort((a,b)=>(b.rack_position_u||0)-(a.rack_position_u||0)).map(a=>`<tr class="cl" data-as="${a.id}"><td>${a.rack_position_u||'--'}${a.rack_size_u>1?'–'+(a.rack_position_u+a.rack_size_u-1):''}</td><td>${esc(a.name)}</td><td>${esc(a.ip_address||'--')}</td><td>${esc(a.device_role||'--')}</td><td>${esc([a.manufacturer,a.model].filter(Boolean).join(' ')||'--')}</td><td>${sel(a.data_source)}</td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mu)">Rack vazio.</td></tr>'}</table>${ed()?`<div style="margin-top:10px"><button class="btn sec" id="berk">Editar rack</button> <button class="btn del" id="bdrk">Excluir rack</button></div>`:''}</div>`;
