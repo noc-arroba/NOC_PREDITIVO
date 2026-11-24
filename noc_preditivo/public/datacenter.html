@@ -86,6 +86,27 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 10px
 .msg{font-size:12px;margin-top:8px;color:#ffb3c0}.msg.ok{color:#7dffc8}
 .foot{text-align:center;color:#3a4d6e;font-size:11px;padding:18px;letter-spacing:.5px}
 @media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}.f{grid-template-columns:1fr}}
+
+.fp{margin:10px 0;background:linear-gradient(180deg,#141b2c,#0a0f1c);border:1px solid #2a3a5e;border-radius:6px;padding:8px 10px;box-shadow:0 0 0 1px #000 inset,0 6px 18px rgba(0,0,0,.5);position:relative}
+.fp:before,.fp:after{content:"";position:absolute;top:50%;margin-top:-4px;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#6b7a99,#1a2236);box-shadow:0 0 0 1px #000}
+.fp:before{left:5px}.fp:after{right:5px}
+.fp .brand{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;margin:0 12px 6px;color:#9fb6d6}
+.fp .brand b{color:#fff;font-size:11px}
+.fp .grp{display:flex;gap:10px;flex-wrap:wrap;margin:0 12px;align-items:flex-end}
+.fp .gl{font-size:8px;color:#566a8f;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.fp .row{display:flex;gap:3px}
+.pt{position:relative;width:22px;height:19px;border-radius:2px;background:#05080f;border:1px solid #33466f;box-shadow:inset 0 2px 4px #000}
+.pt.sfp{width:17px;height:15px;border-color:#3d557f}.pt.q{width:30px;height:22px;border-color:#5a6fa0}.pt.rj{width:21px;height:18px}
+.pt.pon{width:20px;height:16px;border-color:#6d4cc4}.pt.mg{border-color:#2f7a5b}.pt.con{width:16px;height:12px;border-color:#8a6a2f;border-radius:6px}
+.pt:after{content:"";position:absolute;left:3px;right:3px;top:3px;height:3px;background:#1a2a48;border-radius:1px}
+.pt i{position:absolute;bottom:2px;right:2px;width:4px;height:4px;border-radius:50%;background:#26324e}
+.pt .n{position:absolute;bottom:-11px;left:0;right:0;text-align:center;font-size:7px;color:#566a8f;font-style:normal}
+.fp .row.lb{margin-bottom:12px}
+.slot{width:34px;height:70px;border-radius:2px;background:linear-gradient(180deg,#171f35,#0c1222);border:1px solid #3a4f7d;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4px 0}
+.slot b{font-size:8px;color:#8fa6c8;font-weight:600}.slot.pw{border-color:#8a4a2f;background:linear-gradient(180deg,#2a1710,#140b08)}.slot.fan{border-color:#2f6d7a}
+.slot .pp{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:0 3px}.slot .pp i{width:10px;height:8px;background:#05080f;border:1px solid #6d4cc4;border-radius:1px}
+.fp .aviso{margin:6px 12px 0;font-size:10px;color:#ffd27a}
+.fp .src{margin:4px 12px 0;font-size:10px;color:#566a8f}
 </style>
 </head>
 <body>
@@ -118,6 +139,30 @@ function pst(a){const p=a&&a.ping;if(!(a&&a.ip_address))return{c:'p-nd',t:'Sem I
   const idade=(Date.now()-new Date(p.t))/60000;if(idade>PING_VELHO_MIN)return{c:'p-old',t:'Desatualizado: última leitura há '+Math.round(idade)+' min'};
   if(p.received===0||p.loss>=100)return{c:'p-bad',t:'Sem resposta ao ping (100% de perda)'};if(p.loss>=10)return{c:'p-bad',t:'Perda de '+p.loss+'%'};
   if(p.loss>0||(p.avg!=null&&p.avg>100))return{c:'p-wn',t:'Atenção: perda '+p.loss+'%, latência '+p.avg+' ms'};return{c:'p-ok',t:'Respondendo: '+p.avg+' ms, perda '+p.loss+'%'};}
+
+/* ===== Layouts frontais por modelo. So desenha portas quando o modelo e conhecido. ===== */
+const P=(n,t,l)=>({n,t,l});
+const rng=(a,b,t,pre)=>Array.from({length:b-a+1},(_, i)=>P(a+i,t,pre?pre+(a+i):a+i));
+const LAYOUTS={
+ 'juniper mx204':{marca:'Juniper Networks',nome:'MX204',u:1,fonte:'Painel frontal do MX204: 4 portas QSFP28 100G, 4 portas SFP+/QSFP+ 10G e gerenciamento.',
+   grupos:[{l:'QSFP28 100G (4)',p:rng(1,4,'q')},{l:'QSFP+ 10G (4)',p:rng(1,4,'q')},{l:'Mgmt',p:[P(0,'mg','MGT')]},{l:'Console',p:[P(0,'con','CON')]}]},
+ 'mikrotik ccr1072-1g-8s+':{marca:'MikroTik',nome:'CCR1072-1G-8S+',u:1,fonte:'CCR1072-1G-8S+: 8 portas SFP+ 10G, 1 Ethernet 1G e console serial.',
+   grupos:[{l:'SFP+ 10G',p:rng(1,8,'sfp','sfp+')},{l:'Ether',p:[P(1,'rj','ether1')]},{l:'Console',p:[P(0,'con','CON')]}]},
+ 'mikrotik rb941-2nd':{marca:'MikroTik',nome:'hAP lite (RB941-2nD)',u:0,fonte:'RB941-2nD: 4 portas Ethernet 10/100 e Wi-Fi 2,4 GHz.',grupos:[{l:'Ether 10/100',p:rng(1,4,'rj','ether')}]},
+ 'mikrotik rb450':{marca:'MikroTik',nome:'RB450',u:0,fonte:'RB450: 5 portas Ethernet 10/100/1000.',grupos:[{l:'Ether',p:rng(1,5,'rj','ether')}]},
+};
+function chaveLayout(a){const m=((a.manufacturer||'')+' '+(a.model||'')).toLowerCase().replace(/\s+/g,' ').trim();return LAYOUTS[m]?m:null;}
+function portaHtml(p){return `<div class="pt ${p.t==='q'?'q':p.t}" title="${esc(String(p.l))}"><i></i><span class="n">${esc(String(p.l).replace(/^(sfp\+|ether)/,''))}</span></div>`;}
+function genericoPortas(a){const f=(a.manufacturer||'').toLowerCase(),r=(a.device_role||'').toLowerCase();
+  if(r.includes('olt')) return null;
+  return null;}
+function painelFrontal(a){
+  if(/organiz/i.test(a.device_role||''))return `<div class="fp"><div class="brand"><b>Organizador de cabos</b><span>${a.rack_size_u||1}U</span></div><div class="aviso" style="color:#7d92b3">Sem portas: painel passivo.</div></div>`;
+  const k=chaveLayout(a);
+  if(k){const L=LAYOUTS[k];
+    return `<div class="fp"><div class="brand"><b>${esc(L.marca)} ${esc(L.nome)}</b><span>${L.u?L.u+'U':'desktop'} · <span class="sel Confirmado">Por modelo</span></span></div><div class="grp">${L.grupos.map(g=>`<div><div class="gl">${esc(g.l)}</div><div class="row lb">${g.p.map(portaHtml).join('')}</div></div>`).join('')}</div><div class="src">${esc(L.fonte)} Portas sem LED: o estado real vem do ping e da coleta, não deste desenho.</div></div>`;}
+  const hu=a.rack_size_u||1,nome=[a.manufacturer,a.model].filter(Boolean).join(' ')||'Modelo não informado';
+  return `<div class="fp"><div class="brand"><b>${esc(nome)}</b><span>${hu}U · <span class="sel Inferido">Genérico</span></span></div><div style="margin:6px 12px;height:${Math.min(hu,6)*14}px;border:1px dashed #33466f;border-radius:3px;display:flex;align-items:center;justify-content:center;color:#566a8f;font-size:11px">${hu}U ${esc(a.device_role||'equipamento')}</div><div class="aviso">Layout genérico: o modelo ${a.model?'"'+esc(a.model)+'" ainda não tem desenho':'não está cadastrado'}. Informe o modelo (ex.: Fiberhome AN5516-06) para eu desenhar slots e portas certos.</div></div>`;}
 function cls(d){const r=(d.device_role||'').toLowerCase();if(r.includes('organiz'))return'r-Org';if(r.includes('olt'))return'r-OLT';if(r.includes('router')||r.includes('roteador'))return'r-Router';if(r.includes('switch'))return'r-Switch';return'r-Outro';}
 function ed(){return !!KEY}
 function chrome(){$('edtag').style.display=ed()?'inline-block':'none';$('bkey').textContent=ed()?'🔓 Sair da edição':'🔑 Modo edição';}
@@ -155,7 +200,7 @@ function bindSlots(){document.querySelectorAll('[data-slot]').forEach(e=>e.oncli
 function bindAs(){bindSlots();document.querySelectorAll('[data-as]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();const a=allAssets().find(x=>x.id===e.dataset.as);if(a)detalhe(a);});}
 function detalhe(a){const l=[['IP',a.ip_address],['Função',a.device_role],['Fabricante',a.manufacturer],['Modelo',a.model],['Firmware',a.firmware_version],['Nº de série',a.serial_number],['POP',a.pop],['Local',a.location],['Rack',a.rack_name],['Posição',a.rack_position_u?`U${a.rack_position_u}${a.rack_size_u>1?'–U'+(a.rack_position_u+a.rack_size_u-1):''} (${a.rack_size_u||1}U, ${a.rack_side||'frente'})`:null],['Latitude / longitude',a.latitude!=null?a.latitude+' / '+a.longitude:null],['Porta/range de acesso',a.access_port_range],['Range de IP',a.ip_query_range],['Range de VLAN',a.vlan_query_range],['Range de interface',a.interface_query_range],['ASN',a.asn],['Observações',a.notes||a.description]].filter(x=>x[1]);
   $('mbody').innerHTML=`<h3>${esc(a.name)} ${sel(a.data_source)}</h3>${/organiz/i.test(a.device_role||'')?'':(()=>{const p=a.ping,s=pst(a);return`<div class="diag" style="margin:8px 0;padding:8px 10px;border-radius:8px;border-left:3px solid ${s.c==='p-ok'?'var(--ok)':s.c==='p-wn'?'var(--wn)':s.c==='p-bad'?'var(--bad)':'#475569'};background:rgba(255,255,255,.04)"><b>Ping</b> ${p?'<span class="sel Real">Real</span>':'<span class="sel Desatualizado">Sem leitura</span>'}<div style="font-size:12px;margin-top:3px">${esc(s.t)}</div>${p?`<div style="font-size:11px;color:var(--mu);margin-top:3px">${p.received}/${p.sent} pacotes · min ${p.min??'--'} / médio ${p.avg??'--'} / máx ${p.max??'--'} ms · jitter ${p.jitter??'--'} · ${new Date(p.t).toLocaleString('pt-BR')}</div><div style="font-size:11px;color:var(--mu)">${esc(p.source||'')}</div>`:''}</div>`})()}
-<dl class="det">${l.map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl><div style="font-size:11px;color:var(--mu);margin-top:10px">Usuário e senha não são exibidos aqui.</div>${ed()?`<div style="margin-top:10px"><button class="btn sec" id="bea">Editar</button> <button class="btn del" id="bda">Excluir</button></div>`:''}`;
+${painelFrontal(a)}<dl class="det">${l.map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl><div style="font-size:11px;color:var(--mu);margin-top:10px">Usuário e senha não são exibidos aqui.</div>${ed()?`<div style="margin-top:10px"><button class="btn sec" id="bea">Editar</button> <button class="btn del" id="bda">Excluir</button></div>`:''}`;
   $('mdl').classList.add('on');if($('bea'))$('bea').onclick=()=>formAsset(a);if($('bda'))$('bda').onclick=()=>del('asset',a.id,'o equipamento '+a.name,()=>{});}
 function fechar(){$('mdl').classList.remove('on');}$('mx').onclick=fechar;$('mdl').onclick=e=>{if(e.target.id==='mdl')fechar();};
 function fld(n,l,v,t,w,o){const val=v==null?'':v;if(t==='sel')return`<div class="${w?'w':''}"><label>${l}</label><select name="${n}">${o.map(x=>`<option value="${esc(x[0])}" ${String(x[0])===String(val)?'selected':''}>${esc(x[1])}</option>`).join('')}</select></div>`;
