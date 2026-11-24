@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Preditivo — Datacenters e Racks</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060b18;--pn:#0b1224;--pn2:#0d1730;--bd:#16233f;--tx:#e2e8f0;--mu:#64748b;--ok:#22c55e;--wn:#f59e0b;--bad:#ef4444;--ac:#38bdf8}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);font-size:13px}
+.header{background:linear-gradient(135deg,#0a1226,#0f1c3a);padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.header h1{font-size:18px;color:#f8fafc}.header .asn{font-size:11px;color:var(--mu);margin-top:2px}
+.clock{font-size:20px;font-variant-numeric:tabular-nums}
+.wrap{max-width:1500px;margin:0 auto;padding:14px}
+.nav{display:flex;gap:4px;background:var(--pn);border-radius:8px;padding:4px;border:1px solid var(--bd);flex-wrap:wrap;margin-bottom:12px;width:fit-content}
+.nav a{text-decoration:none;padding:5px 12px;border-radius:6px;font-size:12px;color:#94a3b8}
+.nav a.active{background:#1e40af;color:#dbeafe;font-weight:600}.nav a:not(.active):hover{background:#16233f}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.crumb{color:var(--mu);font-size:12px}.crumb a{color:var(--ac);cursor:pointer;text-decoration:none}
+.btn{background:#1e3a8a;color:#dbeafe;border:1px solid #1e40af;border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer}
+.btn:hover{background:#1e40af}.btn.sec{background:var(--pn2);border-color:var(--bd);color:#94a3b8}.btn.del{background:#7f1d1d;border-color:#991b1b;color:#fecaca}
+.sp{flex:1}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.kpi{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:10px 14px}.kpi .v{font-size:24px;font-weight:700}.kpi .l{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{background:var(--pn2);border:1px solid var(--bd);border-left:3px solid var(--ac);border-radius:10px;padding:12px;cursor:pointer}
+.card:hover{border-color:#1e40af}.card.vazio{border-left-color:#475569}
+.card h3{font-size:14px;margin-bottom:2px}.card .k{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.6px}
+.card .n{display:flex;gap:14px;margin-top:10px;font-size:12px;color:#94a3b8}.card .n b{color:var(--tx);font-size:16px;display:block}
+.sel{display:inline-block;font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;background:#1e293b;color:#94a3b8;margin-left:6px;vertical-align:middle}
+.sel.Importado{background:#1e3a8a;color:#bfdbfe}.sel.Manual{background:#4c1d95;color:#ddd6fe}.sel.Real,.sel.Confirmado{background:#14532d;color:#86efac}.sel.Inferido{background:#78350f;color:#fcd34d}.sel.Simulado{background:#334155}.sel.Desatualizado{background:#7f1d1d;color:#fecaca}
+.racks{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.rackbox{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:12px;min-width:340px;flex:1}
+.rackbox h3{font-size:14px;margin-bottom:2px}.rackbox .sub{font-size:11px;color:var(--mu);margin-bottom:8px}
+.rack{background:#05080f;border:2px solid #243252;border-radius:4px;padding:2px;width:100%}
+.u{display:flex;height:17px;border-bottom:1px solid #0e1730;font-size:10px;align-items:stretch}
+.u .no{width:22px;color:#475569;text-align:right;padding-right:5px;line-height:17px;font-variant-numeric:tabular-nums}
+.u .sl{flex:1;position:relative}
+.dev{position:absolute;left:0;right:0;border-radius:3px;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;line-height:17px;cursor:pointer;border:1px solid #0006;z-index:2}
+.dev:hover{filter:brightness(1.25)}
+.r-Router{background:#0e7490}.r-OLT{background:#6d28d9}.r-Switch{background:#15803d}.r-Org{background:#334155;color:#94a3b8}.r-Outro{background:#9a3412}
+.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--mu);margin-top:8px}.leg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.panel{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-top:12px}.panel h3{font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--bd);font-size:12px}th{color:var(--mu);font-size:10px;text-transform:uppercase}tr.cl{cursor:pointer}tr.cl:hover{background:#0d1730}
+.alert{background:#78350f33;border:1px solid #f59e0b55;color:#fcd34d;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:10px}
+.mdl{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:50;padding:14px}.mdl.on{display:flex}
+.mbox{background:var(--pn);border:1px solid var(--bd);border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;padding:16px}
+.mbox h3{font-size:16px;margin-bottom:8px}.x{float:right;cursor:pointer;color:var(--mu);font-size:22px;line-height:1}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px}.f label{display:block;font-size:10px;color:var(--mu);text-transform:uppercase;margin-bottom:2px}.f .w{grid-column:1/-1}
+.f input,.f select,.f textarea{width:100%;background:var(--pn2);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;color:var(--tx);font-size:12px;font-family:inherit}
+.f input:focus,.f select:focus,.f textarea:focus{outline:1px solid #1e40af}
+.det dt{font-size:10px;color:var(--mu);text-transform:uppercase;margin-top:8px}.det dd{font-size:13px}
+.msg{font-size:12px;margin-top:8px;color:#fca5a5}.msg.ok{color:#86efac}
+.foot{text-align:center;color:#334155;font-size:11px;padding:16px}
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}.f{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1>🏢 Datacenters e Racks</h1><div class="asn">AS264025 — Arroba Banda Larga · cadastro do painel (não altera equipamentos)</div></div>
+  <div class="clock" id="clock">--:--:--</div>
+</div>
+<div class="wrap">
+  <div class="nav">
+    <a href="index.html">📊 Executivo</a><a href="bgp-centro.html">BGP</a><a href="zabbix.html">Zabbix</a>
+    <a href="flow.html">Flow</a><a href="sites.html">🌐 Sites</a><a href="datacenter.html" class="active">🏢 Datacenters</a><a href="rb-cliente.html">RB Cliente</a>
+    <a href="security.html">Segurança</a><a href="config.html">Config</a>
+  </div>
+  <div class="bar"><div class="crumb" id="crumb"></div><div class="sp"></div>
+    <button class="btn sec" id="bkey">🔑 Modo edição</button><span id="edtag" class="sel Manual" style="display:none">EDIÇÃO ATIVA</span>
+    <button class="btn" id="badd" style="display:none"></button></div>
+  <div id="main"><div style="color:var(--mu);padding:20px">Carregando...</div></div>
+  <div class="foot" id="foot"></div>
+</div>
+<div class="mdl" id="mdl"><div class="mbox"><span class="x" id="mx">&times;</span><div id="mbody"></div></div></div>
+<script>
+const API='https://valen-a789b7cc.base44.app/functions/dcMonitor',EDIT='https://valen-a789b7cc.base44.app/functions/dcEdit';
+const $=id=>document.getElementById(id);
+let D=null,DC=null,RK=null,KEY=sessionStorage.getItem('dckey')||'';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SELOS=['Manual','Importado','Real','Confirmado','Inferido','Simulado','Desatualizado'];
+const sel=s=>`<span class="sel ${esc(s||'')}">${esc(s||'Sem selo')}</span>`;
+function cls(d){const r=(d.device_role||'').toLowerCase();if(r.includes('organiz'))return'r-Org';if(r.includes('olt'))return'r-OLT';if(r.includes('router')||r.includes('roteador'))return'r-Router';if(r.includes('switch'))return'r-Switch';return'r-Outro';}
+function ed(){return !!KEY}
+function chrome(){$('edtag').style.display=ed()?'inline-block':'none';$('bkey').textContent=ed()?'🔓 Sair da edição':'🔑 Modo edição';}
+function crumb(){let h='<a data-go="home">Datacenters</a>';if(DC)h+=` › <a data-go="dc">${esc(DC.name)}</a>`;if(RK)h+=` › ${esc(RK.name)}`;$('crumb').innerHTML=h;
+  document.querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>{if(a.dataset.go==='home'){DC=RK=null;}else if(a.dataset.go==='dc'){RK=null;}render();});
+  const b=$('badd');b.style.display=ed()?'inline-block':'none';b.textContent=!DC?'+ Datacenter':!RK?'+ Rack':'+ Equipamento';
+  b.onclick=()=>!DC?formDC():!RK?formRack():formAsset();}
+function render(){if(!D)return;
+  if(DC)DC=D.datacenters.find(x=>x.id===DC.id)||null;if(DC&&RK)RK=DC.racks.find(x=>x.id===RK.id)||null;
+  chrome();crumb();
+  if(!DC)home();else if(!RK)dcView();else rackView();
+  $('foot').textContent='Gerado em '+new Date(D.generated_at).toLocaleString('pt-BR')+' · '+D.source;}
+function home(){const ds=D.datacenters,nr=ds.reduce((a,d)=>a+d.racks.length,0),nd=ds.reduce((a,d)=>a+d.racks.reduce((b,r)=>b+r.devices.length,0),0);
+  let h=`<div class="kpis"><div class="kpi"><div class="v">${ds.length}</div><div class="l">Datacenters / POPs</div></div><div class="kpi"><div class="v">${nr}</div><div class="l">Racks</div></div><div class="kpi"><div class="v">${nd}</div><div class="l">Equipamentos em rack</div></div><div class="kpi"><div class="v" style="color:${D.unracked.length?'var(--wn)':'var(--ok)'}">${D.unracked.length}</div><div class="l">Sem rack definido</div></div></div><div class="grid">`;
+  h+=ds.slice().sort((a,b)=>b.racks.length-a.racks.length||a.name.localeCompare(b.name)).map(d=>{const n=d.racks.reduce((b,r)=>b+r.devices.length,0);
+    return`<div class="card ${d.racks.length?'':'vazio'}" data-dc="${d.id}"><div class="k">${esc(d.kind||'')}${sel(d.data_source)}</div><h3>${esc(d.name)}</h3><div style="font-size:11px;color:var(--mu)">${esc(d.description||'')}</div><div class="n"><div><b>${d.racks.length}</b>racks</div><div><b>${n}</b>equipamentos</div></div></div>`}).join('')+'</div>';
+  if(D.unracked.length)h+=`<div class="panel"><h3>Equipamentos sem rack (${D.unracked.length})</h3><table><tr><th>Nome</th><th>IP</th><th>Função</th><th>POP</th><th>Selo</th></tr>${D.unracked.map(a=>`<tr class="cl" data-as="${a.id}"><td>${esc(a.name)}</td><td>${esc(a.ip_address||'--')}</td><td>${esc(a.device_role||'--')}</td><td>${esc(a.pop||'--')}</td><td>${sel(a.data_source)}</td></tr>`).join('')}</table></div>`;
+  $('main').innerHTML=h;document.querySelectorAll('[data-dc]').forEach(c=>c.onclick=()=>{DC=D.datacenters.find(x=>x.id===c.dataset.dc);render();});bindAs();}
+function dcView(){let h=`<div class="panel" style="margin-top:0"><h3>${esc(DC.name)} ${sel(DC.data_source)}</h3><dl class="det"><dd>${esc(DC.description||'')}</dd>${DC.address?`<dt>Endereço</dt><dd>${esc(DC.address)}</dd>`:''}${DC.power_info?`<dt>Energia</dt><dd>${esc(DC.power_info)}</dd>`:''}${DC.cooling_info?`<dt>Climatização</dt><dd>${esc(DC.cooling_info)}</dd>`:''}${DC.responsible?`<dt>Responsável</dt><dd>${esc(DC.responsible)}</dd>`:''}${DC.source_ref?`<dt>Origem</dt><dd>${esc(DC.source_ref)}</dd>`:''}</dl>${ed()?`<div style="margin-top:10px"><button class="btn sec" id="bedc">Editar</button> <button class="btn del" id="bddc">Excluir</button></div>`:''}</div>`;
+  if(!DC.racks.length)h+='<div class="panel"><div style="color:var(--mu)">Nenhum rack documentado neste local.'+(ed()?' Use "+ Rack".':' Ative o modo edição para cadastrar.')+'</div></div>';
+  h+='<div class="racks" style="margin-top:12px">'+DC.racks.map(rackHtml).join('')+'</div>';
+  $('main').innerHTML=h;document.querySelectorAll('[data-rk]').forEach(c=>c.onclick=e=>{if(e.target.closest('.dev'))return;RK=DC.racks.find(x=>x.id===c.dataset.rk);render();});bindAs();
+  if($('bedc'))$('bedc').onclick=()=>formDC(DC);if($('bddc'))$('bddc').onclick=()=>del('datacenter',DC.id,'o datacenter '+DC.name,()=>{DC=null;});}
+function rackHtml(r){const n=r.size_u||44;const bs=!!r.back_side;let lin='';
+  const devs=r.devices.filter(d=>d.rack_position_u>0&&d.rack_size_u>0);
+  for(let i=n;i>=1;i--){const d=devs.find(x=>x.rack_position_u===i);
+    lin+=`<div class="u"><div class="no">${i}</div><div class="sl">${d?`<div class="dev ${cls(d)}" data-as="${d.id}" style="top:${-(d.rack_size_u-1)*17}px;height:${d.rack_size_u*17-1}px;line-height:${d.rack_size_u*17-1}px" title="${esc(d.name)} (${d.rack_size_u}U)">${esc(d.name)}${d.ip_address?' · '+esc(d.ip_address):''}</div>`:''}</div></div>`;}
+  const sem=r.devices.filter(d=>!(d.rack_position_u>0&&d.rack_size_u>0));
+  return`<div class="rackbox" data-rk="${r.id}" style="cursor:pointer"><h3>${esc(r.name)} ${sel(r.data_source)}</h3><div class="sub">${n} U · ${r.devices.length} equipamento(s)${bs?' · numeração do verso':''} ${r.description?'· '+esc(r.description):''}</div><div class="rack">${lin}</div>${sem.length?`<div class="alert" style="margin-top:8px">${sem.length} equipamento(s) sem posição definida: ${sem.map(d=>esc(d.name)).join(', ')}</div>`:''}<div class="leg"><span><i class="r-Router"></i>Roteador</span><span><i class="r-OLT"></i>OLT</span><span><i class="r-Switch"></i>Switch</span><span><i class="r-Org"></i>Organizador</span><span><i class="r-Outro"></i>Outro</span></div></div>`;}
+function rackView(){let h=`<div class="racks">${rackHtml(RK)}</div><div class="panel"><h3>Equipamentos do rack</h3><table><tr><th>U</th><th>Nome</th><th>IP</th><th>Função</th><th>Fabricante / modelo</th><th>Selo</th></tr>${RK.devices.slice().sort((a,b)=>(b.rack_position_u||0)-(a.rack_position_u||0)).map(a=>`<tr class="cl" data-as="${a.id}"><td>${a.rack_position_u||'--'}${a.rack_size_u>1?'–'+(a.rack_position_u+a.rack_size_u-1):''}</td><td>${esc(a.name)}</td><td>${esc(a.ip_address||'--')}</td><td>${esc(a.device_role||'--')}</td><td>${esc([a.manufacturer,a.model].filter(Boolean).join(' ')||'--')}</td><td>${sel(a.data_source)}</td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mu)">Rack vazio.</td></tr>'}</table>${ed()?`<div style="margin-top:10px"><button class="btn sec" id="berk">Editar rack</button> <button class="btn del" id="bdrk">Excluir rack</button></div>`:''}</div>`;
+  $('main').innerHTML=h;bindAs();if($('berk'))$('berk').onclick=()=>formRack(RK);if($('bdrk'))$('bdrk').onclick=()=>del('rack',RK.id,'o rack '+RK.name,()=>{RK=null;});}
+function allAssets(){const l=[...D.unracked];D.datacenters.forEach(d=>d.racks.forEach(r=>l.push(...r.devices)));return l;}
+function bindAs(){document.querySelectorAll('[data-as]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();const a=allAssets().find(x=>x.id===e.dataset.as);if(a)detalhe(a);});}
+function detalhe(a){const l=[['IP',a.ip_address],['Função',a.device_role],['Fabricante',a.manufacturer],['Modelo',a.model],['Firmware',a.firmware_version],['Nº de série',a.serial_number],['POP',a.pop],['Local',a.location],['Rack',a.rack_name],['Posição',a.rack_position_u?`U${a.rack_position_u}${a.rack_size_u>1?'–U'+(a.rack_position_u+a.rack_size_u-1):''} (${a.rack_size_u||1}U, ${a.rack_side||'frente'})`:null],['Latitude / longitude',a.latitude!=null?a.latitude+' / '+a.longitude:null],['Porta/range de acesso',a.access_port_range],['Range de IP',a.ip_query_range],['Range de VLAN',a.vlan_query_range],['Range de interface',a.interface_query_range],['ASN',a.asn],['Observações',a.notes||a.description]].filter(x=>x[1]);
+  $('mbody').innerHTML=`<span class="x" id="mx2">&times;</span><h3>${esc(a.name)} ${sel(a.data_source)}</h3><dl class="det">${l.map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl><div style="font-size:11px;color:var(--mu);margin-top:10px">Usuário e senha não são exibidos aqui.</div>${ed()?`<div style="margin-top:10px"><button class="btn sec" id="bea">Editar</button> <button class="btn del" id="bda">Excluir</button></div>`:''}`;
+  $('mdl').classList.add('on');$('mx2').onclick=fechar;if($('bea'))$('bea').onclick=()=>formAsset(a);if($('bda'))$('bda').onclick=()=>del('asset',a.id,'o equipamento '+a.name,()=>{});}
+function fechar(){$('mdl').classList.remove('on');}$('mx').onclick=fechar;$('mdl').onclick=e=>{if(e.target.id==='mdl')fechar();};
+function fld(n,l,v,t,w,o){const val=v==null?'':v;if(t==='sel')return`<div class="${w?'w':''}"><label>${l}</label><select name="${n}">${o.map(x=>`<option value="${esc(x[0])}" ${String(x[0])===String(val)?'selected':''}>${esc(x[1])}</option>`).join('')}</select></div>`;
+  if(t==='ta')return`<div class="w"><label>${l}</label><textarea name="${n}" rows="2">${esc(val)}</textarea></div>`;
+  return`<div class="${w?'w':''}"><label>${l}</label><input name="${n}" type="${t||'text'}" value="${esc(val)}" ${t==='number'?'step="any"':''}></div>`;}
+function modalForm(titulo,campos,onSave,extra){$('mbody').innerHTML=`<span class="x" id="mx2">&times;</span><h3>${titulo}</h3><form id="fm"><div class="f">${campos}</div><div id="fmsg" class="msg"></div><div style="margin-top:12px"><button class="btn" type="submit">Salvar</button> <button class="btn sec" type="button" id="bc">Cancelar</button></div></form>${extra||''}`;
+  $('mdl').classList.add('on');$('mx2').onclick=fechar;$('bc').onclick=fechar;
+  $('fm').onsubmit=async e=>{e.preventDefault();const o={};new FormData($('fm')).forEach((v,k)=>{o[k]=v});await onSave(o);};}
+async function api(body){const r=await fetch(EDIT,{method:'POST',headers:{'Content-Type':'application/json','x-edit-key':KEY},body:JSON.stringify(body)});const j=await r.json();if(r.status===401){KEY='';sessionStorage.removeItem('dckey');chrome();throw new Error('Chave de edição inválida.');}if(!r.ok)throw new Error(j.error+(j.missing?': '+j.missing.join(', '):''));return j;}
+async function salvar(entity,id,data,numeros){numeros.forEach(k=>{if(data[k]===''||data[k]==null)delete data[k];else data[k]=Number(data[k]);});if(data.back_side!==undefined)data.back_side=data.back_side==='true';
+  const m=$('fmsg');m.className='msg';m.textContent='Salvando...';try{await api({action:id?'update':'create',entity,id,data});m.className='msg ok';m.textContent='Salvo.';await load();setTimeout(fechar,500);}catch(e){m.className='msg';m.textContent=e.message;}}
+function formDC(d){d=d||{};modalForm(d.id?'Editar datacenter':'Novo datacenter',fld('name','Nome *',d.name,'text',1)+fld('kind','Tipo',d.kind||'Datacenter','sel',0,['Datacenter','POP','Predio NOC','Outro'].map(x=>[x,x]))+fld('data_source','Selo de origem',d.data_source||'Manual','sel',0,SELOS.map(x=>[x,x]))+fld('address','Endereço',d.address,'text',1)+fld('latitude','Latitude',d.latitude,'number')+fld('longitude','Longitude',d.longitude,'number')+fld('responsible','Responsável',d.responsible,'text',1)+fld('power_info','Energia (nobreak, gerador, circuitos)',d.power_info,'ta')+fld('cooling_info','Climatização',d.cooling_info,'ta')+fld('description','Descrição',d.description,'ta'),o=>salvar('datacenter',d.id,o,['latitude','longitude']));}
+function formRack(r){r=r||{};const dcs=D.datacenters.map(x=>[x.id,x.name]);modalForm(r.id?'Editar rack':'Novo rack',fld('datacenter_id','Datacenter *',r.datacenter_id||(DC&&DC.id),'sel',1,dcs)+fld('name','Nome *',r.name,'text',1)+fld('size_u','Altura (U) *',r.size_u||44,'number')+fld('back_side','Numeração do verso',String(!!r.back_side),'sel',0,[['false','Não'],['true','Sim']])+fld('row_label','Fileira/posição na sala',r.row_label,'text')+fld('max_power_w','Potência máx. (W)',r.max_power_w,'number')+fld('data_source','Selo de origem',r.data_source||'Manual','sel',1,SELOS.map(x=>[x,x]))+fld('description','Descrição',r.description,'ta'),o=>{o.datacenter_name=(D.datacenters.find(x=>x.id===o.datacenter_id)||{}).name;return salvar('rack',r.id,o,['size_u','max_power_w']);});}
+function formAsset(a){a=a||{};const rk=[['','(sem rack)']];D.datacenters.forEach(d=>d.racks.forEach(r=>rk.push([r.id,d.name+' › '+r.name])));
+  const extra='<div style="font-size:11px;color:var(--mu);margin-top:10px">Equipamento novo exige: nome, POP, latitude, longitude, usuário e porta/range de acesso. A senha não é guardada aqui: informe só uma referência (ex.: nome do cofre). Este cadastro não conecta no equipamento.</div>';
+  modalForm(a.id?'Editar equipamento':'Novo equipamento',fld('name','Nome *',a.name,'text',1)+fld('pop','POP *',a.pop||(DC&&DC.name),'text')+fld('device_role','Função',a.device_role,'text')+fld('ip_address','IP',a.ip_address,'text')+fld('access_port_range','Porta/range de acesso *',a.access_port_range,'text')+fld('latitude','Latitude *',a.latitude,'number')+fld('longitude','Longitude *',a.longitude,'number')+fld('username','Usuário *',a.username,'text')+fld('password_ref','Referência da senha (não a senha)',a.password_ref,'text')+fld('manufacturer','Fabricante',a.manufacturer,'text')+fld('model','Modelo',a.model,'text')+fld('serial_number','Nº de série',a.serial_number,'text')+fld('firmware_version','Firmware',a.firmware_version,'text')+fld('rack_id','Rack',a.rack_id||(RK&&RK.id)||'','sel',1,rk)+fld('rack_position_u','U inicial (base)',a.rack_position_u,'number')+fld('rack_size_u','Altura (U)',a.rack_size_u||1,'number')+fld('rack_side','Lado',a.rack_side||'frente','sel',0,[['frente','Frente'],['verso','Verso']])+fld('data_source','Selo de origem',a.data_source||'Manual','sel',0,SELOS.map(x=>[x,x]))+fld('ip_query_range','Range de IP',a.ip_query_range,'text')+fld('vlan_query_range','Range de VLAN',a.vlan_query_range,'text')+fld('interface_query_range','Range de interface',a.interface_query_range,'text')+fld('notes','Observações',a.notes,'ta'),
+   o=>{const r=D.datacenters.flatMap(d=>d.racks).find(x=>x.id===o.rack_id);o.rack_name=r?r.name:'';if(!r){o.rack_id='';}
+     const conflito=r&&o.rack_position_u?r.devices.find(x=>x.id!==a.id&&x.rack_position_u&&!(Number(o.rack_position_u)+Number(o.rack_size_u||1)-1<x.rack_position_u||Number(o.rack_position_u)>x.rack_position_u+x.rack_size_u-1)):null;
+     if(conflito){$('fmsg').textContent='Conflito de posição com "'+conflito.name+'" (U'+conflito.rack_position_u+').';return;}
+     if(a.id){['username','password_ref'].forEach(k=>{if(o[k]==='')delete o[k];});}
+     return salvar('asset',a.id,o,['latitude','longitude','rack_position_u','rack_size_u']);},extra);}
+async function del(entity,id,nome,depois){if(!confirm('Excluir '+nome+'? Isso só remove do cadastro do painel.'))return;try{await api({action:'delete',entity,id});depois();fechar();await load();}catch(e){alert(e.message);}}
+$('bkey').onclick=()=>{if(ed()){KEY='';sessionStorage.removeItem('dckey');render();return;}const k=prompt('Chave de edição:');if(k){KEY=k.trim();sessionStorage.setItem('dckey',KEY);render();}};
+async function load(){try{const r=await fetch(API);D=await r.json();if(D.error)throw new Error(D.error);render();}catch(e){$('main').innerHTML='<div class="alert">Falha ao carregar: '+esc(e.message)+'</div>';}}
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('pt-BR');},1000);
+load();
+</script>
+</body>
+</html>
